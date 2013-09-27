@@ -1,24 +1,25 @@
 var canvas = null;
 var ctx = null;
 var jqcanvas = null;
+var kb = null;
 
 var cellsize = 50.0;
 var boardOffset = {x: cellsize, y: cellsize};
 var boardColumns = 9, boardRows = 9;
 var buildMode = true;
 
-function flipper( col, row, ascending ) {
-    return { type: "flipper",
-	     col: col,
-	     row: row,
-	     ascending: ascending };
-}
-
 var elements = [];
 
 var gamestate = null;
 
 var buildModeSerialization = null;
+
+function colourOf( base, deactivated ) {
+    if( deactivated ) {
+	return "#755";
+    }
+    return "#f55";
+}
 
 function startRun() {
     if( !buildMode ) {
@@ -94,6 +95,12 @@ function diagonalBounce( direction, ascending ) {
 	     y: m * direction.x };
 }
 
+function onEachElement( f ) {
+    for(var key in elements) {
+	f( elements[key] );
+    }
+}
+
 function nextState( lastState ) {
     var dir = lastState.d2;
     var colp = lastState.col + dir.x;
@@ -101,7 +108,7 @@ function nextState( lastState ) {
     var element = elementAt( colp, rowp );
     var phasep = lastState.phase - 1.0;
     
-    if( !element ) {
+    if( !element || element.deactivated ) {
 	return { col: colp,
 		 row: rowp,
 		 phase: phasep,
@@ -118,6 +125,27 @@ function nextState( lastState ) {
 		     element.ascending = !element.ascending;
 		 }
 	       };
+    }
+    if( element.type == "square" || element.type == "breakable-square" ) {
+	if( element.type == "breakable-square" ) {
+	    removeElement( element );
+	}
+	return nextState( { col: colp,
+			    row: rowp,
+			    phase: phasep + 1.0,
+			    d2: {x: -dir.x, y: -dir.y } } );
+    }
+    if( element.type == "switch" ) {
+	onEachElement( function(el) {
+	    if( elementDeactivatable(el) ) {
+		el.deactivated = ! el.deactivated;
+	    }
+	} );
+	return { col: colp,
+		 row: rowp,
+		 phase: phasep,
+		 d1: dir,
+		 d2: dir };
     }
 }
 
@@ -149,6 +177,10 @@ function removeElement( elt ) {
     arrayRemoveElement( elements, elt );
 }
 
+function elementDeactivatable( el ) {
+    return el.type != "switch";
+}
+
 function toggleElementAt( cell ) {
     if( !buildMode ) {
 	return;
@@ -161,10 +193,19 @@ function toggleElementAt( cell ) {
 
     var newElement = null;
 
-    if( !element ) {
-	newElement = flipper( cell.col, cell.row, true );
+    if( element && !element.deactivated && elementDeactivatable( element ) ) {
+	newElement = element;
+	newElement.deactivated = true;
+    } else if( !element ) {
+	newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: true };
     } else if( element.type == "flipper" && element.ascending ) {
-	newElement = flipper( cell.col, cell.row, false );
+	newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: false };
+    } else if( element.type == "flipper" && !element.ascending ) {
+	newElement = {type: "square", col: cell.col, row: cell.row };
+    } else if( element.type == "square" ) {
+	newElement = {type: "breakable-square", col: cell.col, row: cell.row };
+    } else if( element.type == "breakable-square" ) {
+	newElement = {type: "switch", col: cell.col, row: cell.row };
     }
 
     if( newElement ) {
@@ -270,10 +311,7 @@ function drawFrame() {
 
     drawChessboard( {cols: boardColumns, rows: boardRows} );
     
-    for(var i in elements) {
-        var x = elements[i];
-        drawFlipper( x.col, x.row, x.ascending );
-    }
+    onEachElement( drawThing );
 
     if( gamestate ) {
 	var pos = ballPosition();
@@ -293,12 +331,15 @@ function drawBall( cx, cy ) {
     ctx.fill();
 }
 
-function drawFlipper( col, row, type ) {
+function drawFlipper( thing ) {
+    var col = thing.col;
+    var row = thing.row;
+    var type = thing.ascending;
     var xleft = col * cellsize + boardOffset.x;
     var xright = (col+1) * cellsize + boardOffset.x;
     var ytop = row * cellsize + boardOffset.y;
     var ybottom = (row+1) * cellsize + boardOffset.y;
-    ctx.strokeStyle = "#f00";
+    ctx.strokeStyle = colourOf( "red", thing.deactivated );
     ctx.beginPath();
     if( type ) {
         ctx.moveTo( xleft, ybottom );
@@ -308,6 +349,51 @@ function drawFlipper( col, row, type ) {
         ctx.lineTo( xleft, ytop );
     }
     ctx.stroke();
+}
+
+function drawSquare( thing ) {
+    ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    var sp = 3;
+    for(var i = 0; i < 5; i++) {
+	ctx.strokeRect( boardOffset.x + thing.col * cellsize + sp * i,
+			boardOffset.y + thing.row * cellsize + sp * i,
+			cellsize - 2 * sp * i,
+			cellsize - 2 * sp * i);
+    }
+}
+
+function drawBreakableSquare( thing ) {
+    ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    var sp = 9;
+    for(var i = 0; i < 2; i++) {
+	ctx.strokeRect( boardOffset.x + thing.col * cellsize + sp * i,
+			boardOffset.y + thing.row * cellsize + sp * i,
+			cellsize - 2 * sp * i,
+			cellsize - 2 * sp * i);
+    }
+}
+
+function drawSwitch( thing ) {
+    ctx.fillStyle = colourOf( "red", thing.deactivated );
+    ctx.beginPath();
+    ctx.arc( boardOffset.x + (thing.col+0.5) * cellsize,
+	     boardOffset.y + (thing.row+0.5) * cellsize,
+	     cellsize * 0.5,
+	     0,
+	     2 * Math.PI,
+	     false );
+    ctx.fill();
+}
+
+var drawFunctions = {
+    "flipper": drawFlipper,
+    "square": drawSquare,
+    "breakable-square": drawBreakableSquare,
+    "switch": drawSwitch
+}
+
+function drawThing( thing ) {
+    drawFunctions[ thing.type ]( thing );
 }
 
 function drawChessboard( size ) {
