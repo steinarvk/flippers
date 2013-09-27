@@ -14,18 +14,7 @@ function flipper( col, row, ascending ) {
 	     ascending: ascending };
 }
 
-var elements = [
-    flipper( 0, 0, true ),
-    flipper( 3, 0, false ),
-    flipper( 1, 3, true ),
-    flipper( 4, 8, false ),
-    flipper( 1, 8, false ),
-    flipper( 3, 3, true ),
-    flipper( 0, 1, false ),
-    flipper( 0, 7, false ),
-    flipper( 4, 7, true ),
-    flipper( 3, 1, false )
-];
+var elements = [];
 
 var gamestate = null;
 
@@ -161,6 +150,10 @@ function removeElement( elt ) {
 }
 
 function toggleElementAt( cell ) {
+    if( !buildMode ) {
+	return;
+    }
+
     var element = elementAt( cell.col, cell.row );
     if( element ) {
 	removeElement( element );
@@ -231,6 +224,8 @@ function begin() {
 
     setInterval( drawFrame, 1000.0 / 30.0 );
     setInterval( advanceWorld, 15.0 );
+
+    elements = [{"type":"flipper","col":4,"row":2,"ascending":true},{"type":"flipper","col":7,"row":6,"ascending":true},{"type":"flipper","col":7,"row":2,"ascending":false},{"type":"flipper","col":7,"row":8,"ascending":true},{"type":"flipper","col":3,"row":8,"ascending":false},{"type":"flipper","col":3,"row":4,"ascending":true},{"type":"flipper","col":6,"row":4,"ascending":false},{"type":"flipper","col":6,"row":7,"ascending":true},{"type":"flipper","col":1,"row":7,"ascending":false},{"type":"flipper","col":1,"row":2,"ascending":true},{"type":"flipper","col":0,"row":6,"ascending":true},{"type":"flipper","col":0,"row":8,"ascending":false},{"type":"flipper","col":0,"row":4,"ascending":false},{"type":"flipper","col":0,"row":1,"ascending":true},{"type":"flipper","col":4,"row":1,"ascending":true}];
 }
 
 function stepWorld() {
