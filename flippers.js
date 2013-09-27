@@ -5,6 +5,7 @@ var jqcanvas = null;
 var cellsize = 50.0;
 var boardOffset = {x: cellsize, y: cellsize};
 var boardColumns = 9, boardRows = 9;
+var buildMode = true;
 
 function flipper( col, row, ascending ) {
     return { type: "flipper",
@@ -26,13 +27,67 @@ var elements = [
     flipper( 3, 1, false )
 ];
 
-var gamestate = {
-    col: 4,
-    row: 9,
-    phase: 0.0,
-    d1: {x: 0, y: -1},
-    d2: {x: 0, y: -1}
-};
+var gamestate = null;
+
+var buildModeSerialization = null;
+
+function startRun() {
+    if( !buildMode ) {
+	return;
+    }
+	
+    $("#startstopbutton").html( "Stop" );
+
+    buildMode = false;
+    gamestate = initialGameState();
+
+    buildModeSerialization = serializeGame();
+
+    $("#loadbutton").prop( "disabled", true );
+    $("#savebutton").prop( "disabled", true );
+}
+
+function stopRun() {
+    if( buildMode ) {
+	return;
+    }
+
+    $("#startstopbutton").html( "Start" );
+
+    buildMode = true;
+    gamestate = null;
+
+    if( buildModeSerialization ) {
+	unserializeGame( buildModeSerialization );
+    }
+
+    $("#loadbutton").prop( "disabled", false );
+    $("#savebutton").prop( "disabled", false );
+}
+
+function saveLevel() {
+    $("#leveldata").val( serializeGame() );
+}
+
+function loadLevel() {
+    unserializeGame( $("#leveldata").val() );
+}
+
+function serializeGame() {
+    return JSON.stringify( elements );
+}
+
+function unserializeGame( data ) {
+    elements = JSON.parse( data );
+}
+
+function initialGameState() {
+    return {col: 4,
+	    row: 9,
+	    phase: 0.0,
+	    d1: {x: 0, y: -1},
+	    d2: {x: 0, y: -1}};
+}
 
 function elementAt( col, row ) {
     for(var i = 0; i < elements.length; i++) {
@@ -78,7 +133,6 @@ function nextState( lastState ) {
 }
 
 function cellAtPosition( pos ) {
-    console.log( "x " + pos.x + " y " + pos.y );
     var x = (pos.x - boardOffset.x) / cellsize;
     var y = (pos.y - boardOffset.y) / cellsize;
     if( x < 0 || y < 0 || x >= boardColumns || y >= boardRows ) {
@@ -117,7 +171,7 @@ function toggleElementAt( cell ) {
     if( !element ) {
 	newElement = flipper( cell.col, cell.row, true );
     } else if( element.type == "flipper" && element.ascending ) {
-	newElement = flipper( coll.col, cell.row, false );
+	newElement = flipper( cell.col, cell.row, false );
     }
 
     if( newElement ) {
@@ -134,8 +188,39 @@ function handleClick( pos ) {
     toggleElementAt( cell );
 }
 
+function toggleGame() {
+    if( buildMode ) {
+	startRun();
+    } else {
+	stopRun();
+    }
+}
+
 function begin() {
-    canvas = document.getElementById( "flippersCanvas" );
+    canvas = document.createElement( "canvas" );
+    canvas.id = "flippersCanvas";
+    canvas.width = (2 + boardColumns) * cellsize;
+    canvas.height = (2 + boardRows) * cellsize;
+
+    jqcanvas = $(canvas);
+    
+    $("#flippersGame")
+	.append( jqcanvas )
+	.append( $(document.createElement("button"))
+		 .attr( "id", "startstopbutton" )
+		 .html( "Start" )
+		 .click( toggleGame ) )
+	.append( $(document.createElement("textarea"))
+		 .attr( "id", "leveldata" ) )
+	.append( $(document.createElement("button"))
+		 .attr( "id", "savebutton" )
+		 .html( "Save" )
+		 .click( saveLevel ) )
+	.append( $(document.createElement("button"))
+		 .attr( "id", "loadbutton" )
+		 .html( "Load" )
+		 .click( loadLevel ) );
+		 
     ctx = canvas.getContext( "2d" );
     jqcanvas = $("#flippersCanvas");
 
@@ -156,6 +241,10 @@ function stepWorld() {
 }
 
 function advanceWorld() {
+    if( buildMode ) {
+	return;
+    }
+
     gamestate.phase += 0.04;
     while( gamestate.phase > 1.0 ) {
         stepWorld();
@@ -191,8 +280,10 @@ function drawFrame() {
         drawFlipper( x.col, x.row, x.ascending );
     }
 
-    var pos = ballPosition();
-    drawBall( pos.x, pos.y );
+    if( gamestate ) {
+	var pos = ballPosition();
+	drawBall( pos.x, pos.y );
+    }
 }
 
 function drawBall( cx, cy ) {
