@@ -159,15 +159,20 @@ function cellAtPosition( pos ) {
 	     row: Math.floor( y ) };
 }
 
-if( Modernizr.touch ) {
-    function getClickPosition( e ) {
+function printObject( o ) {
+    for(var k in o) {
+	console.log( "key " + k + ": " + o[k] );
+    }
+}
+
+function getClickPosition( e ) {
+    if( Modernizr.touch ) {
+	console.log( "translating touch " );
 	if( e.touches && e.touches.length > 0 ) {
 	    return {x: e.touches[0].pageX - jqcanvas.offset().left,
-		    y: e.touches[1].pageY - jqcanvas.offset().top};
+		    y: e.touches[0].pageY - jqcanvas.offset().top};
 	}
-    }
-} else {
-    function getClickPosition( e ) {
+    } else {
 	return {
 	    x: e.pageX - jqcanvas.offset().left,
 	    y: e.pageY - jqcanvas.offset().top
@@ -223,6 +228,8 @@ function toggleElementAt( cell ) {
 }
 
 function handleClick( pos ) {
+    console.log( "handling click at " + JSON.stringify( pos ) );
+
     var cell = cellAtPosition( pos );
     if( !cell ) {
 	return;
@@ -276,10 +283,19 @@ function begin() {
     ctx = canvas.getContext( "2d" );
     jqcanvas = $("#flippersCanvas");
 
-    jqcanvas.on( "click", function(e) {
-	e.preventDefault();
-	handleClick( getClickPosition( e ) );
-    });
+    if( Modernizr.touch ) {
+	console.log( "using touch events" );
+
+	canvas.ontouchstart = function(e) {
+	    e.preventDefault();
+	    handleClick( getClickPosition( e ) );
+	}
+    } else {
+	canvas.onclick = function(e) {
+	    e.preventDefault();
+	    handleClick( getClickPosition( e ) );
+	}
+    }
 
     setInterval( drawFrame, 1000.0 / 30.0 );
     setInterval( advanceWorld, 15.0 );

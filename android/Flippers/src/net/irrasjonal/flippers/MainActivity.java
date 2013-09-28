@@ -8,7 +8,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebSettings.RenderPriority;
 import android.webkit.WebSettings.ZoomDensity;
 
 public class MainActivity extends Activity {
@@ -44,6 +46,9 @@ public class MainActivity extends Activity {
         webview.getSettings().setBuiltInZoomControls( false );
         webview.getSettings().setSupportZoom( false );
         webview.getSettings().setDefaultZoom( ZoomDensity.FAR );
+        
+        webview.getSettings().setRenderPriority( RenderPriority.HIGH );
+        webview.getSettings().setCacheMode( WebSettings.LOAD_NO_CACHE );
         
         webview.setHorizontalScrollBarEnabled(false);
         webview.setVerticalScrollBarEnabled( false );
