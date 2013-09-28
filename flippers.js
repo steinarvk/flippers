@@ -3,7 +3,7 @@ var ctx = null;
 var jqcanvas = null;
 var kb = null;
 
-var cellsize = 50.0;
+var cellsize = 25.0;
 var boardOffset = {x: cellsize, y: cellsize};
 var boardColumns = 9, boardRows = 9;
 var buildMode = true;
@@ -159,11 +159,20 @@ function cellAtPosition( pos ) {
 	     row: Math.floor( y ) };
 }
 
-function getClickPosition( e ) {
-    return {
-	x: e.pageX - jqcanvas.offset().left,
-	y: e.pageY - jqcanvas.offset().top
-    };
+if( Modernizr.touch ) {
+    function getClickPosition( e ) {
+	if( e.touches && e.touches.length > 0 ) {
+	    return {x: e.touches[0].pageX - jqcanvas.offset().left,
+		    y: e.touches[1].pageY - jqcanvas.offset().top};
+	}
+    }
+} else {
+    function getClickPosition( e ) {
+	return {
+	    x: e.pageX - jqcanvas.offset().left,
+	    y: e.pageY - jqcanvas.offset().top
+	};
+    }
 }
 
 function arrayRemoveElement( ar, element ) {
@@ -237,9 +246,18 @@ function begin() {
     canvas.height = (2 + boardRows) * cellsize;
 
     jqcanvas = $(canvas);
-    
+
+    console.log( "Game beginning!");
+
+    if( Modernizr.touch ) {
+	console.log( "Touch events enabled" );
+    } else {
+	console.log( "Touch events not enabled" );
+    }
+
     $("#flippersGame")
 	.append( jqcanvas )
+	.append( $(document.createElement("br")) )
 	.append( $(document.createElement("button"))
 		 .attr( "id", "startstopbutton" )
 		 .html( "Start" )
