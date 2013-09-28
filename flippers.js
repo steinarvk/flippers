@@ -3,9 +3,9 @@ var ctx = null;
 var jqcanvas = null;
 var kb = null;
 
-var cellsize = 25.0;
-var boardOffset = {x: cellsize, y: cellsize};
-var boardColumns = 9, boardRows = 9;
+var cellsize = 70.0;
+var boardOffset = {x: 25.0, y: 25.0};
+var boardColumns = 5, boardRows = 5;
 var buildMode = true;
 
 var elements = [];
@@ -72,8 +72,8 @@ function unserializeGame( data ) {
 }
 
 function initialGameState() {
-    return {col: 4,
-	    row: 9,
+    return {col: Math.floor( boardColumns / 2 ),
+	    row: boardRows,
 	    phase: 0.0,
 	    d1: {x: 0, y: -1},
 	    d2: {x: 0, y: -1}};
@@ -284,7 +284,7 @@ function begin() {
     setInterval( drawFrame, 1000.0 / 30.0 );
     setInterval( advanceWorld, 15.0 );
 
-    elements = [{"type":"flipper","col":4,"row":2,"ascending":true},{"type":"flipper","col":7,"row":6,"ascending":true},{"type":"flipper","col":7,"row":2,"ascending":false},{"type":"flipper","col":7,"row":8,"ascending":true},{"type":"flipper","col":3,"row":8,"ascending":false},{"type":"flipper","col":3,"row":4,"ascending":true},{"type":"flipper","col":6,"row":4,"ascending":false},{"type":"flipper","col":6,"row":7,"ascending":true},{"type":"flipper","col":1,"row":7,"ascending":false},{"type":"flipper","col":1,"row":2,"ascending":true},{"type":"flipper","col":0,"row":6,"ascending":true},{"type":"flipper","col":0,"row":8,"ascending":false},{"type":"flipper","col":0,"row":4,"ascending":false},{"type":"flipper","col":0,"row":1,"ascending":true},{"type":"flipper","col":4,"row":1,"ascending":true}];
+    elements = [];
 }
 
 function stepWorld() {
