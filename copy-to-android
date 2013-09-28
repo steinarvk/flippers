@@ -1,0 +1,2 @@
+#!/bin/sh
+cp *.html *.js *.css android/Flippers/assets/

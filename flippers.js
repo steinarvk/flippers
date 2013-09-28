@@ -4,7 +4,7 @@ var jqcanvas = null;
 var kb = null;
 
 var cellsize = 70.0;
-var boardOffset = {x: 25.0, y: 25.0};
+var boardOffset = {x: 70.0, y: 70.0};
 var boardColumns = 5, boardRows = 5;
 var buildMode = true;
 
