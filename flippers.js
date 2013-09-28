@@ -4,15 +4,24 @@ var jqcanvas = null;
 var kb = null;
 
 var cellsize = 70.0;
-var boardOffset = {x: 70.0, y: 70.0};
 var boardColumns = 5, boardRows = 5;
 var buildMode = true;
+var canvasWidth = 480;
+var canvasHeight = 480;
+var boardOffset = {x: (canvasWidth - boardColumns * cellsize) * 0.5,
+		   y: (canvasHeight - boardRows * cellsize) * 0.5};
 
 var elements = [];
 
 var gamestate = null;
 
 var buildModeSerialization = null;
+
+var predefinedLevels = {
+    "Puzzle 4 -- place one breakable square": [{"type":"flipper","col":0,"row":4,"ascending":false},{"type":"flipper","col":4,"row":4,"ascending":true},{"type":"flipper","col":4,"row":0,"ascending":false},{"type":"flipper","col":0,"row":0,"ascending":true},{"type":"breakable-square","col":2,"row":0},{"type":"flipper","col":2,"row":4,"ascending":true}],
+    "Puzzle 5 -- place one flipper": [{"type":"flipper","col":2,"row":2,"ascending":true},{"type":"flipper","col":3,"row":2,"ascending":true},{"type":"flipper","col":3,"row":1,"ascending":false},{"type":"flipper","col":1,"row":1,"ascending":true},{"type":"flipper","col":1,"row":3,"ascending":false},{"type":"flipper","col":4,"row":3,"ascending":true},{"type":"flipper","col":4,"row":0,"ascending":false},{"type":"flipper","col":0,"row":0,"ascending":true},{"type":"flipper","col":0,"row":4,"ascending":false}],
+    "Puzzle 6 -- place one flipper and one square": [{"type":"flipper","col":1,"row":0,"ascending":true},{"type":"breakable-square","col":2,"row":0},{"type":"flipper","col":4,"row":0,"ascending":false},{"type":"square","col":0,"row":1},{"type":"flipper","col":2,"row":1,"ascending":false},{"type":"square","col":3,"row":1},{"type":"flipper","col":0,"row":2,"ascending":true},{"type":"flipper","col":2,"row":2,"ascending":false},{"type":"flipper","col":3,"row":2,"ascending":false},{"type":"flipper","col":4,"row":2,"ascending":true},{"type":"flipper","col":1,"row":3,"ascending":false},{"type":"flipper","col":2,"row":3,"ascending":true},{"type":"flipper","col":3,"row":3,"ascending":true},{"type":"flipper","col":4,"row":3,"ascending":true},{"type":"flipper","col":0,"row":4,"ascending":false}]
+};
 
 function colourOf( base, deactivated ) {
     if( deactivated ) {
@@ -249,8 +258,8 @@ function toggleGame() {
 function begin() {
     canvas = document.createElement( "canvas" );
     canvas.id = "flippersCanvas";
-    canvas.width = (2 + boardColumns) * cellsize;
-    canvas.height = (2 + boardRows) * cellsize;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
 
     jqcanvas = $(canvas);
 
@@ -260,6 +269,12 @@ function begin() {
 	console.log( "Touch events enabled" );
     } else {
 	console.log( "Touch events not enabled" );
+    }
+
+    var dropdown = $( "<select/>", {id: "predefinedLevelSelector"} );
+    for(var name in predefinedLevels) {
+	$( "<option/>", {value: name,
+			 text: name} ).appendTo( dropdown );
     }
 
     $("#flippersGame")
@@ -278,7 +293,25 @@ function begin() {
 	.append( $(document.createElement("button"))
 		 .attr( "id", "loadbutton" )
 		 .html( "Load" )
-		 .click( loadLevel ) );
+		 .click( loadLevel ) )
+	.append( dropdown )
+	.append( $("<button/>")
+		 .html( "Load predefined" )
+		 .click( function() {
+		     var key = dropdown.val();
+		     var level = predefinedLevels[ key ];
+		     if( !level ) {
+			 console.log( "No such level!" );
+			 return;
+		     }
+		     if( !buildMode ) {
+			 console.log( "Not in build mode!" );
+			 return;
+		     }
+		     console.log( "loading " + JSON.stringify( level ) );
+		     unserializeGame( JSON.stringify( level ) );
+		 } ) );
+    
 		 
     ctx = canvas.getContext( "2d" );
     jqcanvas = $("#flippersCanvas");
@@ -308,7 +341,50 @@ function stepWorld() {
 	gamestate.resolve();
     }
     gamestate = nextState( gamestate );
+
+    var result = checkGameOver( gamestate );
+    if( result ) {
+	declareResult( result );
+	stopRun();
+    }
 }
+
+function declareResult( result ) {
+    console.log( "declaring result: " + result );
+
+    var proclamation = $("#flippersGameResult");
+    
+    if( !proclamation.length ) {
+	proclamation = $(document.createElement( "p" ));
+	$("#flippersGame").append( proclamation
+				   .attr( "id", "flippersGameResult" ) );
+    }
+
+    if( result == "win" ) {
+	proclamation.html( "Puzzle cleared!" );
+    } else {
+	proclamation.html( "Try again" );
+    }
+}
+
+function targetCell() {
+    return {col: Math.floor( boardColumns / 2 ),
+	    row: -1};
+}
+
+function checkGameOver( state ) {
+    if( state.col < 0 || 
+	state.row < 0 ||
+	state.col >= boardColumns ||
+	state.row >= boardRows ) {
+	var target = targetCell();
+	if( state.col == target.col && state.row == target.row ) {
+	    return "win";
+	}
+	return "loss";
+    }
+}
+
 
 function advanceWorld() {
     if( buildMode ) {
@@ -316,7 +392,7 @@ function advanceWorld() {
     }
 
     gamestate.phase += 0.04;
-    while( gamestate.phase > 1.0 ) {
+    while( gamestate && gamestate.phase > 1.0 ) {
         stepWorld();
     }
 }
