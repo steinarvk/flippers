@@ -3,8 +3,8 @@ var ctx = null;
 var jqcanvas = null;
 var kb = null;
 
-var cellsize = 70.0;
-var boardColumns = 5, boardRows = 5;
+var cellsize = 60.0;
+var boardColumns = 7, boardRows = 7;
 var buildMode = true;
 var canvasWidth = 480;
 var canvasHeight = 480;
