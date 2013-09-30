@@ -182,6 +182,32 @@ function nextState( lastState ) {
 			    phase: phasep + 1.0,
 			    d2: {x: -dir.x, y: -dir.y } } );
     }
+    if( element.type == "triangle" || element.type == "breakable-triangle" ) {
+	var tangent = [ [-1,1], [1,1], [1,-1], [-1,-1] ][ element.rotation ];
+	var ascending = element.rotation % 2;
+	var diagonal = (dir.x == -tangent[0]) || (dir.y == -tangent[1]);
+	var d2 = diagonal ? diagonalBounce( dir, ascending ) : {x: -dir.x, y: -dir.y};
+	if( diagonal ) {
+	    return { col: colp,
+		     row: rowp,
+		     phase: phasep,
+		     resolve: function() {
+			 if( element.type == "breakable-triangle" ) {
+			     removeElement( element );
+			 }
+		     },
+		     d1: dir,
+		     d2: diagonalBounce( dir, ascending ) };
+	} else {
+	    if( element.type == "breakable-triangle" ) {
+		removeElement( element );
+	    }
+	    return nextState( { col: colp,
+				row: rowp,
+				phase: phasep + 1.0,
+				d2: {x: -dir.x, y: -dir.y } } );
+	}
+    }
     if( element.type == "switch" ) {
 	onEachElement( function(el) {
 	    if( elementDeactivatable(el) ) {
@@ -257,7 +283,15 @@ function toggleElementAt( cell ) {
     if( element && !element.deactivated && elementDeactivatable( element ) ) {
 	newElement = element;
 	newElement.deactivated = true;
+    } else if( element && element.rotation ) {
+	newElement = element;
+	newElement.rotation -= 1;
+	newElement.deactivated = false;
     } else if( !element ) {
+	newElement = {type: "triangle", col: cell.col, row: cell.row, rotation: 3 };
+    } else if( element.type == "triangle" ) {
+	newElement = {type: "breakable-triangle", col: cell.col, row: cell.row, rotation: 3 };
+    } else if( element.type == "breakable-triangle" ) {
 	newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: true };
     } else if( element.type == "flipper" && element.ascending ) {
 	newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: false };
@@ -510,6 +544,68 @@ function drawSquare( thing ) {
     }
 }
 
+function drawTriangle( thing ) {
+    ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    var sp = 3;
+    var dx = [-1,1,1,-1];
+    var dy = [1,1,-1,-1];
+    var cx = boardOffset.x + (thing.col+0.5) * cellsize;
+    var cy = boardOffset.y + (thing.row+0.5) * cellsize;
+    
+    for(var i = 0; i < 5; i++) {
+	var begun = false;
+	var f = ctx.moveTo;
+	var x0, y0;
+	ctx.beginPath();
+	for(var j = 0; j < 4; j++) {
+	    if( j == thing.rotation ) continue;
+	    var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
+	    var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
+	    if( begun ) {
+		ctx.lineTo( x, y );
+	    } else {
+		x0 = x;
+		y0 = y;
+		ctx.moveTo( x, y );
+		begun = true;
+	    }
+	}
+	ctx.lineTo( x0, y0 );
+	ctx.stroke();
+    }
+}
+
+function drawBreakableTriangle( thing ) {
+    ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    var sp = 9;
+    var dx = [-1,1,1,-1];
+    var dy = [1,1,-1,-1];
+    var cx = boardOffset.x + (thing.col+0.5) * cellsize;
+    var cy = boardOffset.y + (thing.row+0.5) * cellsize;
+    
+    for(var i = 0; i < 2; i++) {
+	var begun = false;
+	var f = ctx.moveTo;
+	var x0, y0;
+	ctx.beginPath();
+	for(var j = 0; j < 4; j++) {
+	    if( j == thing.rotation ) continue;
+	    var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
+	    var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
+	    if( begun ) {
+		ctx.lineTo( x, y );
+	    } else {
+		x0 = x;
+		y0 = y;
+		ctx.moveTo( x, y );
+		begun = true;
+	    }
+	}
+	ctx.lineTo( x0, y0 );
+	ctx.stroke();
+    }
+}
+
 function drawBreakableSquare( thing ) {
     ctx.strokeStyle = colourOf( "red", thing.deactivated );
     var sp = 9;
@@ -537,7 +633,9 @@ var drawFunctions = {
     "flipper": drawFlipper,
     "square": drawSquare,
     "breakable-square": drawBreakableSquare,
-    "switch": drawSwitch
+    "switch": drawSwitch,
+    "breakable-triangle": drawBreakableTriangle,
+    "triangle": drawTriangle
 }
 
 function drawThing( thing ) {
