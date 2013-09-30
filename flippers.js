@@ -288,10 +288,6 @@ function toggleElementAt( cell ) {
 	newElement.rotation -= 1;
 	newElement.deactivated = false;
     } else if( !element ) {
-	newElement = {type: "triangle", col: cell.col, row: cell.row, rotation: 3 };
-    } else if( element.type == "triangle" ) {
-	newElement = {type: "breakable-triangle", col: cell.col, row: cell.row, rotation: 3 };
-    } else if( element.type == "breakable-triangle" ) {
 	newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: true };
     } else if( element.type == "flipper" && element.ascending ) {
 	newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: false };
@@ -301,6 +297,10 @@ function toggleElementAt( cell ) {
 	newElement = {type: "breakable-square", col: cell.col, row: cell.row };
     } else if( element.type == "breakable-square" ) {
 	newElement = {type: "switch", col: cell.col, row: cell.row };
+    } else if( element.type == "switch" ) {
+	newElement = {type: "triangle", col: cell.col, row: cell.row, rotation: 3 };
+    } else if( element.type == "triangle" ) {
+	newElement = {type: "breakable-triangle", col: cell.col, row: cell.row, rotation: 3 };
     }
 
     if( newElement ) {
