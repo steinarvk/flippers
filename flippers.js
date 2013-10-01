@@ -327,7 +327,7 @@ function toggleGame() {
     }
 }
 
-function begin() {
+function initialize() {
     canvas = document.createElement( "canvas" );
     canvas.id = "flippersCanvas";
     canvas.width = canvasWidth;
@@ -654,5 +654,3 @@ function drawChessboard( size ) {
         }
     }
 }
-
-window.onload = begin;
