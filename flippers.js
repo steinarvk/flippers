@@ -81,10 +81,200 @@ var Mouse = { handle: function( root, options, handler ) {
     }
 } };
 
+var DiagramGraphics = { create: function(canvas, area, boardsize) {
+    var ctx = canvas.getContext( "2d" );
+
+    var cellsize = null;
+    var offset = null;
+
+    function drawBoard() {
+	for(var i = 0; i < boardsize.cols; i++) {
+            for(var j = 0; j < boardsize.rows; j++) {
+		var isWhite = (i%2) == (j%2);
+		ctx.fillStyle = isWhite ? "#caa" : "#aac";
+		ctx.fillRect( offset.x + i * cellsize,
+			      offset.y + j * cellsize,
+			      cellsize,
+			      cellsize );
+            }
+	}
+    }
+    
+    function setBoardSize( sz ) {
+	boardsize = sz;
+	autofitBoard();
+    }
+
+    function autofitBoard() {
+	var padding = 50.0;
+	cellsize = Math.ceil(
+	    (Math.min( (area.width - 2 * padding) / boardsize.cols,
+		       (area.height - 2 * padding) / boardsize.rows ) / 2)
+	) * 2;
+	offset = {
+	    x: area.x + (area.width - boardsize.cols * cellsize) * 0.5,
+	    y: area.y + (area.height - boardsize.rows * cellsize) * 0.5
+	};
+    }
+
+
+    function drawBall( pos ) {
+	ctx.fillStyle = "#000";
+	ctx.beginPath();
+	ctx.arc( offset.x + pos.x * cellsize,
+		 offset.y + pos.y * cellsize,
+		 cellsize * 0.1,
+		 0,
+		 2 * Math.PI,
+		 false );
+	ctx.fill();
+    }
+
+    function drawFlipper( thing ) {
+	var col = thing.col;
+	var row = thing.row;
+	var type = thing.ascending;
+	var xleft = col * cellsize + offset.x;
+	var xright = (col+1) * cellsize + offset.x;
+	var ytop = row * cellsize + offset.y;
+	var ybottom = (row+1) * cellsize + offset.y;
+	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	ctx.beginPath();
+	if( type ) {
+            ctx.moveTo( xleft, ybottom );
+            ctx.lineTo( xright, ytop );
+	} else {
+            ctx.moveTo( xright, ybottom );
+            ctx.lineTo( xleft, ytop );
+	}
+	ctx.stroke();
+    }
+    
+    function drawSquare( thing ) {
+	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	var sp = 3;
+	for(var i = 0; i < 5; i++) {
+	    ctx.strokeRect( offset.x + thing.col * cellsize + sp * i,
+			    offset.y + thing.row * cellsize + sp * i,
+			    cellsize - 2 * sp * i,
+			    cellsize - 2 * sp * i);
+	}
+    }
+    
+    function drawTriangle( thing ) {
+	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	var sp = 3;
+	var dx = [-1,1,1,-1];
+	var dy = [1,1,-1,-1];
+	var cx = offset.x + (thing.col+0.5) * cellsize;
+	var cy = offset.y + (thing.row+0.5) * cellsize;
+	
+	for(var i = 0; i < 5; i++) {
+	    var begun = false;
+	    var f = ctx.moveTo;
+	    var x0, y0;
+	    ctx.beginPath();
+	    for(var j = 0; j < 4; j++) {
+		if( j == thing.rotation ) continue;
+		var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
+		var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
+		if( begun ) {
+		    ctx.lineTo( x, y );
+		} else {
+		    x0 = x;
+		    y0 = y;
+		    ctx.moveTo( x, y );
+		    begun = true;
+		}
+	    }
+	    ctx.lineTo( x0, y0 );
+	    ctx.stroke();
+	}
+    }
+    
+    function drawBreakableTriangle( thing ) {
+	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	var sp = 9;
+	var dx = [-1,1,1,-1];
+	var dy = [1,1,-1,-1];
+	var cx = offset.x + (thing.col+0.5) * cellsize;
+	var cy = offset.y + (thing.row+0.5) * cellsize;
+	
+	for(var i = 0; i < 2; i++) {
+	    var begun = false;
+	    var f = ctx.moveTo;
+	    var x0, y0;
+	    ctx.beginPath();
+	    for(var j = 0; j < 4; j++) {
+		if( j == thing.rotation ) continue;
+		var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
+		var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
+		if( begun ) {
+		    ctx.lineTo( x, y );
+		} else {
+		    x0 = x;
+		    y0 = y;
+		    ctx.moveTo( x, y );
+		    begun = true;
+		}
+	    }
+	    ctx.lineTo( x0, y0 );
+	    ctx.stroke();
+	}
+    }
+    
+    function drawBreakableSquare( thing ) {
+	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	var sp = 9;
+	for(var i = 0; i < 2; i++) {
+	    ctx.strokeRect( offset.x + thing.col * cellsize + sp * i,
+			    offset.y + thing.row * cellsize + sp * i,
+			    cellsize - 2 * sp * i,
+			    cellsize - 2 * sp * i);
+	}
+    }
+    
+    function drawSwitch( thing ) {
+	ctx.fillStyle = colourOf( "red", thing.deactivated );
+	ctx.beginPath();
+	ctx.arc( offset.x + (thing.col+0.5) * cellsize,
+		 offset.y + (thing.row+0.5) * cellsize,
+		 cellsize * 0.5,
+		 0,
+		 2 * Math.PI,
+		 false );
+	ctx.fill();
+    }
+
+    var functions = {
+	"flipper": drawFlipper,
+	"square": drawSquare,
+	"breakable-square": drawBreakableSquare,
+	"switch": drawSwitch,
+	"breakable-triangle": drawBreakableTriangle,
+	"triangle": drawTriangle
+    };
+
+    function drawElement( thing ) {
+	functions[thing.type]( thing );
+    }
+    
+    setBoardSize( boardsize );
+        
+    return {
+	setBoardSize: setBoardSize,
+	drawBackground: drawBoard,
+	drawElement: drawElement,
+	drawBall: drawBall
+    };
+} };
+
 var canvas = null;
 var ctx = null;
 var jqcanvas = null;
 var kb = null;
+
+var gamegraphics = null;
 
 var cellsize = 60.0;
 var boardColumns = 5, boardRows = 5;
@@ -178,18 +368,6 @@ function serializeGame() {
 	 cols: boardColumns,
 	 contents: elements}
     );
-}
-
-function autofitBoard() {
-    var padding = 50.0;
-    cellsize = Math.ceil(
-	(Math.min( (canvasWidth - 2 * padding) / boardColumns,
-		   (canvasHeight - 2 * padding) / boardRows ) / 2)
-    ) * 2;
-    boardOffset = {
-	x: (canvasWidth - boardColumns * cellsize) * 0.5,
-	y: (canvasHeight - boardRows * cellsize) * 0.5
-    };
 }
 
 function unserializeGame( data ) {
@@ -483,6 +661,15 @@ function initialize() {
 	}
     );
 
+    gamegraphics = DiagramGraphics.create( canvas,
+					   {x: 0,
+					    y: 0,
+					    width: 480,
+					    height: 480},
+					   {cols: 9,
+					    rows: 9}
+					   );
+
     setInterval( drawFrame, 1000.0 / 30.0 );
     setInterval( advanceWorld, 15.0 );
 
@@ -561,13 +748,13 @@ function ballPosition() {
         var d = gamestate.d1;
         var dx = -0.5 * (1-t) * d.x;
         var dy = -0.5 * (1-t) * d.y;
-        return {x: cellsize * (cx+dx), y: cellsize * (cy+dy)};
+        return {x: (cx+dx), y: (cy+dy)};
     } else {
         var t = 2 * (gamestate.phase - 0.5);
         var d = gamestate.d2;
         var dx = 0.5 * t * d.x;
         var dy = 0.5 * t * d.y;
-        return {x: cellsize * (cx+dx), y: cellsize * (cy+dy)};
+        return {x: (cx+dx), y: (cy+dy)};
     }
 }
 
@@ -584,156 +771,19 @@ function drawFrame() {
     }
 }
 
-function drawBall( cx, cy ) {
-    ctx.fillStyle = "#000";
-    ctx.beginPath();
-    ctx.arc( boardOffset.x + cx,
-	     boardOffset.y + cy,
-	     5.0,
-	     0,
-	     2 * Math.PI,
-	     false );
-    ctx.fill();
-}
-
-function drawFlipper( thing ) {
-    var col = thing.col;
-    var row = thing.row;
-    var type = thing.ascending;
-    var xleft = col * cellsize + boardOffset.x;
-    var xright = (col+1) * cellsize + boardOffset.x;
-    var ytop = row * cellsize + boardOffset.y;
-    var ybottom = (row+1) * cellsize + boardOffset.y;
-    ctx.strokeStyle = colourOf( "red", thing.deactivated );
-    ctx.beginPath();
-    if( type ) {
-        ctx.moveTo( xleft, ybottom );
-        ctx.lineTo( xright, ytop );
-    } else {
-        ctx.moveTo( xright, ybottom );
-        ctx.lineTo( xleft, ytop );
-    }
-    ctx.stroke();
-}
-
-function drawSquare( thing ) {
-    ctx.strokeStyle = colourOf( "red", thing.deactivated );
-    var sp = 3;
-    for(var i = 0; i < 5; i++) {
-	ctx.strokeRect( boardOffset.x + thing.col * cellsize + sp * i,
-			boardOffset.y + thing.row * cellsize + sp * i,
-			cellsize - 2 * sp * i,
-			cellsize - 2 * sp * i);
-    }
-}
-
-function drawTriangle( thing ) {
-    ctx.strokeStyle = colourOf( "red", thing.deactivated );
-    var sp = 3;
-    var dx = [-1,1,1,-1];
-    var dy = [1,1,-1,-1];
-    var cx = boardOffset.x + (thing.col+0.5) * cellsize;
-    var cy = boardOffset.y + (thing.row+0.5) * cellsize;
-    
-    for(var i = 0; i < 5; i++) {
-	var begun = false;
-	var f = ctx.moveTo;
-	var x0, y0;
-	ctx.beginPath();
-	for(var j = 0; j < 4; j++) {
-	    if( j == thing.rotation ) continue;
-	    var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
-	    var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
-	    if( begun ) {
-		ctx.lineTo( x, y );
-	    } else {
-		x0 = x;
-		y0 = y;
-		ctx.moveTo( x, y );
-		begun = true;
-	    }
-	}
-	ctx.lineTo( x0, y0 );
-	ctx.stroke();
-    }
-}
-
-function drawBreakableTriangle( thing ) {
-    ctx.strokeStyle = colourOf( "red", thing.deactivated );
-    var sp = 9;
-    var dx = [-1,1,1,-1];
-    var dy = [1,1,-1,-1];
-    var cx = boardOffset.x + (thing.col+0.5) * cellsize;
-    var cy = boardOffset.y + (thing.row+0.5) * cellsize;
-    
-    for(var i = 0; i < 2; i++) {
-	var begun = false;
-	var f = ctx.moveTo;
-	var x0, y0;
-	ctx.beginPath();
-	for(var j = 0; j < 4; j++) {
-	    if( j == thing.rotation ) continue;
-	    var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
-	    var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
-	    if( begun ) {
-		ctx.lineTo( x, y );
-	    } else {
-		x0 = x;
-		y0 = y;
-		ctx.moveTo( x, y );
-		begun = true;
-	    }
-	}
-	ctx.lineTo( x0, y0 );
-	ctx.stroke();
-    }
-}
-
-function drawBreakableSquare( thing ) {
-    ctx.strokeStyle = colourOf( "red", thing.deactivated );
-    var sp = 9;
-    for(var i = 0; i < 2; i++) {
-	ctx.strokeRect( boardOffset.x + thing.col * cellsize + sp * i,
-			boardOffset.y + thing.row * cellsize + sp * i,
-			cellsize - 2 * sp * i,
-			cellsize - 2 * sp * i);
-    }
-}
-
-function drawSwitch( thing ) {
-    ctx.fillStyle = colourOf( "red", thing.deactivated );
-    ctx.beginPath();
-    ctx.arc( boardOffset.x + (thing.col+0.5) * cellsize,
-	     boardOffset.y + (thing.row+0.5) * cellsize,
-	     cellsize * 0.5,
-	     0,
-	     2 * Math.PI,
-	     false );
-    ctx.fill();
-}
-
-var drawFunctions = {
-    "flipper": drawFlipper,
-    "square": drawSquare,
-    "breakable-square": drawBreakableSquare,
-    "switch": drawSwitch,
-    "breakable-triangle": drawBreakableTriangle,
-    "triangle": drawTriangle
-}
-
+// Proxies temporary
 function drawThing( thing ) {
-    drawFunctions[ thing.type ]( thing );
+    gamegraphics.drawElement( thing );
 }
 
-function drawChessboard( size ) {
-    for(var i = 0; i < size.cols; i++) {
-        for(var j = 0; j < size.rows; j++) {
-            var isWhite = (i%2) == (j%2);
-            ctx.fillStyle = isWhite ? "#caa" : "#aac";
-            ctx.fillRect( boardOffset.x + i * cellsize,
-			  boardOffset.y + j * cellsize,
-			  cellsize,
-			  cellsize );
-        }
-    }
+function drawBall( cx, cy ) {
+    gamegraphics.drawBall( {x: cx, y: cy} );
+}
+
+function drawChessboard() {
+    gamegraphics.drawBackground();
+}
+
+function autofitBoard() {
+    gamegraphics.setBoardSize( {cols: boardColumns, rows: boardRows } );
 }
