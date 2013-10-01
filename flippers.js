@@ -101,6 +101,9 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     }
     
     function setBoardSize( sz ) {
+	if( sz.cols == boardsize.cols && sz.rows == boardsize.rows ) {
+	    return;
+	}
 	boardsize = sz;
 	autofitBoard();
     }
@@ -269,10 +272,266 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     };
 } };
 
+var GameState = (function() {
+    function defaultOrigin( boardsize ) {
+	return  {col: Math.floor( boardsize.cols / 2 ),
+		 row: boardsize.rows};
+    }
+    
+    function defaultInitialVelocity( origin ) {
+	return {dx: 0, dy: -1};
+    }
+
+    function defaultTarget( boardsize ) {
+	return  {col: Math.floor( boardsize.cols / 2 ),
+		 row: boardsize.rows};
+    }
+
+    function createBlankState( boardsize ) {
+	return createState(
+	    {
+		size: boardsize,
+		origin: defaultOrigin(boardsize),
+		initialVelocity: defaultInitialVelocity( defaultOrigin(boardsize) ),
+		target: defaultTarget(boardsize),
+		elements: []
+	    }
+	);
+    }
+    
+    function convertOldState( data ) {
+	var sz = {cols: data.cols, rows: data.rows};
+	return createState(
+	    {
+		size: sz,
+		origin: defaultOrigin(sz),
+		initialVelocity: defaultInitialVelocity( defaultOrigin(sz) ),
+		target: defaultTarget(sz),
+		elements: data.contents
+	    }
+	);
+    };
+
+    function createState( state ) {
+	function elementAt( col, row ) {
+	    for(var i = 0; i < state.elements.length; i++) {
+		var flipper = state.elements[i];
+		if( flipper.col == col && flipper.row == row ) {  
+		    return flipper;
+		}
+	    }
+	    return null;
+	}
+	
+	function start() {
+	    state.ball = {
+		position: state.origin,
+		incomingVelocity: state.initialVelocity,
+		outgoingVelocity: state.initialVelocity
+	    };
+	    state.status = "running";
+	}
+
+	function status() {
+	    return state.status || "stopped";
+	}
+
+	function diagonalBounce( direction, ascending ) {
+	    var m = ascending ? -1 : 1;
+	    return { dx: m * direction.dy,
+		     dy: m * direction.dx };
+	}
+
+	function flipperCollision( ball, flipper ) {
+	    var v = ball.incomingVelocity = ball.outgoingVelocity;
+	    ball.outgoingVelocity = diagonalBounce( v, flipper.ascending );
+	    ball.position = {col: flipper.col,
+			     row: flipper.row};
+	    flipper.ascending = !flipper.ascending;
+	}
+
+	var collisions = {
+	    flipper: flipperCollision
+	};
+	
+	function checkCell( pos ) {
+	    return (pos.col >= 0
+		    && pos.row >= 0
+		    && pos.col < state.size.cols
+		    && pos.row < state.size.rows);
+	}
+
+	function advance() {
+	    if( state.status != "running" ) {
+		return;
+	    }
+
+	    var v = state.ball.outgoingVelocity;
+	    var npos = {col: state.ball.position.col + v.dx,
+			row: state.ball.position.row + v.dy };
+	    var el = elementAt( npos.col, npos.row );
+	    if( !el || el.deactivated ) {
+		state.ball = {
+		    position: npos,
+		    incomingVelocity: v,
+		    outgoingVelocity: v
+		};
+	    } else {
+		collisions[ el.type ]( state.ball, el );
+	    }
+
+	    if( !checkCell( state.ball.position ) ) {
+		if( state.ball.position.col == state.target.col
+		    &&
+		    state.ball.position.row == state.target.row )
+		{
+		    state.status = "gameover:win";
+		} else {
+		    state.status = "gameover:loss";
+		}
+	    }
+	}
+
+	function save() {
+	    return JSON.parse( JSON.stringify( state ) );
+	}
+
+	function onEachElement( f ) {
+	    for(var key in state.elements) {
+		f( state.elements[key] );
+	    }
+	}
+
+	function render( gfx ) {
+	    // Direct render function -- note that this object operates
+	    // discretely. For better visuals we can use a layer above
+	    // to show smooth animation.
+
+	    gfx.setBoardSize( state.size );
+
+	    gfx.drawBackground();
+
+	    onEachElement( gfx.drawElement );
+
+	    if( state.ball ) {
+		gfx.drawBall( {x: (0.5 + state.ball.position.col),
+			       y: (0.5 + state.ball.position.row) } );
+	    }
+	}
+
+	return {
+	    start: start,
+	    advance: advance,
+	    status: status,
+	    save: save,
+	    render: render,
+	    elements: function(){ return state.elements; },
+	    ball: function(){ return state.ball; },
+	    size: function(){ return state.size; }
+	}	
+    }
+
+    return {
+	create: createBlankState,
+	load: createState,
+	loadOld: convertOldState
+    }
+})();
+
+var SmoothGameState = function( gamestate ) {
+    var target = 40;
+    var counter = 0;
+    var timerId = null;
+
+    function phase() {
+	return counter / target;
+    }
+
+    function interpolatedBallPosition( ball ) {
+	var cx = (ball.position.col + 0.5);
+	var cy = (ball.position.row + 0.5);
+	if( (counter * 2) < target ) {
+	    var t = (counter / target) * 2;
+	    var v = ball.incomingVelocity;
+	    return {
+		x: cx + 0.5 * v.dx * (t-1),
+		y: cy + 0.5 * v.dy * (t-1)
+	    };
+	} else {
+	    var t = ((counter - target/2) / target) * 2;
+	    var v = ball.outgoingVelocity;
+	    return {
+		x: cx + 0.5 * v.dx * t,
+		y: cy + 0.5 * v.dy * t
+	    };
+	}
+    }
+
+    function render(gfx) {
+	gfx.setBoardSize( gamestate.size() );
+	
+	gfx.drawBackground();
+
+	var elements = gamestate.elements();
+	var ball = gamestate.ball();
+
+	for(var key in elements) {
+	    gfx.drawElement( elements[key] );
+	}
+
+	if( !ball ) {
+	    return;
+	}
+
+	gfx.drawBall( interpolatedBallPosition( ball ) );
+    }
+
+    function advance() {
+	counter += 1;
+	while( counter > target ) {
+	    gamestate.advance()
+	    counter -= target;
+	}
+
+	if( gamestate.status() != "running" ) {
+	    stop();
+	}
+    }
+    
+    function running() {
+	return timerId != null;
+    }
+    
+    function start() {
+	if( running() ) {
+	    return;
+	}
+	
+	timerId = setInterval( advance, 10 );
+    }
+    
+    function stop() {
+	if( !running() ) {
+	    return;
+	}
+	
+	clearInterval( timerId );
+	timerId = null;
+    }
+
+    return {
+	start: start,
+	stop: stop,
+	running: running,
+	render: render
+    }
+};
+
 var canvas = null;
 var ctx = null;
 var jqcanvas = null;
 var kb = null;
+var myState = null;
 
 var gamegraphics = null;
 
@@ -281,10 +540,6 @@ var boardColumns = 5, boardRows = 5;
 var buildMode = true;
 var canvasWidth = 480;
 var canvasHeight = 480;
-var boardOffset = {x: (canvasWidth - boardColumns * cellsize) * 0.5,
-		   y: (canvasHeight - boardRows * cellsize) * 0.5};
-
-var elements = [];
 
 var gamestate = null;
 
@@ -387,26 +642,11 @@ function initialGameState() {
 	    d2: {x: 0, y: -1}};
 }
 
-function elementAt( col, row ) {
-    for(var i = 0; i < elements.length; i++) {
-	var flipper = elements[i];
-	if( flipper.col == col && flipper.row == row ) {  
-	    return flipper;
-	}
-    }
-    return null;
-}
 
 function diagonalBounce( direction, ascending ) {
     var m = ascending ? -1 : 1;
     return { x: m * direction.y,
 	     y: m * direction.x };
-}
-
-function onEachElement( f ) {
-    for(var key in elements) {
-	f( elements[key] );
-    }
 }
 
 function nextState( lastState ) {
@@ -596,6 +836,11 @@ function initialize() {
 
     jqcanvas = $(canvas);
 
+    myState = GameState.loadOld(
+	{"rows":7,"cols":7,"contents":[{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":true},{"type":"flipper","col":5,"row":1,"ascending":false},{"type":"flipper","col":5,"row":3,"ascending":true},{"type":"flipper","col":5,"row":4,"ascending":true},{"type":"flipper","col":4,"row":4,"ascending":false},{"type":"flipper","col":2,"row":2,"ascending":true},{"type":"flipper","col":2,"row":3,"ascending":false},{"type":"flipper","col":1,"row":0,"ascending":false},{"type":"flipper","col":0,"row":0,"ascending":true},{"type":"flipper","col":0,"row":3,"ascending":false},{"type":"flipper","col":1,"row":3,"ascending":true}]}
+    );
+    myState.start();
+
     console.log( "Game beginning!");
 
     var dropdown = $( "<select/>", {id: "predefinedLevelSelector"} );
@@ -669,26 +914,14 @@ function initialize() {
 					   {cols: 9,
 					    rows: 9}
 					   );
+    var smooth = SmoothGameState( myState );
+    smooth.start();
 
-    setInterval( drawFrame, 1000.0 / 30.0 );
-    setInterval( advanceWorld, 15.0 );
+    setInterval( function() {
+	ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
-    elements = [];
-
-    autofitBoard();
-}
-
-function stepWorld() {
-    if( gamestate.resolve ) {
-	gamestate.resolve();
-    }
-    gamestate = nextState( gamestate );
-
-    var result = checkGameOver( gamestate );
-    if( result ) {
-	declareResult( result );
-	stopRun();
-    }
+	smooth.render( gamegraphics );
+    }, 1000.0 / 30.0 );
 }
 
 function declareResult( result ) {
@@ -706,55 +939,6 @@ function declareResult( result ) {
 	proclamation.html( "Puzzle cleared!" );
     } else {
 	proclamation.html( "Try again" );
-    }
-}
-
-function targetCell() {
-    return {col: Math.floor( boardColumns / 2 ),
-	    row: -1};
-}
-
-function checkGameOver( state ) {
-    if( state.col < 0 || 
-	state.row < 0 ||
-	state.col >= boardColumns ||
-	state.row >= boardRows ) {
-	var target = targetCell();
-	if( state.col == target.col && state.row == target.row ) {
-	    return "win";
-	}
-	return "loss";
-    }
-}
-
-
-function advanceWorld() {
-    if( buildMode ) {
-	return;
-    }
-
-    gamestate.phase += 0.04;
-    while( gamestate && gamestate.phase > 1.0 ) {
-        stepWorld();
-    }
-}
-
-function ballPosition() {
-    var cx = (gamestate.col+0.5);
-    var cy = (gamestate.row+0.5);
-
-    if( gamestate.phase < 0.5 ) {
-        var t = 2 * gamestate.phase;
-        var d = gamestate.d1;
-        var dx = -0.5 * (1-t) * d.x;
-        var dy = -0.5 * (1-t) * d.y;
-        return {x: (cx+dx), y: (cy+dy)};
-    } else {
-        var t = 2 * (gamestate.phase - 0.5);
-        var d = gamestate.d2;
-        var dx = 0.5 * t * d.x;
-        var dy = 0.5 * t * d.y;
-        return {x: (cx+dx), y: (cy+dy)};
     }
 }
 
