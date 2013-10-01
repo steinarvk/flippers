@@ -268,6 +268,17 @@ function elementDeactivatable( el ) {
     return el.type != "switch";
 }
 
+function removeElementAt( cell ) {
+    if( !buildMode ) {
+	return;
+    }
+
+    var element = elementAt( cell.col, cell.row );
+    if( element ) {
+        removeElement( element );
+    }
+}
+
 function toggleElementAt( cell ) {
     if( !buildMode ) {
 	return;
@@ -308,6 +319,11 @@ function toggleElementAt( cell ) {
     }
 }
 
+// This could be modular!
+var nextMouseClickId = 1;
+var currentMouseClickId = null;
+var shortClickTrigger = null;
+
 function handleClick( pos ) {
     console.log( "handling click at " + JSON.stringify( pos ) );
 
@@ -316,7 +332,33 @@ function handleClick( pos ) {
 	return;
     }
 
-    toggleElementAt( cell );
+
+    var myClickId = nextMouseClickId;
+    currentMouseClickId = myClickId;
+    nextMouseClickId += 1;
+
+    shortClickTrigger = function() {
+        toggleElementAt( cell );
+    }
+
+    window.setTimeout( function() {
+        if( myClickId == currentMouseClickId ) {
+            removeElementAt( cell );
+            console.log( "long click!" );
+            shortClickTrigger = null;
+        }
+    }, 500 );
+
+    console.log( "mouse down" );
+}
+
+function handleUnclick() {
+    console.log( "mouse up" );
+    if( shortClickTrigger ) {
+        shortClickTrigger();
+    }
+    currentMouseClickId = null;
+    shortClickTrigger = null;
 }
 
 function toggleGame() {
@@ -393,11 +435,21 @@ function initialize() {
 	    e.preventDefault();
 	    handleClick( getClickPosition( e ) );
 	}
+
+    canvas.ontouchend = function(e) {
+        e.preventDefault();
+        handleUnclick();
+    }
+
     } else {
-	canvas.onclick = function(e) {
+	canvas.onmousedown = function(e) {
 	    e.preventDefault();
 	    handleClick( getClickPosition( e ) );
 	}
+    canvas.onmouseup = function(e) {
+	    e.preventDefault();
+	    handleUnclick();
+    }
     }
 
     setInterval( drawFrame, 1000.0 / 30.0 );
