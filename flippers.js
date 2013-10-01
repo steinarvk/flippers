@@ -7,6 +7,9 @@ var Mouse = { handle: function( root, options, handler ) {
 
     function down(pos) {
 	var rv = handler( pos );
+	if( !rv ) {
+	    return;
+	}
 	context = {
 	    time: now(), 
 	    click: pos,
@@ -258,6 +261,16 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     function drawElement( thing ) {
 	functions[thing.type]( thing );
     }
+
+    function cellAtPosition( pos ) {
+	var x = (pos.x - offset.x) / cellsize;
+	var y = (pos.y - offset.y) / cellsize;
+	if( x < 0 || y < 0 || x >= boardColumns || y >= boardRows ) {
+	    return null;
+	}
+	return { col: Math.floor( x ),
+		 row: Math.floor( y ) };
+    }
     
     setBoardSize( boardsize );
         
@@ -265,7 +278,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	setBoardSize: setBoardSize,
 	drawBackground: drawBoard,
 	drawElement: drawElement,
-	drawBall: drawBall
+	drawBall: drawBall,
+	cellAtPosition: cellAtPosition
     };
 } };
 
@@ -483,16 +497,6 @@ function nextState( lastState ) {
     }
 }
 
-function cellAtPosition( pos ) {
-    var x = (pos.x - boardOffset.x) / cellsize;
-    var y = (pos.y - boardOffset.y) / cellsize;
-    if( x < 0 || y < 0 || x >= boardColumns || y >= boardRows ) {
-	return null;
-    }
-    return { col: Math.floor( x ),
-	     row: Math.floor( y ) };
-}
-
 function printObject( o ) {
     for(var k in o) {
 	console.log( "key " + k + ": " + o[k] );
@@ -645,7 +649,7 @@ function initialize() {
 	canvas,
 	{holdDelay: 750},
 	function( click ) {
-	    var cell = cellAtPosition( click );
+	    var cell = gamegraphics.cellAtPosition( click );
 	    if( !cell ) {
 		return;
 	    }
