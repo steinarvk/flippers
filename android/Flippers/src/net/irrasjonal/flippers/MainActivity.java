@@ -1,5 +1,7 @@
 package net.irrasjonal.flippers;
 
+import java.lang.reflect.InvocationTargetException;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
@@ -16,6 +18,7 @@ import android.webkit.WebSettings.ZoomDensity;
 public class MainActivity extends Activity {
     
     WebChromeClient chromeClient;
+    WebView webview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +36,7 @@ public class MainActivity extends Activity {
             }
         };
                
-        WebView webview = (WebView) findViewById( R.id.webView1 );
+        webview = (WebView) findViewById( R.id.webView1 );
         webview.setWebChromeClient( chromeClient );
         
         webview.setOnTouchListener( new View.OnTouchListener() {
@@ -55,6 +58,48 @@ public class MainActivity extends Activity {
         
         webview.loadUrl( "file:///android_asset/flippers.html" );
         
+    }
+    
+    protected void onPause() {
+        super.onPause();
+        
+        Log.d("Flippers", "onPause" );
+        
+        try {
+            WebView.class
+                .getMethod( "onPause", (Class[]) null )
+                .invoke( webview, (Object[]) null );
+        }
+        catch( IllegalAccessException e ) {
+            Log.d("Flippers", "onPause illegal access" );
+        }
+        catch( InvocationTargetException e ) {
+            Log.d("Flippers", "onPause invocation target" );
+        }
+        catch( NoSuchMethodException e ) {
+            Log.d("Flippers", "onPause no such method" );
+        }
+    }
+    
+    protected void onResume() {
+        super.onResume();
+        
+        Log.d("Flippers", "onResume" );
+        
+        try {
+            WebView.class
+                .getMethod( "onResume", (Class[]) null )
+                .invoke( webview, (Object[]) null );
+        }
+        catch( IllegalAccessException e ) {
+            Log.d("Flippers", "onResume illegal access" );
+        }
+        catch( InvocationTargetException e ) {
+            Log.d("Flippers", "onResume invocation target" );
+        }
+        catch( NoSuchMethodException e ) {
+            Log.d("Flippers", "onResume no such method" );
+        }
     }
 
     @Override
