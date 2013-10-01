@@ -647,7 +647,7 @@ function initialize() {
 
     Mouse.handle(
 	canvas,
-	{holdDelay: 750},
+	{holdDelay: 600},
 	function( click ) {
 	    var cell = gamegraphics.cellAtPosition( click );
 	    if( !cell ) {
