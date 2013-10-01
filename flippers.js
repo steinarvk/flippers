@@ -1,3 +1,86 @@
+var Mouse = { handle: function( root, options, handler ) {
+    var context = null;
+
+    function now() {
+	return new Date().getTime();
+    }
+
+    function down(pos) {
+	var rv = handler( pos );
+	context = {
+	    time: now(), 
+	    click: pos,
+	    handlers: rv
+	};
+	if( !rv.noHold && options.holdDelay ) {
+	    window.setTimeout( function() {
+		trigger( "hold" );
+	    }, options.holdDelay );
+	}
+    }
+
+    function trigger( type, pos ) {
+	var ctx = context;
+	context = null;
+	if( !ctx ) {
+	    return;
+	}
+
+	var f = ctx.handlers[type];
+	if( f ) {
+	} else {
+	    console.log( "no handler for: " + type );
+	}
+
+	var ms = now() - ctx.time;
+	
+	f( { click: ctx.click,
+	     duration: now() - ctx.time,
+	     release: pos } );
+    }
+
+    function up( pos ) {
+	trigger( "tap", pos );
+    }
+    
+    function extract( e ) {
+	if( Modernizr.touch ) {
+	    if( e.touches && e.touches.length > 0 ) {
+		return {x: e.touches[0].pageX - root.style.left,
+			y: e.touches[0].pageY - root.style.top};
+	    }
+	} else {
+	    return {
+		x: e.pageX - root.style.left,
+		y: e.pageY - root.style.top
+	    };
+	}
+    }
+    
+    function handleDown( e ) {
+	var pos = extract(e);
+	e.preventDefault();
+	down( pos );
+    }
+
+    function handleUp( e ) {
+	var pos = extract(e);
+	e.preventDefault();
+	up( pos );
+    }
+
+    if( Modernizr.touch ) {
+	console.log( "setting up mouse handling for touch" );
+	root.ontouchstart = handleDown;
+	root.ontouchend = handleUp;
+    } else {
+	console.log( "setting up mouse handling for mouse" );
+	console.log( "element " + root );
+	root.onmousedown = handleDown;
+	root.onmouseup = handleUp;
+    }
+} }
+
 var canvas = null;
 var ctx = null;
 var jqcanvas = null;
@@ -319,48 +402,6 @@ function toggleElementAt( cell ) {
     }
 }
 
-// This could be modular!
-var nextMouseClickId = 1;
-var currentMouseClickId = null;
-var shortClickTrigger = null;
-
-function handleClick( pos ) {
-    console.log( "handling click at " + JSON.stringify( pos ) );
-
-    var cell = cellAtPosition( pos );
-    if( !cell ) {
-	return;
-    }
-
-
-    var myClickId = nextMouseClickId;
-    currentMouseClickId = myClickId;
-    nextMouseClickId += 1;
-
-    shortClickTrigger = function() {
-        toggleElementAt( cell );
-    }
-
-    window.setTimeout( function() {
-        if( myClickId == currentMouseClickId ) {
-            removeElementAt( cell );
-            console.log( "long click!" );
-            shortClickTrigger = null;
-        }
-    }, 500 );
-
-    console.log( "mouse down" );
-}
-
-function handleUnclick() {
-    console.log( "mouse up" );
-    if( shortClickTrigger ) {
-        shortClickTrigger();
-    }
-    currentMouseClickId = null;
-    shortClickTrigger = null;
-}
-
 function toggleGame() {
     if( buildMode ) {
 	startRun();
@@ -378,12 +419,6 @@ function initialize() {
     jqcanvas = $(canvas);
 
     console.log( "Game beginning!");
-
-    if( Modernizr.touch ) {
-	console.log( "Touch events enabled" );
-    } else {
-	console.log( "Touch events not enabled" );
-    }
 
     var dropdown = $( "<select/>", {id: "predefinedLevelSelector"} );
     for(var name in predefinedLevels) {
@@ -428,29 +463,25 @@ function initialize() {
     ctx = canvas.getContext( "2d" );
     jqcanvas = $("#flippersCanvas");
 
-    if( Modernizr.touch ) {
-	console.log( "using touch events" );
+    Mouse.handle(
+	canvas,
+	{holdDelay: 750},
+	function( click ) {
+	    var cell = cellAtPosition( click );
+	    if( !cell ) {
+		return;
+	    }
 
-	canvas.ontouchstart = function(e) {
-	    e.preventDefault();
-	    handleClick( getClickPosition( e ) );
+	    return {
+		hold: function( m ) {
+		    removeElementAt( cell );
+		},
+		tap: function( m ) {
+		    toggleElementAt( cell );
+		}
+	    }
 	}
-
-    canvas.ontouchend = function(e) {
-        e.preventDefault();
-        handleUnclick();
-    }
-
-    } else {
-	canvas.onmousedown = function(e) {
-	    e.preventDefault();
-	    handleClick( getClickPosition( e ) );
-	}
-    canvas.onmouseup = function(e) {
-	    e.preventDefault();
-	    handleUnclick();
-    }
-    }
+    );
 
     setInterval( drawFrame, 1000.0 / 30.0 );
     setInterval( advanceWorld, 15.0 );
