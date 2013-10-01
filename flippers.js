@@ -79,7 +79,7 @@ var Mouse = { handle: function( root, options, handler ) {
 	root.onmousedown = handleDown;
 	root.onmouseup = handleUp;
     }
-} }
+} };
 
 var canvas = null;
 var ctx = null;
