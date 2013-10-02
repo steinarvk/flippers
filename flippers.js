@@ -358,11 +358,24 @@ var GameState = (function() {
 	function status() {
 	    return state.status || "stopped";
 	}
+	
+	function orthogonalBounce( direction ) {
+	    return { dx: - direction.dx,
+		     dy: - direction.dy };
+	}
 
 	function diagonalBounce( direction, ascending ) {
 	    var m = ascending ? -1 : 1;
 	    return { dx: m * direction.dy,
 		     dy: m * direction.dx };
+	}
+
+	function squareCollision( ball, square ) {
+	    if( square.type == "breakable-square" ) {
+		removeElementAtCell( square );
+	    }
+	    ballEnters( ball.position,
+			orthogonalBounce( ball.outgoingVelocity ) );
 	}
 
 	function flipperCollision( ball, flipper ) {
@@ -374,7 +387,9 @@ var GameState = (function() {
 	}
 
 	var collisions = {
-	    flipper: flipperCollision
+	    "flipper": flipperCollision,
+	    "square": squareCollision,
+	    "breakable-square": squareCollision
 	};
 	
 	function checkCell( pos ) {
@@ -384,24 +399,32 @@ var GameState = (function() {
 		    && pos.row < state.size.rows);
 	}
 
+	function ballEnters( position, velocity ) {
+	    var el = elementAt( position.col, position.row );
+
+	    if( !el || el.deactivated ) {
+		state.ball = {
+		    position: position,
+		    incomingVelocity: velocity,
+		    outgoingVelocity: velocity
+		};
+	    } else {
+		state.ball.outgoingVelocity = velocity;
+		collisions[ el.type ]( state.ball, el );
+	    }
+	}
+
 	function advance() {
 	    if( state.status != "running" ) {
 		return;
 	    }
 
 	    var v = state.ball.outgoingVelocity;
-	    var npos = {col: state.ball.position.col + v.dx,
-			row: state.ball.position.row + v.dy };
-	    var el = elementAt( npos.col, npos.row );
-	    if( !el || el.deactivated ) {
-		state.ball = {
-		    position: npos,
-		    incomingVelocity: v,
-		    outgoingVelocity: v
-		};
-	    } else {
-		collisions[ el.type ]( state.ball, el );
-	    }
+
+	    ballEnters( {col: state.ball.position.col + v.dx,
+			 row: state.ball.position.row + v.dy },
+			state.ball.outgoingVelocity );
+
 
 	    if( !checkCell( state.ball.position ) ) {
 		if( state.ball.position.col == state.target.col
@@ -661,6 +684,7 @@ function initialize() {
 	{"rows":7,"cols":7,"contents":[{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":true},{"type":"flipper","col":5,"row":1,"ascending":false},{"type":"flipper","col":5,"row":3,"ascending":true},{"type":"flipper","col":5,"row":4,"ascending":true},{"type":"flipper","col":4,"row":4,"ascending":false},{"type":"flipper","col":2,"row":2,"ascending":true},{"type":"flipper","col":2,"row":3,"ascending":false},{"type":"flipper","col":1,"row":0,"ascending":false},{"type":"flipper","col":0,"row":0,"ascending":true},{"type":"flipper","col":0,"row":3,"ascending":false},{"type":"flipper","col":1,"row":3,"ascending":true}]}
     );
     var mySmoothState = null;
+    var mySavedState = null;
 
     myState.start();
 
@@ -679,14 +703,14 @@ function initialize() {
     }
 
     function startGame() {
+	mySavedState = myState.save();
 	myState.start();
 	mySmoothState = SmoothGameState.wrap( myState );
 	mySmoothState.start();
     }
 
     function stopGame() {
-	myState.stop();
-	mySmoothState = null;
+	setState( GameState.load( mySavedState ) );
     }
 
     function running() {
