@@ -307,8 +307,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	    ctx.beginPath();
 	    for(var j = 0; j < 4; j++) {
 		if( j == thing.rotation ) continue;
-		var x = cx + dx[j] * (cellsize * 0.5 * size - sp * i);
-		var y = cy + dy[j] * (cellsize * 0.5 * size - sp * i);
+		var x = cx + dx[j] * (cellsize * 0.5 * size * (0.75 + 0.25 * i));
+		var y = cy + dy[j] * (cellsize * 0.5 * size * (0.75 + 0.25 * i));
 		if( begun ) {
 		    ctx.lineTo( x, y );
 		} else {
@@ -548,6 +548,40 @@ var GameState = (function() {
 			orthogonalBounce( ball.outgoingVelocity ) );
 	}
 
+        function triangleCollision( ball, triangle ) {
+            // 32 
+            // 01
+            if( triangle.type == "breakable-triangle" ) {
+		setEvent( triangle.col,
+			  triangle.row,
+			  {type: "disappear",
+			   element: triangle} );
+		removeElementAtCell( triangle );                
+            }
+            var v = ball.outgoingVelocity;
+            var n = [ {dx: -1, dy: 1},
+                      {dx: 1, dy: 1},
+                      {dx: 1, dy: -1},
+                      {dx: -1, dy: -1} ][ triangle.rotation ];
+            var angled = (v.dx == -n.dx) || (v.dy == -n.dy);
+            var ascending = triangle.rotation % 2;
+            console.log( "collide! " + triangle.rotation );
+            console.log( JSON.stringify( v ) );
+            console.log( " angled " + angled );
+            console.log( "ascending " + ascending );
+            if( !angled ) {
+                ballEnters( ball.position,
+                            orthogonalBounce( v ) );
+            } else {
+                state.ball = ball = {
+                    position: {col: triangle.col,
+                               row: triangle.row},
+                    incomingVelocity: v,
+                    outgoingVelocity: diagonalBounce( v, ascending )
+                };
+            }
+        }
+
 	function flipperCollision( ball, flipper ) {
 	    var v = ball.incomingVelocity = ball.outgoingVelocity;
 	    ball.outgoingVelocity = diagonalBounce( v, flipper.ascending );
@@ -566,7 +600,9 @@ var GameState = (function() {
 	var collisions = {
 	    "flipper": flipperCollision,
 	    "square": squareCollision,
-	    "breakable-square": squareCollision
+	    "breakable-square": squareCollision,
+	    "triangle": triangleCollision,
+	    "breakable-triangle": triangleCollision
 	};
 	
 	function checkCell( pos ) {
