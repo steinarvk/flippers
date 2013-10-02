@@ -7,6 +7,9 @@ var Mouse = { handle: function( root, options, handler ) {
 
     function down(pos) {
 	var rv = handler( pos );
+	if( !rv ) {
+	    return;
+	}
 	var ctx = {
 	    time: now(), 
 	    click: pos,
@@ -84,6 +87,77 @@ var Mouse = { handle: function( root, options, handler ) {
 	root.onmouseup = handleUp;
     }
 } };
+
+var Map2D = (function() {
+    function load( data ) {
+	var m = create();
+	for(var index = 0; index < data.length; index++) {
+	    var i = data[index][0];
+	    var j = data[index][1];
+	    var v = data[index][2];
+	    m.set( i, j, v );
+	}
+	return m;
+    }
+
+    function create() {
+	var m = {};
+
+	function set( i, j, data ) {
+	    var is = i.toString();
+	    var js = j.toString();
+	    var submap = m[ is ];
+	    if( !submap ) {
+		submap  = m[ is ] = {};
+	    }
+	    submap[ js ] = data;
+	}
+
+	function remove( i, j ) {
+	    var is = i.toString();
+	    var js = j.toString();
+	    var submap = m[ is ];
+	    if( !submap ) {
+		return;
+	    }
+	    delete submap[js];
+	}
+
+	function get( i, j ) {
+	    var is = i.toString();
+	    var js = j.toString();
+	    var submap = m[ is ];
+	    if( !submap ) {
+		return undefined;
+	    }
+	    return submap[js];
+	}
+
+	function save() {
+	    var rv = [];
+	    for(var is in m) {
+		var i = parseInt( is );
+		for(var js in m[is]) {
+		    var j = parseInt( js );
+		    rv.push( [i, j, m[is][js]] );
+		}
+	    }
+	    return rv;
+	}
+	
+	return {
+	    set: set,
+	    remove: remove,
+	    get: get,
+	    save: save
+	};
+    }
+
+    return {
+	create: create,
+	load: load
+    };
+} )();
 
 var DiagramGraphics = { create: function(canvas, area, boardsize) {
     var ctx = canvas.getContext( "2d" );
@@ -331,6 +405,26 @@ var GameState = (function() {
     };
 
     function createState( state ) {
+	var events = null;
+
+	function eventAtCell( cell ) {
+	    if( events ) {
+		return events.get( cell.col, cell.row );
+	    }
+	    return null;
+	}
+	
+	function clearEvents() {
+	    events = Map2D.create();
+	}
+
+	function setEvent( col, row, data ) {
+	    if( !events ) {
+		clearEvents();
+	    }
+	    events.set( col, row, data );
+	}
+	
 	function elementAt( col, row ) {
 	    for(var i = 0; i < state.elements.length; i++) {
 		var flipper = state.elements[i];
@@ -372,6 +466,10 @@ var GameState = (function() {
 
 	function squareCollision( ball, square ) {
 	    if( square.type == "breakable-square" ) {
+		setEvent( square.col,
+			  square.row,
+			  {type: "disappear",
+			   element: square} );
 		removeElementAtCell( square );
 	    }
 	    ballEnters( ball.position,
@@ -384,6 +482,11 @@ var GameState = (function() {
 	    ball.position = {col: flipper.col,
 			     row: flipper.row};
 	    flipper.ascending = !flipper.ascending;
+	    
+	    setEvent( flipper.col,
+		      flipper.row,
+		      {type: "flip",
+		       element: flipper} );
 	}
 
 	var collisions = {
@@ -418,6 +521,8 @@ var GameState = (function() {
 	    if( state.status != "running" ) {
 		return;
 	    }
+
+	    clearEvents();
 
 	    var v = state.ball.outgoingVelocity;
 
@@ -481,6 +586,19 @@ var GameState = (function() {
 	    state.elements.push( element );
 	}
 
+	function onSquares( f ) {
+	    for( var i = 0; i < state.size.cols; i++) {
+		for(var j = 0; j < state.size.rows; j++) {
+		    var cell = {col: i, row: j};
+		    var element = elementAtCell( cell );
+		    var event = eventAtCell( cell );
+		    if( element || event ) {
+			f( cell, element, event );
+		    }
+		}
+	    }
+	}
+
 	return {
 	    start: start,
 	    stop: stop,
@@ -489,9 +607,10 @@ var GameState = (function() {
 	    save: save,
 	    render: render,
 	    elementAtCell: elementAtCell,
+	    eventAtCell: eventAtCell,
 	    removeElementAtCell: removeElementAtCell,
 	    setElement: setElement,
-	    elements: function(){ return state.elements; },
+	    onSquares: onSquares,
 	    ball: function(){ return state.ball; },
 	    size: function(){ return state.size; }
 	}	
@@ -538,12 +657,19 @@ var SmoothGameState = { wrap: function( gamestate ) {
 	
 	gfx.drawBackground();
 
-	var elements = gamestate.elements();
 	var ball = gamestate.ball();
 
-	for(var key in elements) {
-	    gfx.drawElement( elements[key] );
-	}
+	var t = phase();
+
+	gamestate.onSquares( function(cell, element, event) {
+	    var drewEvent = false;
+	    if( event && gfx.drawEvent ) {
+		drewEvent = gfx.drawEvent( event, t );
+	    }
+	    if( !drewEvent && element ) {
+		gfx.drawElement( element, t );
+	    }
+	} );
 
 	if( !ball ) {
 	    return;
@@ -697,7 +823,6 @@ function initialize() {
     }
 
     function setState( newstate ) {
-	console.log( "setting state" );
 	myState = newstate;
 	mySmoothState = null;
     }
