@@ -7,13 +7,17 @@ var Mouse = { handle: function( root, options, handler ) {
 
     function down(pos) {
 	var rv = handler( pos );
-	context = {
+	var ctx = {
 	    time: now(), 
 	    click: pos,
 	    handlers: rv
 	};
-	if( !rv.noHold && options.holdDelay ) {
+	context = ctx;
+	if( rv.hold && options.holdDelay ) {
 	    window.setTimeout( function() {
+		if( context != ctx ) {
+		    return;
+		}
 		trigger( "hold" );
 	    }, options.holdDelay );
 	}
@@ -261,6 +265,19 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     function drawElement( thing ) {
 	functions[thing.type]( thing );
     }
+
+    function cellAtPosition( pos ) {
+	var x = Math.floor( (pos.x - offset.x) / cellsize );
+	var y = Math.floor( (pos.y - offset.y) / cellsize );
+	if( x < 0
+	    || y < 0
+	    || x >= boardsize.cols
+	    || y >= boardsize.rows ) {
+	    return null;
+	}
+	return {col: x,
+		row: y};
+    }
     
     setBoardSize( boardsize );
         
@@ -268,7 +285,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	setBoardSize: setBoardSize,
 	drawBackground: drawBoard,
 	drawElement: drawElement,
-	drawBall: drawBall
+	drawBall: drawBall,
+	cellAtPosition: cellAtPosition
     };
 } };
 
@@ -330,6 +348,11 @@ var GameState = (function() {
 		outgoingVelocity: state.initialVelocity
 	    };
 	    state.status = "running";
+	}
+
+	function stop() {
+	    state.ball = null;
+	    state.status = "stop";
 	}
 
 	function status() {
@@ -431,12 +454,13 @@ var GameState = (function() {
 	}
 
 	function setElement( element ) {
-	    removeElementAtCell( element.col, element.row );
+	    removeElementAtCell( element ); // Note duck-typing
 	    state.elements.push( element );
 	}
 
 	return {
 	    start: start,
+	    stop: stop,
 	    advance: advance,
 	    status: status,
 	    save: save,
@@ -587,10 +611,12 @@ function elementDeactivatable( element ) {
     return element.type != "switch";
 }
 
-function cycleElements( element ) {
+function cycleElement( cell, element ) {
     var newElement = null;
 
-    if( element && !element.deactivated && elementDeactivatable( element ) ) {
+    if( element
+	&& !element.deactivated
+	&& elementDeactivatable( element ) ) {
 	newElement = element;
 	newElement.deactivated = true;
     } else if( element && element.rotation ) {
@@ -616,6 +642,7 @@ function cycleElements( element ) {
     if( newElement ) {
 	return newElement;
     }
+
     return {type: "flipper", col: element.col, row: element.row, ascending: false };
 }
 
@@ -646,6 +673,7 @@ function initialize() {
     }
 
     function setState( newstate ) {
+	console.log( "setting state" );
 	myState = newstate;
 	mySmoothState = null;
     }
@@ -701,11 +729,17 @@ function initialize() {
 	.append( $(document.createElement("button"))
 		 .attr( "id", "savebutton" )
 		 .html( "Save" )
-		 .click( saveLevel ) )
+		 .click( function() {
+		     $("#leveldata").val( saveLevel() );
+		 } ) )
 	.append( $(document.createElement("button"))
 		 .attr( "id", "loadbutton" )
 		 .html( "Load" )
-		 .click( loadLevel ) )
+		 .click( function() {
+		     var data = $("#leveldata").val();
+		     console.log( "loading " + data );
+		     loadLevel( data );
+		 } ) )
 	.append( dropdown )
 	.append( $("<button/>")
 		 .html( "Load predefined" )
@@ -716,21 +750,26 @@ function initialize() {
 			 console.log( "No such level!" );
 			 return;
 		     }
-		     if( !buildMode ) {
-			 console.log( "Not in build mode!" );
-			 return;
-		     }
-		     unserializeGame( JSON.stringify( level ) );
+		     setState( GameState.loadOld( level ) );
 		 } ) );
 		 
     ctx = canvas.getContext( "2d" );
     jqcanvas = $("#flippersCanvas");
 
+
+    var gamegraphics = DiagramGraphics.create( canvas,
+					      {x: 0,
+					       y: 0,
+					       width: 480,
+					       height: 480},
+					      {cols: 9,
+					       rows: 9}
+					    );
     Mouse.handle(
 	canvas,
-	{holdDelay: 750},
+	{holdDelay: 500},
 	function( click ) {
-	    var cell = cellAtPosition( click );
+	    var cell = gamegraphics.cellAtPosition( click );
 	    if( !cell ) {
 		return;
 	    }
@@ -740,23 +779,13 @@ function initialize() {
 		    myState.removeElementAtCell( cell );
 		},
 		tap: function( m ) {
-		    var element = cycleElement( myState.elementAtCell( cell ) );
+		    var element = cycleElement( cell,
+						myState.elementAtCell( cell ) );
 		    myState.setElement( element );
 		}
 	    }
 	}
     );
-
-    vargamegraphics = DiagramGraphics.create( canvas,
-					      {x: 0,
-					       y: 0,
-					       width: 480,
-					       height: 480},
-					      {cols: 9,
-					       rows: 9}
-					    );
-    var smooth = SmoothGameState.wrap( myState );
-    smooth.start();
 
     setInterval( function() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
