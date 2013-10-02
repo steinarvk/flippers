@@ -1,3 +1,21 @@
+var AABB = {create: function( rect ) {
+    function inside( p ) {
+        return p.x >= rect.x
+            && p.y >= rect.y
+            && p.x < (rect.x + rect.width)
+            && p.y < (rect.x + rect.height);
+    }
+    
+    function getRect() {
+        return rect;
+    }
+
+    return {
+        contains: inside,
+        rect: getRect
+    };
+} };
+
 var Mouse = { handle: function( root, options, handler ) {
     var context = null;
 
@@ -425,6 +443,16 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     }
     
     setBoardSize( boardsize );
+
+    function drawColouredAABB( bb, colour ) {
+        var col = colour || "#0f0";
+	ctx.fillStyle = col;
+        var r = bb.rect();
+	ctx.fillRect( r.x,
+                      r.y,
+                      r.width,
+                      r.height );
+    }
         
     return {
 	setBoardSize: setBoardSize,
@@ -432,7 +460,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	drawElement: drawElement,
 	drawEvent: drawEvent,
 	drawBall: drawBall,
-	cellAtPosition: cellAtPosition
+	cellAtPosition: cellAtPosition,
+        drawColouredAABB: drawColouredAABB
     };
 } };
 
@@ -1042,10 +1071,24 @@ function initialize() {
 					      {cols: 9,
 					       rows: 9}
 					    );
+
+    var testRegion = AABB.create( {x: 10, y: 20, width: 20, height: 100} );
+
     Mouse.handle(
 	canvas,
 	{holdDelay: 500},
 	function( click ) {
+            if( testRegion.contains( click ) ) {
+                return {
+                    hold: function() {
+                        console.log( "region was held" );
+                    },
+                    tap: function() {
+                        console.log( "region was tapped" );
+                    }
+                }
+            }
+
 	    var cell = gamegraphics.cellAtPosition( click );
 	    if( !cell ) {
 		return;
@@ -1066,6 +1109,7 @@ function initialize() {
 
     setInterval( function() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
+        gamegraphics.drawColouredAABB( testRegion, "blue" );
 	render( gamegraphics );
     }, 1000.0 / 30.0 );
 }
