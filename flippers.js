@@ -565,10 +565,6 @@ var GameState = (function() {
                       {dx: -1, dy: -1} ][ triangle.rotation ];
             var angled = (v.dx == -n.dx) || (v.dy == -n.dy);
             var ascending = triangle.rotation % 2;
-            console.log( "collide! " + triangle.rotation );
-            console.log( JSON.stringify( v ) );
-            console.log( " angled " + angled );
-            console.log( "ascending " + ascending );
             if( !angled ) {
                 ballEnters( ball.position,
                             orthogonalBounce( v ) );
@@ -597,12 +593,34 @@ var GameState = (function() {
 	    flipper.ascending = !flipper.ascending;
 	}
 
+        function switchCollision( ball, element ) {
+            var v = ball.outgoingVelocity;
+
+            onEachElement( function(switched) {
+                if( switched.type != "switch"
+                    && switched.colour == element.colour ) {
+                    switched.deactivated = !switched.deactivated;
+                    setEvent( switched.col,
+                              switched.row,
+                              {type: "toggle",
+                               newActive: !switched.deactivated} );
+                }
+            } );
+            state.ball = ball = {
+                position: {col: element.col,
+                           row: element.row},
+                incomingVelocity: v,
+                outgoingVelocity: v
+            };
+        }
+
 	var collisions = {
 	    "flipper": flipperCollision,
 	    "square": squareCollision,
 	    "breakable-square": squareCollision,
 	    "triangle": triangleCollision,
-	    "breakable-triangle": triangleCollision
+	    "breakable-triangle": triangleCollision,
+            "switch": switchCollision
 	};
 	
 	function checkCell( pos ) {
