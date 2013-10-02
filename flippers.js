@@ -211,34 +211,48 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	ctx.fill();
     }
 
-    function drawFlipper( thing ) {
-	var col = thing.col;
-	var row = thing.row;
-	var type = thing.ascending;
-	var xleft = col * cellsize + offset.x;
-	var xright = (col+1) * cellsize + offset.x;
-	var ytop = row * cellsize + offset.y;
-	var ybottom = (row+1) * cellsize + offset.y;
+    function center( cell ) {
+	return {x: (cell.col + 0.5) * cellsize + offset.x,
+		y: (cell.row + 0.5) * cellsize + offset.y};
+    }
+   
+    function drawFlippingFlipper( thing, degrees ) {
+	var c = center( thing );
+	var r = cellsize * 0.5;
+	var a = 2 * Math.PI * degrees / 360.0;
+	var cosa = Math.cos( a );
+	var sina = Math.sin( a );
+	
 	ctx.strokeStyle = colourOf( "red", thing.deactivated );
 	ctx.beginPath();
-	if( type ) {
-            ctx.moveTo( xleft, ybottom );
-            ctx.lineTo( xright, ytop );
-	} else {
-            ctx.moveTo( xright, ybottom );
-            ctx.lineTo( xleft, ytop );
-	}
+	ctx.moveTo( c.x - r * cosa, c.y - r * sina );
+	ctx.lineTo( c.x + r * cosa, c.y + r * sina );
 	ctx.stroke();
     }
+
+    function drawFlipper( thing ) {
+	drawFlippingFlipper( thing, thing.ascending ? -45 : 45 );
+    }
     
-    function drawSquare( thing ) {
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    function drawSquare( thing, options ) {
+	var size = 1.0;
 	var sp = 3;
+
+	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+
+	if( options && options.disappear && options.disappear.phase ) {
+	    size = 1.0 - 0.8 * options.disappear.phase;
+	}
+
+	var c = { x: offset.x + (0.5 + thing.col) * cellsize,
+		  y: offset.y + (0.5 + thing.row) * cellsize };
+
 	for(var i = 0; i < 5; i++) {
-	    ctx.strokeRect( offset.x + thing.col * cellsize + sp * i,
-			    offset.y + thing.row * cellsize + sp * i,
-			    cellsize - 2 * sp * i,
-			    cellsize - 2 * sp * i);
+	    var r = cellsize * 0.5 * size * (0.6 + i * 0.1);
+	    ctx.strokeRect( c.x - r,
+			    c.y - r,
+			    2 * r,
+			    2 * r );
 	}
     }
     
@@ -273,13 +287,18 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
     }
     
-    function drawBreakableTriangle( thing ) {
+    function drawBreakableTriangle( thing, options ) {
 	ctx.strokeStyle = colourOf( "red", thing.deactivated );
 	var sp = 9;
+	var size = 1;
 	var dx = [-1,1,1,-1];
 	var dy = [1,1,-1,-1];
 	var cx = offset.x + (thing.col+0.5) * cellsize;
 	var cy = offset.y + (thing.row+0.5) * cellsize;
+
+	if( options && options.disappear && options.disappear.phase ) {
+	    size = 1.0 - 0.8 * options.disappear.phase;
+	}
 	
 	for(var i = 0; i < 2; i++) {
 	    var begun = false;
@@ -288,8 +307,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	    ctx.beginPath();
 	    for(var j = 0; j < 4; j++) {
 		if( j == thing.rotation ) continue;
-		var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
-		var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
+		var x = cx + dx[j] * (cellsize * 0.5 * size - sp * i);
+		var y = cy + dy[j] * (cellsize * 0.5 * size - sp * i);
 		if( begun ) {
 		    ctx.lineTo( x, y );
 		} else {
@@ -304,14 +323,24 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
     }
     
-    function drawBreakableSquare( thing ) {
+    function drawBreakableSquare( thing, options ) {
+	var size = 1.0;
+
 	ctx.strokeStyle = colourOf( "red", thing.deactivated );
-	var sp = 9;
+
+	if( options && options.disappear && options.disappear.phase ) {
+	    size = 1.0 - 0.8 * options.disappear.phase;
+	}
+
+	var c = { x: offset.x + (0.5 + thing.col) * cellsize,
+		  y: offset.y + (0.5 + thing.row) * cellsize };
+
 	for(var i = 0; i < 2; i++) {
-	    ctx.strokeRect( offset.x + thing.col * cellsize + sp * i,
-			    offset.y + thing.row * cellsize + sp * i,
-			    cellsize - 2 * sp * i,
-			    cellsize - 2 * sp * i);
+	    var r = cellsize * 0.5 * size * (0.75 + i * 0.25);
+	    ctx.strokeRect( c.x - r,
+			    c.y - r,
+			    2 * r,
+			    2 * r );
 	}
     }
     
@@ -327,7 +356,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	ctx.fill();
     }
 
-    var functions = {
+    var drawFunctions = {
 	"flipper": drawFlipper,
 	"square": drawSquare,
 	"breakable-square": drawBreakableSquare,
@@ -337,7 +366,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     };
 
     function drawElement( thing ) {
-	functions[thing.type]( thing );
+	drawFunctions[thing.type]( thing );
     }
 
     function cellAtPosition( pos ) {
@@ -353,12 +382,55 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 		row: y};
     }
     
+    function linearClipAndScale( t, x0, x1 ) {
+	return (t - x0) / (x1 - x0);
+    }
+
+    function drawFlippingEvent( event, t ) {
+	t = linearClipAndScale( t, 0.4, 1.0 );
+	if( t <= 0 ) {
+	    drawFlipper( {col: event.element.col,
+			  row: event.element.row,
+			  ascending: event.originallyAscending } );
+	} else if( t >= 1 ) {
+	    drawFlipper( {col: event.element.col,
+			  row: event.element.row,
+			  ascending: !event.originallyAscending } );
+	} else {
+	    var a0 = event.originallyAscending ? -45 : 45;
+	    var d = -90;
+	    drawFlippingFlipper( event.element, a0 + t * d );
+	}
+	return true;
+    }
+
+    function drawDisappearingEvent( event, t ) {
+	var renderer = drawFunctions[ event.element.type ];
+	renderer( event.element,
+		  {disappear: {phase: t}} );
+	return true;
+    }
+
+    var drawEventFunctions = {
+	"disappear": drawDisappearingEvent,
+	"flip": drawFlippingEvent
+    };
+
+    function drawEvent( event, t ) {
+	var f = drawEventFunctions[ event.type ];
+	if( !f ) {
+	    return false;
+	}
+	return f( event, t );
+    }
+    
     setBoardSize( boardsize );
         
     return {
 	setBoardSize: setBoardSize,
 	drawBackground: drawBoard,
 	drawElement: drawElement,
+	drawEvent: drawEvent,
 	drawBall: drawBall,
 	cellAtPosition: cellAtPosition
     };
@@ -481,12 +553,14 @@ var GameState = (function() {
 	    ball.outgoingVelocity = diagonalBounce( v, flipper.ascending );
 	    ball.position = {col: flipper.col,
 			     row: flipper.row};
-	    flipper.ascending = !flipper.ascending;
 	    
 	    setEvent( flipper.col,
 		      flipper.row,
 		      {type: "flip",
-		       element: flipper} );
+		       element: flipper,
+		       originallyAscending: flipper.ascending} );
+
+	    flipper.ascending = !flipper.ascending;
 	}
 
 	var collisions = {
