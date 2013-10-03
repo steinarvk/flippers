@@ -1118,13 +1118,26 @@ function initialize() {
 					 width: 20,
 					 height: 100} ),
 			   {colour: "blue",
-			    description: "my blue region"} ) );
+                            brush: {type: "flipper",
+                                    ascending: true} } ) );
     regions.add( $.extend( AABB.create( {x: 15,
 					 y: 140,
 					 width: 20,
 					 height: 100} ),
 			   {colour: "red",
-			    description: "my red region"} ) );
+                            brush: {type: "breakable-triangle",
+                                    rotation: 3} } ) );
+    
+    var currentBrush = null;
+
+    function configureElement( element ) {
+        if( element.rotation !== undefined ) {
+            element.rotation = (element.rotation + 1) % 4;
+        } else if( element.ascending !== undefined ) {
+            element.ascending = !element.ascending;
+        }
+        return element;
+    }
 
     Mouse.handle(
 	canvas,
@@ -1133,11 +1146,8 @@ function initialize() {
 	    var region = regions.at( click );
 	    if( region ) {
                 return {
-                    hold: function() {
-                        console.log( "region " + region.description + " was held" );
-                    },
                     tap: function() {
-                        console.log( "region " + region.description + " was tapped" );
+                        currentBrush = region.brush;
                     }
                 }		
 	    }
@@ -1152,9 +1162,12 @@ function initialize() {
 		    myState.removeElementAtCell( cell );
 		},
 		tap: function( m ) {
-		    var element = cycleElement( cell,
-						myState.elementAtCell( cell ) );
-		    myState.setElement( element );
+                    var element = myState.elementAtCell( cell );
+                    if( element ) {
+                        myState.setElement( configureElement( element ) );
+                    } else if( currentBrush ) {
+                        myState.setElement( $.extend( {}, cell, currentBrush ) );
+                    }
 		}
 	    }
 	}
