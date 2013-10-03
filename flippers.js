@@ -3,7 +3,7 @@ var AABB = {create: function( rect ) {
         return p.x >= rect.x
             && p.y >= rect.y
             && p.x < (rect.x + rect.width)
-            && p.y < (rect.x + rect.height);
+            && p.y < (rect.y + rect.height);
     }
     
     function getRect() {
@@ -13,6 +13,42 @@ var AABB = {create: function( rect ) {
     return {
         contains: inside,
         rect: getRect
+    };
+} };
+
+var Regions = {create: function() {
+    // This is one of those vague pieces of code where the point of it
+    // is that it COULD be more efficient, even if it currently isn't.
+    // So if we later want to make this a quadtree, that option is there.
+
+    var regions = [];
+
+    function addRegion( region ) {
+	regions.push( region );
+    }
+
+    function getRegionsAt( pos ) {
+	return regions.filter( function( region ) {
+	    return region.contains( pos );
+	} );
+    }
+
+    function getRegionAt( pos ) {
+	var rv = getRegionsAt( pos );
+	if( rv ) {
+	    return rv[0];
+	}
+    }
+
+    function onEachRegion( f ) {
+	regions.forEach( f );
+    }
+
+    return {
+	add: addRegion,
+	at: getRegionAt,
+	onRegions: onEachRegion,
+	allAt: getRegionsAt
     };
 } };
 
@@ -1072,22 +1108,35 @@ function initialize() {
 					       rows: 9}
 					    );
 
-    var testRegion = AABB.create( {x: 10, y: 20, width: 20, height: 100} );
+    var regions = Regions.create();
+    regions.add( $.extend( AABB.create( {x: 10,
+					 y: 20,
+					 width: 20,
+					 height: 100} ),
+			   {colour: "blue",
+			    description: "my blue region"} ) );
+    regions.add( $.extend( AABB.create( {x: 15,
+					 y: 140,
+					 width: 20,
+					 height: 100} ),
+			   {colour: "red",
+			    description: "my red region"} ) );
 
     Mouse.handle(
 	canvas,
 	{holdDelay: 500},
 	function( click ) {
-            if( testRegion.contains( click ) ) {
+	    var region = regions.at( click );
+	    if( region ) {
                 return {
                     hold: function() {
-                        console.log( "region was held" );
+                        console.log( "region " + region.description + " was held" );
                     },
                     tap: function() {
-                        console.log( "region was tapped" );
+                        console.log( "region " + region.description + " was tapped" );
                     }
-                }
-            }
+                }		
+	    }
 
 	    var cell = gamegraphics.cellAtPosition( click );
 	    if( !cell ) {
@@ -1109,7 +1158,9 @@ function initialize() {
 
     setInterval( function() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
-        gamegraphics.drawColouredAABB( testRegion, "blue" );
+	regions.onRegions( function( region ) {
+	    gamegraphics.drawColouredAABB( region, region.colour );
+	} );
 	render( gamegraphics );
     }, 1000.0 / 30.0 );
 }
