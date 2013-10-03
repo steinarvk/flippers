@@ -452,7 +452,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 			  ascending: !event.originallyAscending } );
 	} else {
 	    var a0 = event.originallyAscending ? -45 : 45;
-	    var d = -90;
+	    var d = event.ccw ? -90 : 90;
 	    drawFlippingFlipper( event.element, a0 + t * d );
 	}
 	return true;
@@ -645,6 +645,9 @@ var GameState = (function() {
 
 	function flipperCollision( ball, flipper ) {
 	    var v = ball.incomingVelocity = ball.outgoingVelocity;
+
+            var vertical = v.dy != 0;
+
 	    ball.outgoingVelocity = diagonalBounce( v, flipper.ascending );
 	    ball.position = {col: flipper.col,
 			     row: flipper.row};
@@ -653,6 +656,7 @@ var GameState = (function() {
 		      flipper.row,
 		      {type: "flip",
 		       element: flipper,
+                       ccw: vertical == flipper.ascending,
 		       originallyAscending: flipper.ascending} );
 
 	    flipper.ascending = !flipper.ascending;
