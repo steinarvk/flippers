@@ -437,6 +437,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     }
     
     function linearClipAndScale( t, x0, x1 ) {
+        if( t <= x0 ) return 0.0;
+        if( t >= x1 ) return 1.0;
 	return (t - x0) / (x1 - x0);
     }
 
@@ -460,6 +462,11 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 
     function drawDisappearingEvent( event, t ) {
 	var renderer = drawFunctions[ event.element.type ];
+        var end = event.begin + 0.5;
+        if( t >= end ) {
+            return true;
+        }
+        t = linearClipAndScale( t, event.begin, end );
 	renderer( event.element,
 		  {disappear: {phase: t}} );
 	return true;
@@ -606,6 +613,7 @@ var GameState = (function() {
 		setEvent( square.col,
 			  square.row,
 			  {type: "disappear",
+                           begin: 0.0,
 			   element: square} );
 		removeElementAtCell( square );
 	    }
@@ -614,15 +622,6 @@ var GameState = (function() {
 	}
 
         function triangleCollision( ball, triangle ) {
-            // 32 
-            // 01
-            if( triangle.type == "breakable-triangle" ) {
-		setEvent( triangle.col,
-			  triangle.row,
-			  {type: "disappear",
-			   element: triangle} );
-		removeElementAtCell( triangle );                
-            }
             var v = ball.outgoingVelocity;
             var n = [ {dx: -1, dy: 1},
                       {dx: 1, dy: 1},
@@ -630,6 +629,16 @@ var GameState = (function() {
                       {dx: -1, dy: -1} ][ triangle.rotation ];
             var angled = (v.dx == -n.dx) || (v.dy == -n.dy);
             var ascending = triangle.rotation % 2;
+            // 32 
+            // 01
+            if( triangle.type == "breakable-triangle" ) {
+		setEvent( triangle.col,
+			  triangle.row,
+			  {type: "disappear",
+                           begin: angled ? 0.5 : 0.0,
+			   element: triangle} );
+		removeElementAtCell( triangle );                
+            }
             if( !angled ) {
                 ballEnters( ball.position,
                             orthogonalBounce( v ) );
@@ -936,7 +945,9 @@ var predefinedLevels = {
     "Puzzle 7 -- place two flippers":
     {"rows":7,"cols":7,"contents":[{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":true},{"type":"flipper","col":5,"row":1,"ascending":false},{"type":"flipper","col":5,"row":3,"ascending":true},{"type":"flipper","col":5,"row":4,"ascending":true},{"type":"flipper","col":4,"row":4,"ascending":false},{"type":"flipper","col":2,"row":2,"ascending":true},{"type":"flipper","col":2,"row":3,"ascending":false},{"type":"flipper","col":1,"row":0,"ascending":false},{"type":"flipper","col":0,"row":0,"ascending":true},{"type":"flipper","col":0,"row":3,"ascending":false},{"type":"flipper","col":1,"row":3,"ascending":true}]},
     "Puzzle 8 -- place two breakable blocks":
-    {"rows":5,"cols":5,"contents":[{"type":"flipper","col":2,"row":4,"ascending":true},{"type":"square","col":3,"row":4},{"type":"flipper","col":0,"row":2,"ascending":true},{"type":"flipper","col":0,"row":1,"ascending":true},{"type":"flipper","col":1,"row":0,"ascending":true},{"type":"flipper","col":2,"row":0,"ascending":false},{"type":"flipper","col":3,"row":0,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":false},{"type":"square","col":4,"row":1},{"type":"flipper","col":4,"row":3,"ascending":true},{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":0,"row":4,"ascending":false},{"type":"flipper","col":1,"row":2,"ascending":false},{"type":"breakable-square","col":1,"row":3},{"type":"breakable-square","col":2,"row":2}]}
+    {"rows":5,"cols":5,"contents":[{"type":"flipper","col":2,"row":4,"ascending":true},{"type":"square","col":3,"row":4},{"type":"flipper","col":0,"row":2,"ascending":true},{"type":"flipper","col":0,"row":1,"ascending":true},{"type":"flipper","col":1,"row":0,"ascending":true},{"type":"flipper","col":2,"row":0,"ascending":false},{"type":"flipper","col":3,"row":0,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":false},{"type":"square","col":4,"row":1},{"type":"flipper","col":4,"row":3,"ascending":true},{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":0,"row":4,"ascending":false},{"type":"flipper","col":1,"row":2,"ascending":false},{"type":"breakable-square","col":1,"row":3},{"type":"breakable-square","col":2,"row":2}]},
+    "Puzzle 9 -- place a breakable block and a breakable triangle":
+    {"size":{"cols":7,"rows":7},"origin":{"col":3,"row":7},"initialVelocity":{"dx":0,"dy":-1},"target":{"col":3,"row":7},"elements":[{"col":3,"row":6,"type":"breakable-triangle","rotation":1},{"col":6,"row":6,"type":"breakable-triangle","rotation":3},{"col":6,"row":3,"type":"breakable-triangle","rotation":0},{"col":1,"row":3,"type":"breakable-triangle","rotation":1},{"col":0,"row":1,"type":"breakable-triangle","rotation":1},{"col":4,"row":1,"type":"breakable-triangle","rotation":0},{"col":4,"row":4,"type":"breakable-square"},{"col":3,"row":5,"type":"breakable-triangle","rotation":3},{"col":3,"row":0,"type":"breakable-triangle","rotation":1},{"col":1,"row":0,"type":"breakable-triangle","rotation":1},{"col":0,"row":4,"type":"breakable-triangle","rotation":2},{"col":0,"row":5,"type":"breakable-triangle","rotation":1},{"col":1,"row":6,"type":"breakable-triangle","rotation":3},{"col":0,"row":6,"type":"breakable-triangle","rotation":2},{"col":5,"row":2,"type":"breakable-triangle","rotation":3},{"col":1,"row":1,"type":"breakable-triangle","rotation":1},{"col":4,"row":0,"type":"breakable-triangle","rotation":0},{"col":5,"row":1,"type":"breakable-triangle","rotation":0},{"col":2,"row":2,"type":"breakable-square"},{"col":6,"row":2,"type":"breakable-triangle","rotation":3},{"col":6,"row":0,"type":"breakable-triangle","rotation":0}]}
 };
 
 function colourOf( base, deactivated ) {
@@ -1096,7 +1107,11 @@ function initialize() {
 			 console.log( "No such level!" );
 			 return;
 		     }
-		     setState( GameState.loadOld( level ) );
+                     if( level.origin ) {
+		         setState( GameState.load( level ) );
+                     } else {
+                         setState( GameState.loadOld( level ) );
+                     }
 		 } ) );
 		 
     ctx = canvas.getContext( "2d" );
@@ -1127,6 +1142,12 @@ function initialize() {
 			   {colour: "red",
                             brush: {type: "breakable-triangle",
                                     rotation: 3} } ) );
+    regions.add( $.extend( AABB.create( {x: 5,
+					 y: 240,
+					 width: 20,
+					 height: 100} ),
+			   {colour: "green",
+                            brush: {type: "breakable-square"}} ) );
     
     var currentBrush = null;
 
