@@ -16,6 +16,28 @@ var AABB = {create: function( rect ) {
     };
 } };
 
+var RegionGrid = {create: function( area, size ) {
+    var cellsize = Math.min(
+        Math.floor( area.width / (2 * size.cols) ) * 2,
+        Math.floor( area.height / (2 * size.rows) ) * 2
+    );
+    var padding = {
+        x: 0.5 * (area.width - cellsize * size.cols),
+        y: 0.5 * (area.height - cellsize * size.rows)
+    };
+
+    function createCell( cell ) {
+        return AABB.create( {x: area.x + padding.x + cellsize * cell.col,
+                             y: area.y + padding.y + cellsize * cell.row,
+                             width: cellsize,
+                             height: cellsize} );
+    }
+    
+    return {
+        cell: createCell
+    };
+} };
+
 var Regions = {create: function() {
     // This is one of those vague pieces of code where the point of it
     // is that it COULD be more efficient, even if it currently isn't.
@@ -1005,7 +1027,7 @@ function cycleElement( cell, element ) {
 
 function initialize() {
     var canvasWidth = 480;
-    var canvasHeight = 480;
+    var canvasHeight = 800;
 
     canvas = document.createElement( "canvas" );
     canvas.id = "flippersCanvas";
@@ -1128,24 +1150,21 @@ function initialize() {
 					    );
 
     var regions = Regions.create();
-    regions.add( $.extend( AABB.create( {x: 10,
-					 y: 20,
-					 width: 20,
-					 height: 100} ),
+    var grid = RegionGrid.create( {y: 480,
+                                   x: 0,
+                                   width: 480,
+                                   height: 200},
+                                  {cols: 6,
+                                   rows: 2} );
+    regions.add( $.extend( grid.cell( {col: 0, row: 0} ),
 			   {colour: "blue",
                             brush: {type: "flipper",
                                     ascending: true} } ) );
-    regions.add( $.extend( AABB.create( {x: 15,
-					 y: 140,
-					 width: 20,
-					 height: 100} ),
+    regions.add( $.extend( grid.cell( {col: 3, row: 0} ),
 			   {colour: "red",
                             brush: {type: "breakable-triangle",
                                     rotation: 3} } ) );
-    regions.add( $.extend( AABB.create( {x: 5,
-					 y: 240,
-					 width: 20,
-					 height: 100} ),
+    regions.add( $.extend( grid.cell( {col: 1, row: 0} ),
 			   {colour: "green",
                             brush: {type: "breakable-square"}} ) );
     
@@ -1166,6 +1185,7 @@ function initialize() {
 	function( click ) {
 	    var region = regions.at( click );
 	    if( region ) {
+                console.log( "tapping region of colour " + region.colour );
                 return {
                     tap: function() {
                         currentBrush = region.brush;
