@@ -1,3 +1,218 @@
+var AABB = {create: function( rect ) {
+    function inside( p ) {
+        return p.x >= rect.x
+            && p.y >= rect.y
+            && p.x < (rect.x + rect.width)
+            && p.y < (rect.y + rect.height);
+    }
+    
+    function getRect() {
+        return rect;
+    }
+
+    return {
+        contains: inside,
+        rect: getRect
+    };
+} };
+
+var RegionGrid = {create: function( area, size, options ) {
+    var margins = options.margins || 0;
+    var cellsize = Math.min(
+        Math.floor( area.width / (2 * size.cols) ) * 2,
+        Math.floor( area.height / (2 * size.rows) ) * 2
+    );
+    var padding = {
+        x: 0.5 * (area.width - cellsize * size.cols),
+        y: 0.5 * (area.height - cellsize * size.rows)
+    };
+
+    function createCell( cell, data ) {
+        var rv = AABB.create( {x: area.x + padding.x + cellsize * cell.col + margins,
+                               y: area.y + padding.y + cellsize * cell.row + margins,
+                               width: cellsize - 2 * margins,
+                               height: cellsize - 2 * margins} );
+        if( data ) {
+            $.extend( rv, data );
+        }
+        return rv;
+    }
+
+    return {
+        cell: createCell
+    };
+} };
+
+var Inventory = {create: function( area, size, options ) {
+    var grid = RegionGrid.create( area, size, options );
+    var itemRegions = [];
+    var pageSize = size.cols * size.rows;
+    var currentPage = 0;
+    var fullRegion = AABB.create( area );
+    var selected = null;
+
+    function setSelected( region ) {
+        selected = region;
+        if( region ) {
+            setPage( region.page );
+        }
+    }
+
+    function region() {
+        return fullRegion;
+    }
+
+    function cellNo( i ) {
+        var pageNo = Math.floor( i / pageSize );
+        var rowNo = Math.floor( (i - pageNo * pageSize) / size.cols );
+        var colNo = i - pageNo * pageSize - rowNo * size.cols;
+        return {col: colNo,
+                row: rowNo,
+                page: pageNo,
+                index: i};
+    }
+    
+    function addItem( item ) {
+        var i = 0;
+        while( itemRegions[i] ) {
+            ++i;
+        }
+        var cell = cellNo( i );
+        itemRegions[i] = $.extend( grid.cell( cell ),
+                                   cell,
+                                   {item: item} );
+        return itemRegions[i];
+    }
+
+    function pageRegions() {
+        var page = Regions.create();
+        onActiveItems( function(itemregion) {
+            page.add( itemregion );
+        } );
+        return page;
+    }
+
+    function draw( gfx ) {
+        onActiveItems( function(itemregion) {
+            gfx.drawInventoryItemIn( itemregion.item,
+                                     {selected: itemregion == selected},
+                                     itemregion.rect() );
+        } );
+    }
+    
+    function onActiveItems( f ) {
+        var i0 = currentPage * pageSize;
+        var i;
+        for(i = 0; i < pageSize; i++) {
+            var region = itemRegions[i0 + i];
+            if( region ) {
+                f( region );
+            }
+        }
+    }
+    
+    function numberOfPages() {
+        return Math.ceil( itemRegions.length / pageSize );
+    }
+
+    function setPage( i ) {
+        var n = numberOfPages();
+        if( n == 0 ) {
+            i = 0;
+        } else if( i >= n ) {
+            i = n - 1;
+        } else if( i <= 0 ) {
+            i = 0;
+        }
+        currentPage = i;
+    }
+
+    function nextPage() {
+        setPage( currentPage + 1 );
+    }
+
+    function previousPage() {
+        setPage( currentPage - 1 );
+    }
+
+    function deltaSelected( di ) {
+        if( !itemRegions.length ) {
+            setSelected( null );
+            return;
+        }
+
+        var index;
+
+        if( !selected ) {
+            index = 0;
+        } else {
+            var n = itemRegions.length;
+            var index = (selected.index + di) % n;
+            index = (index + n) % n;
+        }
+        
+        setSelected( itemRegions[index] );
+    }
+
+    function nextSelected() {
+        deltaSelected(1);
+    }
+
+    function previousSelected() {
+        deltaSelected(-1);
+    }
+
+    return {
+        add: addItem,
+        render: draw,
+        numberOfPages: numberOfPages,
+        setPage: setPage,
+        nextPage: nextPage,
+        previousPage: previousPage,
+        region: region,
+        pageRegions: pageRegions,
+        setSelected: setSelected,
+        nextSelected: nextSelected,
+        previousSelected: previousSelected
+    }
+} };
+
+var Regions = {create: function() {
+    // This is one of those vague pieces of code where the point of it
+    // is that it COULD be more efficient, even if it currently isn't.
+    // So if we later want to make this a quadtree, that option is there.
+
+    var regions = [];
+
+    function addRegion( region ) {
+	regions.push( region );
+    }
+
+    function getRegionsAt( pos ) {
+	return regions.filter( function( region ) {
+	    return region.contains( pos );
+	} );
+    }
+
+    function getRegionAt( pos ) {
+	var rv = getRegionsAt( pos );
+	if( rv ) {
+	    return rv[0];
+	}
+    }
+
+    function onEachRegion( f ) {
+	regions.forEach( f );
+    }
+
+    return {
+	add: addRegion,
+	at: getRegionAt,
+	onRegions: onEachRegion,
+	allAt: getRegionsAt
+    };
+} };
+
 var Mouse = { handle: function( root, options, handler ) {
     var context = null;
 
@@ -10,13 +225,17 @@ var Mouse = { handle: function( root, options, handler ) {
 	if( !rv ) {
 	    return;
 	}
-	context = {
+	var ctx = {
 	    time: now(), 
 	    click: pos,
 	    handlers: rv
 	};
-	if( !rv.noHold && options.holdDelay ) {
+	context = ctx;
+	if( rv.hold && options.holdDelay ) {
 	    window.setTimeout( function() {
+		if( context != ctx ) {
+		    return;
+		}
 		trigger( "hold" );
 	    }, options.holdDelay );
 	}
@@ -84,6 +303,77 @@ var Mouse = { handle: function( root, options, handler ) {
     }
 } };
 
+var Map2D = (function() {
+    function load( data ) {
+	var m = create();
+	for(var index = 0; index < data.length; index++) {
+	    var i = data[index][0];
+	    var j = data[index][1];
+	    var v = data[index][2];
+	    m.set( i, j, v );
+	}
+	return m;
+    }
+
+    function create() {
+	var m = {};
+
+	function set( i, j, data ) {
+	    var is = i.toString();
+	    var js = j.toString();
+	    var submap = m[ is ];
+	    if( !submap ) {
+		submap  = m[ is ] = {};
+	    }
+	    submap[ js ] = data;
+	}
+
+	function remove( i, j ) {
+	    var is = i.toString();
+	    var js = j.toString();
+	    var submap = m[ is ];
+	    if( !submap ) {
+		return;
+	    }
+	    delete submap[js];
+	}
+
+	function get( i, j ) {
+	    var is = i.toString();
+	    var js = j.toString();
+	    var submap = m[ is ];
+	    if( !submap ) {
+		return undefined;
+	    }
+	    return submap[js];
+	}
+
+	function save() {
+	    var rv = [];
+	    for(var is in m) {
+		var i = parseInt( is );
+		for(var js in m[is]) {
+		    var j = parseInt( js );
+		    rv.push( [i, j, m[is][js]] );
+		}
+	    }
+	    return rv;
+	}
+	
+	return {
+	    set: set,
+	    remove: remove,
+	    get: get,
+	    save: save
+	};
+    }
+
+    return {
+	create: create,
+	load: load
+    };
+} )();
+
 var DiagramGraphics = { create: function(canvas, area, boardsize) {
     var ctx = canvas.getContext( "2d" );
 
@@ -104,6 +394,9 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     }
     
     function setBoardSize( sz ) {
+	if( sz.cols == boardsize.cols && sz.rows == boardsize.rows ) {
+	    return;
+	}
 	boardsize = sz;
 	autofitBoard();
     }
@@ -133,44 +426,96 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	ctx.fill();
     }
 
-    function drawFlipper( thing ) {
-	var col = thing.col;
-	var row = thing.row;
-	var type = thing.ascending;
-	var xleft = col * cellsize + offset.x;
-	var xright = (col+1) * cellsize + offset.x;
-	var ytop = row * cellsize + offset.y;
-	var ybottom = (row+1) * cellsize + offset.y;
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    function center( cell ) {
+	return {x: (cell.col + 0.5) * cellsize + offset.x,
+		y: (cell.row + 0.5) * cellsize + offset.y};
+    }
+
+    function cellRect( cell ) {
+        return {x: cell.col * cellsize + offset.x,
+                y: cell.row * cellsize + offset.y,
+                width: cellsize,
+                height: cellsize};
+    }
+    
+    function rectCenter( rect ) {
+        return {x: rect.x + 0.5 * rect.width,
+                y: rect.y + 0.5 * rect.height};
+    }
+
+    function rectRadius( rect ) {
+        return Math.min( 0.5 * rect.width, 0.5 * rect.height );
+    }
+
+    function colourOf( base, deactivated ) {
+        if( base == "red" ) {
+            if( !deactivated ) {
+	        return "#e11";
+            }
+            return "#911";
+        }
+
+        if( base == "green" ) {
+            if( !deactivated ) {
+                return "#1b1";
+            }
+            return "#151";
+        }
+
+        return "#111";
+    }
+
+    function drawFlippingFlipper( thing, degrees, rect ) {
+        rect = rect || cellRect( thing );
+	var c = rectCenter( rect );
+	var r = rectRadius( rect );
+
+	var a = 2 * Math.PI * degrees / 360.0;
+	var cosa = Math.cos( a );
+	var sina = Math.sin( a );
+	
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 	ctx.beginPath();
-	if( type ) {
-            ctx.moveTo( xleft, ybottom );
-            ctx.lineTo( xright, ytop );
-	} else {
-            ctx.moveTo( xright, ybottom );
-            ctx.lineTo( xleft, ytop );
-	}
+	ctx.moveTo( c.x - r * cosa, c.y - r * sina );
+	ctx.lineTo( c.x + r * cosa, c.y + r * sina );
 	ctx.stroke();
     }
+
+    function drawFlipper( thing, options, rect ) {
+	drawFlippingFlipper( thing, thing.ascending ? -45 : 45, rect );
+    }
     
-    function drawSquare( thing ) {
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    function drawSquare( thing, options, rect ) {
+        rect = rect || cellRect( thing );
+
+	var size = 1.0;
 	var sp = 3;
+
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
+
+	if( options && options.disappear && options.disappear.phase ) {
+	    size = 1.0 - 0.8 * options.disappear.phase;
+	}
+
+	var c = rectCenter( rect );
+
 	for(var i = 0; i < 5; i++) {
-	    ctx.strokeRect( offset.x + thing.col * cellsize + sp * i,
-			    offset.y + thing.row * cellsize + sp * i,
-			    cellsize - 2 * sp * i,
-			    cellsize - 2 * sp * i);
+	    var r = rectRadius( rect ) * size * (0.6 + i * 0.1);
+	    ctx.strokeRect( c.x - r,
+			    c.y - r,
+			    2 * r,
+			    2 * r );
 	}
     }
     
-    function drawTriangle( thing ) {
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    function drawTriangle( thing, options, rect  ) {
+        rect = rect || cellRect( thing );
+
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 	var sp = 3;
 	var dx = [-1,1,1,-1];
 	var dy = [1,1,-1,-1];
-	var cx = offset.x + (thing.col+0.5) * cellsize;
-	var cy = offset.y + (thing.row+0.5) * cellsize;
+        var c = rectCenter( rect );
 	
 	for(var i = 0; i < 5; i++) {
 	    var begun = false;
@@ -179,8 +524,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	    ctx.beginPath();
 	    for(var j = 0; j < 4; j++) {
 		if( j == thing.rotation ) continue;
-		var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
-		var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
+		var x = c.x + dx[j] * (rectRadius( rect ) - sp * i);
+		var y = c.y + dy[j] * (rectRadius( rect ) - sp * i);
 		if( begun ) {
 		    ctx.lineTo( x, y );
 		} else {
@@ -195,13 +540,19 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
     }
     
-    function drawBreakableTriangle( thing ) {
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+    function drawBreakableTriangle( thing, options, rect ) {
+        rect = rect || cellRect( thing );
+
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 	var sp = 9;
+	var size = 1;
 	var dx = [-1,1,1,-1];
 	var dy = [1,1,-1,-1];
-	var cx = offset.x + (thing.col+0.5) * cellsize;
-	var cy = offset.y + (thing.row+0.5) * cellsize;
+        var c = rectCenter( rect );
+
+	if( options && options.disappear && options.disappear.phase ) {
+	    size = 1.0 - 0.8 * options.disappear.phase;
+	}
 	
 	for(var i = 0; i < 2; i++) {
 	    var begun = false;
@@ -210,8 +561,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	    ctx.beginPath();
 	    for(var j = 0; j < 4; j++) {
 		if( j == thing.rotation ) continue;
-		var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
-		var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
+		var x = c.x + dx[j] * (rectRadius( rect ) * size * (0.75 + 0.25 * i));
+		var y = c.y + dy[j] * (rectRadius( rect ) * size * (0.75 + 0.25 * i));
 		if( begun ) {
 		    ctx.lineTo( x, y );
 		} else {
@@ -226,30 +577,43 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
     }
     
-    function drawBreakableSquare( thing ) {
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
-	var sp = 9;
+    function drawBreakableSquare( thing, options, rect ) {
+        rect = rect || cellRect( thing );
+
+	var size = 1.0;
+
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
+
+	if( options && options.disappear && options.disappear.phase ) {
+	    size = 1.0 - 0.8 * options.disappear.phase;
+	}
+
+        var c = rectCenter( rect );
+
 	for(var i = 0; i < 2; i++) {
-	    ctx.strokeRect( offset.x + thing.col * cellsize + sp * i,
-			    offset.y + thing.row * cellsize + sp * i,
-			    cellsize - 2 * sp * i,
-			    cellsize - 2 * sp * i);
+	    var r = rectRadius( rect ) * size * (0.75 + i * 0.25);
+	    ctx.strokeRect( c.x - r,
+			    c.y - r,
+			    2 * r,
+			    2 * r );
 	}
     }
     
-    function drawSwitch( thing ) {
-	ctx.fillStyle = colourOf( "red", thing.deactivated );
+    function drawSwitch( thing, options, rect ) {
+        rect = rect || cellRect( thing );
+
+	ctx.fillStyle = colourOf( thing.colour, thing.deactivated );
 	ctx.beginPath();
-	ctx.arc( offset.x + (thing.col+0.5) * cellsize,
-		 offset.y + (thing.row+0.5) * cellsize,
-		 cellsize * 0.5,
+	ctx.arc( rectCenter( rect ).x,
+                 rectCenter( rect ).y,
+		 rectRadius( rect ),
 		 0,
 		 2 * Math.PI,
 		 false );
 	ctx.fill();
     }
 
-    var functions = {
+    var drawFunctions = {
 	"flipper": drawFlipper,
 	"square": drawSquare,
 	"breakable-square": drawBreakableSquare,
@@ -259,7 +623,80 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     };
 
     function drawElement( thing ) {
-	functions[thing.type]( thing );
+	drawFunctions[thing.type]( thing );
+    }
+
+    function drawElementInRect( thing, rect ) {
+        drawFunctions[thing.type]( thing, null, rect );
+    }
+
+    function drawInventoryItemIn( item, options, rect ) {
+        drawColouredRect( rect, options.selected ? "yellow" : "#ddd" );
+        drawElementInRect( item, rect );
+    }
+
+    function cellAtPosition( pos ) {
+	var x = Math.floor( (pos.x - offset.x) / cellsize );
+	var y = Math.floor( (pos.y - offset.y) / cellsize );
+	if( x < 0
+	    || y < 0
+	    || x >= boardsize.cols
+	    || y >= boardsize.rows ) {
+	    return null;
+	}
+	return {col: x,
+		row: y};
+    }
+    
+    function linearClipAndScale( t, x0, x1 ) {
+        if( t <= x0 ) return 0.0;
+        if( t >= x1 ) return 1.0;
+	return (t - x0) / (x1 - x0);
+    }
+
+    function drawFlippingEvent( event, t ) {
+	t = linearClipAndScale( t, 0.4, 1.0 );
+	if( t <= 0 ) {
+	    drawFlipper( {col: event.element.col,
+                          colour: event.element.colour,
+			  row: event.element.row,
+			  ascending: event.originallyAscending } );
+	} else if( t >= 1 ) {
+	    drawFlipper( {col: event.element.col,
+                          colour: event.element.colour,
+			  row: event.element.row,
+			  ascending: !event.originallyAscending } );
+	} else {
+	    var a0 = event.originallyAscending ? -45 : 45;
+	    var d = event.ccw ? -90 : 90;
+	    drawFlippingFlipper( event.element, a0 + t * d );
+	}
+	return true;
+    }
+
+    function drawDisappearingEvent( event, t ) {
+	var renderer = drawFunctions[ event.element.type ];
+        var end = event.begin + 0.5;
+        if( t >= end ) {
+            return true;
+        }
+        t = linearClipAndScale( t, event.begin, end );
+	renderer( event.element,
+		  {disappear: {phase: t}} );
+	return true;
+    }
+
+    var drawEventFunctions = {
+	"disappear": drawDisappearingEvent,
+	"flip": drawFlippingEvent
+    };
+
+    function drawEvent( event, t ) {
+	var f = drawEventFunctions[ event.type ];
+	if( !f ) {
+	    return false;
+	}
+	return f( event, t );
     }
 
     function cellAtPosition( pos ) {
@@ -273,36 +710,456 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     }
     
     setBoardSize( boardsize );
+
+    function drawColouredAABB( bb, colour ) {
+        var col = colour || "#0f0";
+	ctx.fillStyle = col;
+        var r = bb.rect();
+	ctx.fillRect( r.x,
+                      r.y,
+                      r.width,
+                      r.height );
+    }
+
+    function drawColouredRect( rect, colour ) {
+        var col = colour || "#0f0";
+	ctx.fillStyle = col;
+        var r = rect;
+	ctx.fillRect( r.x,
+                      r.y,
+                      r.width,
+                      r.height );
+    }
         
     return {
 	setBoardSize: setBoardSize,
 	drawBackground: drawBoard,
 	drawElement: drawElement,
+	drawElementIn: drawElementInRect,
+	drawInventoryItemIn: drawInventoryItemIn,
+	drawEvent: drawEvent,
 	drawBall: drawBall,
-	cellAtPosition: cellAtPosition
+	cellAtPosition: cellAtPosition,
+        drawColouredAABB: drawColouredAABB
     };
 } };
 
-var canvas = null;
-var ctx = null;
-var jqcanvas = null;
-var kb = null;
+var GameState = (function() {
+    function defaultOrigin( boardsize ) {
+	return  {col: Math.floor( boardsize.cols / 2 ),
+		 row: boardsize.rows};
+    }
+    
+    function defaultInitialVelocity( origin ) {
+	return {dx: 0, dy: -1};
+    }
 
-var gamegraphics = null;
+    function defaultTarget( boardsize ) {
+	return  {col: Math.floor( boardsize.cols / 2 ),
+		 row: boardsize.rows};
+    }
 
-var cellsize = 60.0;
-var boardColumns = 5, boardRows = 5;
-var buildMode = true;
-var canvasWidth = 480;
-var canvasHeight = 480;
-var boardOffset = {x: (canvasWidth - boardColumns * cellsize) * 0.5,
-		   y: (canvasHeight - boardRows * cellsize) * 0.5};
+    function createBlankState( boardsize ) {
+	return createState(
+	    {
+		size: boardsize,
+		origin: defaultOrigin(boardsize),
+		initialVelocity: defaultInitialVelocity( defaultOrigin(boardsize) ),
+		target: defaultTarget(boardsize),
+		elements: []
+	    }
+	);
+    }
+    
+    function convertOldState( data ) {
+	var sz = {cols: data.cols, rows: data.rows};
+	return createState(
+	    {
+		size: sz,
+		origin: defaultOrigin(sz),
+		initialVelocity: defaultInitialVelocity( defaultOrigin(sz) ),
+		target: defaultTarget(sz),
+		elements: data.contents
+	    }
+	);
+    };
 
-var elements = [];
+    function createState( state ) {
+	var events = null;
 
-var gamestate = null;
+	function eventAtCell( cell ) {
+	    if( events ) {
+		return events.get( cell.col, cell.row );
+	    }
+	    return null;
+	}
+	
+	function clearEvents() {
+	    events = Map2D.create();
+	}
 
-var buildModeSerialization = null;
+	function setEvent( col, row, data ) {
+	    if( !events ) {
+		clearEvents();
+	    }
+	    events.set( col, row, data );
+	}
+	
+	function elementAt( col, row ) {
+	    for(var i = 0; i < state.elements.length; i++) {
+		var flipper = state.elements[i];
+		if( flipper.col == col && flipper.row == row ) {  
+		    return flipper;
+		}
+	    }
+	    return null;
+	}
+	
+	function start() {
+	    state.ball = {
+		position: state.origin,
+		incomingVelocity: state.initialVelocity,
+		outgoingVelocity: state.initialVelocity
+	    };
+	    state.status = "running";
+	}
+
+	function stop() {
+	    state.ball = null;
+	    state.status = "stop";
+	}
+
+	function status() {
+	    return state.status || "stopped";
+	}
+	
+	function orthogonalBounce( direction ) {
+	    return { dx: - direction.dx,
+		     dy: - direction.dy };
+	}
+
+	function diagonalBounce( direction, ascending ) {
+	    var m = ascending ? -1 : 1;
+	    return { dx: m * direction.dy,
+		     dy: m * direction.dx };
+	}
+
+	function squareCollision( ball, square ) {
+	    if( square.type == "breakable-square" ) {
+		setEvent( square.col,
+			  square.row,
+			  {type: "disappear",
+                           begin: 0.0,
+			   element: square} );
+		removeElementAtCell( square );
+	    }
+	    ballEnters( ball.position,
+			orthogonalBounce( ball.outgoingVelocity ) );
+	}
+
+        function triangleCollision( ball, triangle ) {
+            var v = ball.outgoingVelocity;
+            var n = [ {dx: -1, dy: 1},
+                      {dx: 1, dy: 1},
+                      {dx: 1, dy: -1},
+                      {dx: -1, dy: -1} ][ triangle.rotation ];
+            var angled = (v.dx == -n.dx) || (v.dy == -n.dy);
+            var ascending = triangle.rotation % 2;
+            // 32 
+            // 01
+            if( triangle.type == "breakable-triangle" ) {
+		setEvent( triangle.col,
+			  triangle.row,
+			  {type: "disappear",
+                           begin: angled ? 0.5 : 0.0,
+			   element: triangle} );
+		removeElementAtCell( triangle );                
+            }
+            if( !angled ) {
+                ballEnters( ball.position,
+                            orthogonalBounce( v ) );
+            } else {
+                state.ball = ball = {
+                    position: {col: triangle.col,
+                               row: triangle.row},
+                    incomingVelocity: v,
+                    outgoingVelocity: diagonalBounce( v, ascending )
+                };
+            }
+        }
+
+	function flipperCollision( ball, flipper ) {
+	    var v = ball.incomingVelocity = ball.outgoingVelocity;
+
+            var vertical = v.dy != 0;
+
+	    ball.outgoingVelocity = diagonalBounce( v, flipper.ascending );
+	    ball.position = {col: flipper.col,
+			     row: flipper.row};
+	    
+	    setEvent( flipper.col,
+		      flipper.row,
+		      {type: "flip",
+		       element: flipper,
+                       ccw: vertical == flipper.ascending,
+		       originallyAscending: flipper.ascending} );
+
+	    flipper.ascending = !flipper.ascending;
+	}
+
+        function switchCollision( ball, element ) {
+            var v = ball.outgoingVelocity;
+
+            onEachElement( function(switched) {
+                if( switched.type != "switch"
+                    && switched.colour == element.colour ) {
+                    switched.deactivated = !switched.deactivated;
+                    setEvent( switched.col,
+                              switched.row,
+                              {type: "toggle",
+                               newActive: !switched.deactivated} );
+                }
+            } );
+            state.ball = ball = {
+                position: {col: element.col,
+                           row: element.row},
+                incomingVelocity: v,
+                outgoingVelocity: v
+            };
+        }
+
+	var collisions = {
+	    "flipper": flipperCollision,
+	    "square": squareCollision,
+	    "breakable-square": squareCollision,
+	    "triangle": triangleCollision,
+	    "breakable-triangle": triangleCollision,
+            "switch": switchCollision
+	};
+	
+	function checkCell( pos ) {
+	    return (pos.col >= 0
+		    && pos.row >= 0
+		    && pos.col < state.size.cols
+		    && pos.row < state.size.rows);
+	}
+
+	function ballEnters( position, velocity ) {
+	    var el = elementAt( position.col, position.row );
+
+	    if( !el || el.deactivated ) {
+		state.ball = {
+		    position: position,
+		    incomingVelocity: velocity,
+		    outgoingVelocity: velocity
+		};
+	    } else {
+		state.ball.outgoingVelocity = velocity;
+		collisions[ el.type ]( state.ball, el );
+	    }
+	}
+
+	function advance() {
+	    if( state.status != "running" ) {
+		return;
+	    }
+
+	    clearEvents();
+
+	    var v = state.ball.outgoingVelocity;
+
+	    ballEnters( {col: state.ball.position.col + v.dx,
+			 row: state.ball.position.row + v.dy },
+			state.ball.outgoingVelocity );
+
+
+	    if( !checkCell( state.ball.position ) ) {
+		if( state.ball.position.col == state.target.col
+		    &&
+		    state.ball.position.row == state.target.row )
+		{
+		    state.status = "gameover:win";
+		} else {
+		    state.status = "gameover:loss";
+		}
+	    }
+	}
+
+	function save() {
+	    return JSON.parse( JSON.stringify( state ) );
+	}
+
+	function onEachElement( f ) {
+	    for(var key in state.elements) {
+		f( state.elements[key] );
+	    }
+	}
+
+	function render( gfx ) {
+	    // Direct render function -- note that this object operates
+	    // discretely. For better visuals we can use a layer above
+	    // to show smooth animation.
+
+	    gfx.setBoardSize( state.size );
+
+	    gfx.drawBackground();
+
+	    onEachElement( gfx.drawElement );
+
+	    if( state.ball ) {
+		gfx.drawBall( {x: (0.5 + state.ball.position.col),
+			       y: (0.5 + state.ball.position.row) } );
+	    }
+	}
+
+	function elementAtCell( cell ) {
+	    return elementAt( cell.col, cell.row );
+	}
+
+	function removeElementAtCell( cell ) {
+	    var el = elementAtCell( cell );
+	    if( el ) {
+		arrayRemoveElement( state.elements, el );
+	    }
+	}
+
+	function setElement( element ) {
+	    removeElementAtCell( element ); // Note duck-typing
+	    state.elements.push( element );
+	}
+
+	function onSquares( f ) {
+	    for( var i = 0; i < state.size.cols; i++) {
+		for(var j = 0; j < state.size.rows; j++) {
+		    var cell = {col: i, row: j};
+		    var element = elementAtCell( cell );
+		    var event = eventAtCell( cell );
+		    if( element || event ) {
+			f( cell, element, event );
+		    }
+		}
+	    }
+	}
+
+	return {
+	    start: start,
+	    stop: stop,
+	    advance: advance,
+	    status: status,
+	    save: save,
+	    render: render,
+	    elementAtCell: elementAtCell,
+	    eventAtCell: eventAtCell,
+	    removeElementAtCell: removeElementAtCell,
+	    setElement: setElement,
+	    onSquares: onSquares,
+	    ball: function(){ return state.ball; },
+	    size: function(){ return state.size; }
+	}	
+    }
+
+    return {
+	create: createBlankState,
+	load: createState,
+	loadOld: convertOldState
+    }
+})();
+
+var SmoothGameState = { wrap: function( gamestate ) {
+    var target = 40;
+    var counter = 0;
+    var timerId = null;
+
+    function phase() {
+	return counter / target;
+    }
+
+    function interpolatedBallPosition( ball ) {
+	var cx = (ball.position.col + 0.5);
+	var cy = (ball.position.row + 0.5);
+	if( (counter * 2) < target ) {
+	    var t = (counter / target) * 2;
+	    var v = ball.incomingVelocity;
+	    return {
+		x: cx + 0.5 * v.dx * (t-1),
+		y: cy + 0.5 * v.dy * (t-1)
+	    };
+	} else {
+	    var t = ((counter - target/2) / target) * 2;
+	    var v = ball.outgoingVelocity;
+	    return {
+		x: cx + 0.5 * v.dx * t,
+		y: cy + 0.5 * v.dy * t
+	    };
+	}
+    }
+
+    function render(gfx) {
+	gfx.setBoardSize( gamestate.size() );
+	
+	gfx.drawBackground();
+
+	var ball = gamestate.ball();
+
+	var t = phase();
+
+	gamestate.onSquares( function(cell, element, event) {
+	    var drewEvent = false;
+	    if( event && gfx.drawEvent ) {
+		drewEvent = gfx.drawEvent( event, t );
+	    }
+	    if( !drewEvent && element ) {
+		gfx.drawElement( element, t );
+	    }
+	} );
+
+	if( !ball ) {
+	    return;
+	}
+
+	gfx.drawBall( interpolatedBallPosition( ball ) );
+    }
+
+    function advance() {
+	counter += 1;
+	while( counter > target ) {
+	    gamestate.advance()
+	    counter -= target;
+	}
+
+	if( gamestate.status() != "running" ) {
+	    stop();
+	}
+    }
+    
+    function running() {
+	return timerId != null;
+    }
+    
+    function start() {
+	if( running() ) {
+	    return;
+	}
+	
+	timerId = setInterval( advance, 10 );
+    }
+    
+    function stop() {
+	if( !running() ) {
+	    return;
+	}
+	
+	clearInterval( timerId );
+	timerId = null;
+    }
+
+    return {
+	start: start,
+	stop: stop,
+	running: running,
+	render: render
+    }
+} };
 
 var predefinedLevels = {
     "Puzzle 2 -- place a single flipper":
@@ -324,199 +1181,12 @@ var predefinedLevels = {
     "Puzzle 7 -- place two flippers":
     {"rows":7,"cols":7,"contents":[{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":true},{"type":"flipper","col":5,"row":1,"ascending":false},{"type":"flipper","col":5,"row":3,"ascending":true},{"type":"flipper","col":5,"row":4,"ascending":true},{"type":"flipper","col":4,"row":4,"ascending":false},{"type":"flipper","col":2,"row":2,"ascending":true},{"type":"flipper","col":2,"row":3,"ascending":false},{"type":"flipper","col":1,"row":0,"ascending":false},{"type":"flipper","col":0,"row":0,"ascending":true},{"type":"flipper","col":0,"row":3,"ascending":false},{"type":"flipper","col":1,"row":3,"ascending":true}]},
     "Puzzle 8 -- place two breakable blocks":
-    {"rows":5,"cols":5,"contents":[{"type":"flipper","col":2,"row":4,"ascending":true},{"type":"square","col":3,"row":4},{"type":"flipper","col":0,"row":2,"ascending":true},{"type":"flipper","col":0,"row":1,"ascending":true},{"type":"flipper","col":1,"row":0,"ascending":true},{"type":"flipper","col":2,"row":0,"ascending":false},{"type":"flipper","col":3,"row":0,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":false},{"type":"square","col":4,"row":1},{"type":"flipper","col":4,"row":3,"ascending":true},{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":0,"row":4,"ascending":false},{"type":"flipper","col":1,"row":2,"ascending":false},{"type":"breakable-square","col":1,"row":3},{"type":"breakable-square","col":2,"row":2}]}
+    {"rows":5,"cols":5,"contents":[{"type":"flipper","col":2,"row":4,"ascending":true},{"type":"square","col":3,"row":4},{"type":"flipper","col":0,"row":2,"ascending":true},{"type":"flipper","col":0,"row":1,"ascending":true},{"type":"flipper","col":1,"row":0,"ascending":true},{"type":"flipper","col":2,"row":0,"ascending":false},{"type":"flipper","col":3,"row":0,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":false},{"type":"square","col":4,"row":1},{"type":"flipper","col":4,"row":3,"ascending":true},{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":0,"row":4,"ascending":false},{"type":"flipper","col":1,"row":2,"ascending":false},{"type":"breakable-square","col":1,"row":3},{"type":"breakable-square","col":2,"row":2}]},
+    "Puzzle 9 -- place a breakable block and a breakable triangle":
+    {"size":{"cols":7,"rows":7},"origin":{"col":3,"row":7},"initialVelocity":{"dx":0,"dy":-1},"target":{"col":3,"row":7},"elements":[{"col":3,"row":6,"type":"breakable-triangle","rotation":1},{"col":6,"row":6,"type":"breakable-triangle","rotation":3},{"col":6,"row":3,"type":"breakable-triangle","rotation":0},{"col":1,"row":3,"type":"breakable-triangle","rotation":1},{"col":0,"row":1,"type":"breakable-triangle","rotation":1},{"col":4,"row":1,"type":"breakable-triangle","rotation":0},{"col":4,"row":4,"type":"breakable-square"},{"col":3,"row":5,"type":"breakable-triangle","rotation":3},{"col":3,"row":0,"type":"breakable-triangle","rotation":1},{"col":1,"row":0,"type":"breakable-triangle","rotation":1},{"col":0,"row":4,"type":"breakable-triangle","rotation":2},{"col":0,"row":5,"type":"breakable-triangle","rotation":1},{"col":1,"row":6,"type":"breakable-triangle","rotation":3},{"col":0,"row":6,"type":"breakable-triangle","rotation":2},{"col":5,"row":2,"type":"breakable-triangle","rotation":3},{"col":1,"row":1,"type":"breakable-triangle","rotation":1},{"col":4,"row":0,"type":"breakable-triangle","rotation":0},{"col":5,"row":1,"type":"breakable-triangle","rotation":0},{"col":2,"row":2,"type":"breakable-square"},{"col":6,"row":2,"type":"breakable-triangle","rotation":3},{"col":6,"row":0,"type":"breakable-triangle","rotation":0}]},
+    "Puzzle 10 -- place a single flipper":
+    {"size":{"cols":9,"rows":9},"origin":{"col":4,"row":9},"initialVelocity":{"dx":0,"dy":-1},"target":{"col":4,"row":0},"elements":[{"col":4,"row":8,"type":"flipper","ascending":true},{"col":5,"row":8,"type":"flipper","ascending":true},{"col":5,"row":5,"type":"flipper","ascending":false},{"col":3,"row":6,"type":"flipper","ascending":true},{"col":3,"row":4,"type":"flipper","ascending":false},{"col":1,"row":5,"type":"flipper","ascending":false},{"col":0,"row":4,"type":"flipper","ascending":false},{"col":1,"row":2,"type":"flipper","ascending":false},{"col":4,"row":0,"type":"flipper","ascending":false},{"col":4,"row":6,"type":"flipper","ascending":false},{"col":4,"row":7,"type":"flipper","ascending":true},{"col":0,"row":6,"type":"flipper","ascending":false},{"col":1,"row":7,"type":"flipper","ascending":false},{"col":1,"row":4,"type":"flipper","ascending":false},{"col":0,"row":3,"type":"flipper","ascending":true},{"col":0,"row":2,"type":"flipper","ascending":false},{"col":0,"row":1,"type":"flipper","ascending":true},{"col":2,"row":1,"type":"flipper","ascending":false},{"col":2,"row":2,"type":"flipper","ascending":true},{"col":6,"row":4,"type":"flipper","ascending":false},{"col":7,"row":8,"type":"flipper","ascending":false},{"col":8,"row":8,"type":"flipper","ascending":true},{"col":8,"row":6,"type":"flipper","ascending":false},{"col":6,"row":6,"type":"flipper","ascending":true},{"col":6,"row":8,"type":"flipper","ascending":false},{"col":8,"row":5,"type":"flipper","ascending":true},{"col":6,"row":5,"type":"flipper","ascending":false},{"col":7,"row":3,"type":"flipper","ascending":true},{"col":7,"row":0,"type":"flipper","ascending":false},{"col":5,"row":0,"type":"flipper","ascending":true},{"col":5,"row":1,"type":"flipper","ascending":false},{"col":8,"row":1,"type":"flipper","ascending":false},{"col":5,"row":2,"type":"flipper","ascending":false},{"col":4,"row":2,"type":"flipper","ascending":false},{"col":4,"row":1,"type":"flipper","ascending":true},{"col":7,"row":5,"type":"flipper","ascending":true}]}
 };
-
-function colourOf( base, deactivated ) {
-    if( deactivated ) {
-	return "#755";
-    }
-    return "#f55";
-}
-
-function startRun() {
-    if( !buildMode ) {
-	return;
-    }
-	
-    $("#startstopbutton").html( "Stop" );
-
-    buildMode = false;
-    gamestate = initialGameState();
-
-    buildModeSerialization = serializeGame();
-
-    $("#loadbutton").prop( "disabled", true );
-    $("#savebutton").prop( "disabled", true );
-}
-
-function stopRun() {
-    if( buildMode ) {
-	return;
-    }
-
-    $("#startstopbutton").html( "Start" );
-
-    buildMode = true;
-    gamestate = null;
-
-    if( buildModeSerialization ) {
-	unserializeGame( buildModeSerialization );
-    }
-
-    $("#loadbutton").prop( "disabled", false );
-    $("#savebutton").prop( "disabled", false );
-}
-
-function saveLevel() {
-    $("#leveldata").val( serializeGame() );
-}
-
-function loadLevel() {
-    unserializeGame( $("#leveldata").val() );
-}
-
-function serializeGame() {
-    return JSON.stringify(
-	{rows: boardRows,
-	 cols: boardColumns,
-	 contents: elements}
-    );
-}
-
-function unserializeGame( data ) {
-    var x = JSON.parse( data );
-    boardColumns = x.cols;
-    boardRows = x.rows;
-    elements = x.contents;
-
-    autofitBoard();
-}
-
-function initialGameState() {
-    return {col: Math.floor( boardColumns / 2 ),
-	    row: boardRows,
-	    phase: 0.0,
-	    d1: {x: 0, y: -1},
-	    d2: {x: 0, y: -1}};
-}
-
-function elementAt( col, row ) {
-    for(var i = 0; i < elements.length; i++) {
-	var flipper = elements[i];
-	if( flipper.col == col && flipper.row == row ) {  
-	    return flipper;
-	}
-    }
-    return null;
-}
-
-function diagonalBounce( direction, ascending ) {
-    var m = ascending ? -1 : 1;
-    return { x: m * direction.y,
-	     y: m * direction.x };
-}
-
-function onEachElement( f ) {
-    for(var key in elements) {
-	f( elements[key] );
-    }
-}
-
-function nextState( lastState ) {
-    var dir = lastState.d2;
-    var colp = lastState.col + dir.x;
-    var rowp = lastState.row + dir.y;
-    var element = elementAt( colp, rowp );
-    var phasep = lastState.phase - 1.0;
-    
-    if( !element || element.deactivated ) {
-	return { col: colp,
-		 row: rowp,
-		 phase: phasep,
-		 d1: dir,
-		 d2: dir };
-    }
-    if( element.type == "flipper" ) {
-	return { col: colp,
-		 row: rowp,
-		 phase: phasep,
-		 d1: dir,
-		 d2: diagonalBounce( dir, element.ascending ),
-		 resolve: function() {
-		     element.ascending = !element.ascending;
-		 }
-	       };
-    }
-    if( element.type == "square" || element.type == "breakable-square" ) {
-	if( element.type == "breakable-square" ) {
-	    removeElement( element );
-	}
-	return nextState( { col: colp,
-			    row: rowp,
-			    phase: phasep + 1.0,
-			    d2: {x: -dir.x, y: -dir.y } } );
-    }
-    if( element.type == "triangle" || element.type == "breakable-triangle" ) {
-	var tangent = [ [-1,1], [1,1], [1,-1], [-1,-1] ][ element.rotation ];
-	var ascending = element.rotation % 2;
-	var diagonal = (dir.x == -tangent[0]) || (dir.y == -tangent[1]);
-	var d2 = diagonal ? diagonalBounce( dir, ascending ) : {x: -dir.x, y: -dir.y};
-	if( diagonal ) {
-	    return { col: colp,
-		     row: rowp,
-		     phase: phasep,
-		     resolve: function() {
-			 if( element.type == "breakable-triangle" ) {
-			     removeElement( element );
-			 }
-		     },
-		     d1: dir,
-		     d2: diagonalBounce( dir, ascending ) };
-	} else {
-	    if( element.type == "breakable-triangle" ) {
-		removeElement( element );
-	    }
-	    return nextState( { col: colp,
-				row: rowp,
-				phase: phasep + 1.0,
-				d2: {x: -dir.x, y: -dir.y } } );
-	}
-    }
-    if( element.type == "switch" ) {
-	onEachElement( function(el) {
-	    if( elementDeactivatable(el) ) {
-		el.deactivated = ! el.deactivated;
-	    }
-	} );
-	return { col: colp,
-		 row: rowp,
-		 phase: phasep,
-		 d1: dir,
-		 d2: dir };
-    }
-}
-
-function printObject( o ) {
-    for(var k in o) {
-	console.log( "key " + k + ": " + o[k] );
-    }
-}
-
-function getClickPosition( e ) {
-    if( Modernizr.touch ) {
-	console.log( "translating touch " );
-	if( e.touches && e.touches.length > 0 ) {
-	    return {x: e.touches[0].pageX - jqcanvas.offset().left,
-		    y: e.touches[0].pageY - jqcanvas.offset().top};
-	}
-    } else {
-	return {
-	    x: e.pageX - jqcanvas.offset().left,
-	    y: e.pageY - jqcanvas.offset().top
-	};
-    }
-}
 
 function arrayRemoveElement( ar, element ) {
     var i = ar.indexOf( element );
@@ -525,38 +1195,16 @@ function arrayRemoveElement( ar, element ) {
     }
 }
 
-function removeElement( elt ) {
-    arrayRemoveElement( elements, elt );
+function elementDeactivatable( element ) {
+    return element.type != "switch";
 }
 
-function elementDeactivatable( el ) {
-    return el.type != "switch";
-}
-
-function removeElementAt( cell ) {
-    if( !buildMode ) {
-	return;
-    }
-
-    var element = elementAt( cell.col, cell.row );
-    if( element ) {
-        removeElement( element );
-    }
-}
-
-function toggleElementAt( cell ) {
-    if( !buildMode ) {
-	return;
-    }
-
-    var element = elementAt( cell.col, cell.row );
-    if( element ) {
-	removeElement( element );
-    }
-
+function cycleElement( cell, element ) {
     var newElement = null;
 
-    if( element && !element.deactivated && elementDeactivatable( element ) ) {
+    if( element
+	&& !element.deactivated
+	&& elementDeactivatable( element ) ) {
 	newElement = element;
 	newElement.deactivated = true;
     } else if( element && element.rotation ) {
@@ -580,25 +1228,64 @@ function toggleElementAt( cell ) {
     }
 
     if( newElement ) {
-	elements.push( newElement );
+	return newElement;
     }
-}
 
-function toggleGame() {
-    if( buildMode ) {
-	startRun();
-    } else {
-	stopRun();
-    }
+    return {type: "flipper", col: element.col, row: element.row, ascending: false };
 }
 
 function initialize() {
+    var canvasWidth = 480;
+    var canvasHeight = 800;
+
     canvas = document.createElement( "canvas" );
     canvas.id = "flippersCanvas";
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
 
     jqcanvas = $(canvas);
+
+    var myState = GameState.loadOld(
+	{"rows":7,"cols":7,"contents":[{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":true},{"type":"flipper","col":5,"row":1,"ascending":false},{"type":"flipper","col":5,"row":3,"ascending":true},{"type":"flipper","col":5,"row":4,"ascending":true},{"type":"flipper","col":4,"row":4,"ascending":false},{"type":"flipper","col":2,"row":2,"ascending":true},{"type":"flipper","col":2,"row":3,"ascending":false},{"type":"flipper","col":1,"row":0,"ascending":false},{"type":"flipper","col":0,"row":0,"ascending":true},{"type":"flipper","col":0,"row":3,"ascending":false},{"type":"flipper","col":1,"row":3,"ascending":true}]}
+    );
+    var mySmoothState = null;
+    var mySavedState = null;
+
+    function setState( newstate ) {
+	myState = newstate;
+	mySmoothState = null;
+    }
+
+    function startGame() {
+	mySavedState = myState.save();
+	myState.start();
+	mySmoothState = SmoothGameState.wrap( myState );
+	mySmoothState.start();
+    }
+
+    function stopGame() {
+	setState( GameState.load( mySavedState ) );
+    }
+
+    function running() {
+	return mySmoothState != null;
+    }
+
+    function toggleGame() {
+	if( running() ) {
+	    stopGame();
+	} else {
+	    startGame();
+	}
+    }
+
+    function saveLevel() {
+	return JSON.stringify( myState.save() );
+    }
+
+    function loadLevel( data ) {
+	setState( GameState.load( JSON.parse( data ) ) );
+    }
 
     console.log( "Game beginning!");
 
@@ -620,11 +1307,17 @@ function initialize() {
 	.append( $(document.createElement("button"))
 		 .attr( "id", "savebutton" )
 		 .html( "Save" )
-		 .click( saveLevel ) )
+		 .click( function() {
+		     $("#leveldata").val( saveLevel() );
+		 } ) )
 	.append( $(document.createElement("button"))
 		 .attr( "id", "loadbutton" )
 		 .html( "Load" )
-		 .click( loadLevel ) )
+		 .click( function() {
+		     var data = $("#leveldata").val();
+		     console.log( "loading " + data );
+		     loadLevel( data );
+		 } ) )
 	.append( dropdown )
 	.append( $("<button/>")
 		 .html( "Load predefined" )
@@ -635,20 +1328,109 @@ function initialize() {
 			 console.log( "No such level!" );
 			 return;
 		     }
-		     if( !buildMode ) {
-			 console.log( "Not in build mode!" );
-			 return;
-		     }
-		     unserializeGame( JSON.stringify( level ) );
+                     if( level.origin ) {
+		         setState( GameState.load( level ) );
+                     } else {
+                         setState( GameState.loadOld( level ) );
+                     }
 		 } ) );
 		 
     ctx = canvas.getContext( "2d" );
     jqcanvas = $("#flippersCanvas");
 
+
+    var gamegraphics = DiagramGraphics.create( canvas,
+					      {x: 0,
+					       y: 0,
+					       width: 480,
+					       height: 480},
+					      {cols: 9,
+					       rows: 9}
+					    );
+
+    var regions = Regions.create();
+    var inventory = Inventory.create( {y: 480,
+                                       x: 0,
+                                       width: 480,
+                                       height: 200},
+                                      {cols: 3,
+                                       rows: 2},
+                                      {margins: 2} );
+    (function () {
+        var colours = ["red", "green", null];
+        var elements = [ {type: "flipper", ascending: true},
+                         {type: "breakable-triangle", rotation: 3},
+                         {type: "breakable-square"},
+                         {type: "triangle", rotation: 3},
+                         {type: "square"},
+                         {type: "switch"} ];
+        
+        for(var k = 0; k < 2; k++) {
+            for(var i = 0; i < colours.length; i++) {
+                for(var j = 0; j < elements.length; j++) {
+                    var deactivated = k == 1;
+                    if( !colours[i] && elements[j].type == "switch" ) {
+                        continue;
+                    }
+                    if( deactivated &&
+                        (!colours[i] || elements[j].type == "switch") ) {
+                        continue;
+                    }
+                    inventory.add( $.extend( {},
+                                             elements[j],
+                                             {colour: colours[i]},
+                                             deactivated ?
+                                             {deactivated: true}
+                                             :
+                                             {} ) );
+                }
+            }
+        }
+    })();
+
+    function render( gfx ) {
+	if( mySmoothState ) {
+	    mySmoothState.render( gfx );
+	} else {
+	    myState.render( gfx );
+	}
+
+        inventory.render( gfx );
+    }
+
+    var currentBrush = null;
+
+    function configureElement( element ) {
+        if( element.rotation !== undefined ) {
+            element.rotation = (element.rotation + 1) % 4;
+        } else if( element.ascending !== undefined ) {
+            element.ascending = !element.ascending;
+        }
+        return element;
+    }
+
     Mouse.handle(
 	canvas,
-	{holdDelay: 600},
+	{holdDelay: 500},
 	function( click ) {
+            if( inventory.region().contains( click ) ) {
+                var subregion = inventory.pageRegions().at( click );
+                if( subregion ) {
+                    return {
+                        tap: function() {
+                            if( currentBrush == subregion.item ) {
+                                inventory.setSelected( null );
+                                currentBrush = null;
+                            } else {
+                                inventory.setSelected( subregion );
+                                currentBrush = subregion.item;
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
 	    var cell = gamegraphics.cellAtPosition( click );
 	    if( !cell ) {
 		return;
@@ -656,43 +1438,31 @@ function initialize() {
 
 	    return {
 		hold: function( m ) {
-		    removeElementAt( cell );
+		    myState.removeElementAtCell( cell );
 		},
 		tap: function( m ) {
-		    toggleElementAt( cell );
+                    var element = myState.elementAtCell( cell );
+                    if( element ) {
+                        myState.setElement( configureElement( element ) );
+                    } else if( currentBrush ) {
+                        myState.setElement( $.extend( {}, cell, currentBrush ) );
+                    }
 		}
 	    }
 	}
     );
 
-    gamegraphics = DiagramGraphics.create( canvas,
-					   {x: 0,
-					    y: 0,
-					    width: 480,
-					    height: 480},
-					   {cols: 9,
-					    rows: 9}
-					   );
+    var kb = new Kibo();
+    kb.down( "left", function() {
+        inventory.previousSelected();
+    } ).down( "right", function() {
+        inventory.nextSelected();
+    } );
 
-    setInterval( drawFrame, 1000.0 / 30.0 );
-    setInterval( advanceWorld, 15.0 );
-
-    elements = [];
-
-    autofitBoard();
-}
-
-function stepWorld() {
-    if( gamestate.resolve ) {
-	gamestate.resolve();
-    }
-    gamestate = nextState( gamestate );
-
-    var result = checkGameOver( gamestate );
-    if( result ) {
-	declareResult( result );
-	stopRun();
-    }
+    setInterval( function() {
+	ctx.clearRect( 0, 0, canvas.width, canvas.height );
+	render( gamegraphics );
+    }, 1000.0 / 30.0 );
 }
 
 function declareResult( result ) {
@@ -713,81 +1483,3 @@ function declareResult( result ) {
     }
 }
 
-function targetCell() {
-    return {col: Math.floor( boardColumns / 2 ),
-	    row: -1};
-}
-
-function checkGameOver( state ) {
-    if( state.col < 0 || 
-	state.row < 0 ||
-	state.col >= boardColumns ||
-	state.row >= boardRows ) {
-	var target = targetCell();
-	if( state.col == target.col && state.row == target.row ) {
-	    return "win";
-	}
-	return "loss";
-    }
-}
-
-
-function advanceWorld() {
-    if( buildMode ) {
-	return;
-    }
-
-    gamestate.phase += 0.04;
-    while( gamestate && gamestate.phase > 1.0 ) {
-        stepWorld();
-    }
-}
-
-function ballPosition() {
-    var cx = (gamestate.col+0.5);
-    var cy = (gamestate.row+0.5);
-
-    if( gamestate.phase < 0.5 ) {
-        var t = 2 * gamestate.phase;
-        var d = gamestate.d1;
-        var dx = -0.5 * (1-t) * d.x;
-        var dy = -0.5 * (1-t) * d.y;
-        return {x: (cx+dx), y: (cy+dy)};
-    } else {
-        var t = 2 * (gamestate.phase - 0.5);
-        var d = gamestate.d2;
-        var dx = 0.5 * t * d.x;
-        var dy = 0.5 * t * d.y;
-        return {x: (cx+dx), y: (cy+dy)};
-    }
-}
-
-function drawFrame() {
-    ctx.clearRect( 0, 0, canvas.width, canvas.height );
-    
-    drawChessboard( {cols: boardColumns, rows: boardRows} );
-    
-    onEachElement( drawThing );
-
-    if( gamestate ) {
-	var pos = ballPosition();
-	drawBall( pos.x, pos.y );
-    }
-}
-
-// Proxies temporary
-function drawThing( thing ) {
-    gamegraphics.drawElement( thing );
-}
-
-function drawBall( cx, cy ) {
-    gamegraphics.drawBall( {x: cx, y: cy} );
-}
-
-function drawChessboard() {
-    gamegraphics.drawBackground();
-}
-
-function autofitBoard() {
-    gamegraphics.setBoardSize( {cols: boardColumns, rows: boardRows } );
-}
