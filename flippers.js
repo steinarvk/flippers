@@ -1073,8 +1073,6 @@ function initialize() {
     var mySmoothState = null;
     var mySavedState = null;
 
-    myState.start();
-
     function render( gfx ) {
 	if( mySmoothState ) {
 	    mySmoothState.render( gfx );
