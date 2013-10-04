@@ -16,7 +16,8 @@ var AABB = {create: function( rect ) {
     };
 } };
 
-var RegionGrid = {create: function( area, size ) {
+var RegionGrid = {create: function( area, size, options ) {
+    var margins = options.margins || 0;
     var cellsize = Math.min(
         Math.floor( area.width / (2 * size.cols) ) * 2,
         Math.floor( area.height / (2 * size.rows) ) * 2
@@ -26,16 +27,154 @@ var RegionGrid = {create: function( area, size ) {
         y: 0.5 * (area.height - cellsize * size.rows)
     };
 
-    function createCell( cell ) {
-        return AABB.create( {x: area.x + padding.x + cellsize * cell.col,
-                             y: area.y + padding.y + cellsize * cell.row,
-                             width: cellsize,
-                             height: cellsize} );
+    function createCell( cell, data ) {
+        var rv = AABB.create( {x: area.x + padding.x + cellsize * cell.col + margins,
+                               y: area.y + padding.y + cellsize * cell.row + margins,
+                               width: cellsize - 2 * margins,
+                               height: cellsize - 2 * margins} );
+        if( data ) {
+            $.extend( rv, data );
+        }
+        return rv;
     }
-    
+
     return {
         cell: createCell
     };
+} };
+
+var Inventory = {create: function( area, size, options ) {
+    var grid = RegionGrid.create( area, size, options );
+    var itemRegions = [];
+    var pageSize = size.cols * size.rows;
+    var currentPage = 0;
+    var fullRegion = AABB.create( area );
+    var selected = null;
+
+    function setSelected( region ) {
+        selected = region;
+        if( region ) {
+            setPage( region.page );
+        }
+    }
+
+    function region() {
+        return fullRegion;
+    }
+
+    function cellNo( i ) {
+        var pageNo = Math.floor( i / pageSize );
+        var rowNo = Math.floor( (i - pageNo * pageSize) / size.cols );
+        var colNo = i - pageNo * pageSize - rowNo * size.cols;
+        return {col: colNo,
+                row: rowNo,
+                page: pageNo,
+                index: i};
+    }
+    
+    function addItem( item ) {
+        var i = 0;
+        while( itemRegions[i] ) {
+            ++i;
+        }
+        var cell = cellNo( i );
+        itemRegions[i] = $.extend( grid.cell( cell ),
+                                   cell,
+                                   {item: item} );
+        return itemRegions[i];
+    }
+
+    function pageRegions() {
+        var page = Regions.create();
+        onActiveItems( function(itemregion) {
+            page.add( itemregion );
+        } );
+        return page;
+    }
+
+    function draw( gfx ) {
+        onActiveItems( function(itemregion) {
+            gfx.drawInventoryItemIn( itemregion.item,
+                                     {selected: itemregion == selected},
+                                     itemregion.rect() );
+        } );
+    }
+    
+    function onActiveItems( f ) {
+        var i0 = currentPage * pageSize;
+        var i;
+        for(i = 0; i < pageSize; i++) {
+            var region = itemRegions[i0 + i];
+            if( region ) {
+                f( region );
+            }
+        }
+    }
+    
+    function numberOfPages() {
+        return Math.ceil( itemRegions.length / pageSize );
+    }
+
+    function setPage( i ) {
+        var n = numberOfPages();
+        if( n == 0 ) {
+            i = 0;
+        } else if( i >= n ) {
+            i = n - 1;
+        } else if( i <= 0 ) {
+            i = 0;
+        }
+        currentPage = i;
+    }
+
+    function nextPage() {
+        setPage( currentPage + 1 );
+    }
+
+    function previousPage() {
+        setPage( currentPage - 1 );
+    }
+
+    function deltaSelected( di ) {
+        if( !itemRegions.length ) {
+            setSelected( null );
+            return;
+        }
+
+        var index;
+
+        if( !selected ) {
+            index = 0;
+        } else {
+            var n = itemRegions.length;
+            var index = (selected.index + di) % n;
+            index = (index + n) % n;
+        }
+        
+        setSelected( itemRegions[index] );
+    }
+
+    function nextSelected() {
+        deltaSelected(1);
+    }
+
+    function previousSelected() {
+        deltaSelected(-1);
+    }
+
+    return {
+        add: addItem,
+        render: draw,
+        numberOfPages: numberOfPages,
+        setPage: setPage,
+        nextPage: nextPage,
+        previousPage: previousPage,
+        region: region,
+        pageRegions: pageRegions,
+        setSelected: setSelected,
+        nextSelected: nextSelected,
+        previousSelected: previousSelected
+    }
 } };
 
 var Regions = {create: function() {
@@ -473,6 +612,11 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
         drawFunctions[thing.type]( thing, null, rect );
     }
 
+    function drawInventoryItemIn( item, options, rect ) {
+        drawColouredRect( rect, options.selected ? "yellow" : "#ddd" );
+        drawElementInRect( item, rect );
+    }
+
     function cellAtPosition( pos ) {
 	var x = Math.floor( (pos.x - offset.x) / cellsize );
 	var y = Math.floor( (pos.y - offset.y) / cellsize );
@@ -546,12 +690,23 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
                       r.width,
                       r.height );
     }
+
+    function drawColouredRect( rect, colour ) {
+        var col = colour || "#0f0";
+	ctx.fillStyle = col;
+        var r = rect;
+	ctx.fillRect( r.x,
+                      r.y,
+                      r.width,
+                      r.height );
+    }
         
     return {
 	setBoardSize: setBoardSize,
 	drawBackground: drawBoard,
 	drawElement: drawElement,
 	drawElementIn: drawElementInRect,
+	drawInventoryItemIn: drawInventoryItemIn,
 	drawEvent: drawEvent,
 	drawBall: drawBall,
 	cellAtPosition: cellAtPosition,
@@ -1073,14 +1228,6 @@ function initialize() {
     var mySmoothState = null;
     var mySavedState = null;
 
-    function render( gfx ) {
-	if( mySmoothState ) {
-	    mySmoothState.render( gfx );
-	} else {
-	    myState.render( gfx );
-	}
-    }
-
     function setState( newstate ) {
 	myState = newstate;
 	mySmoothState = null;
@@ -1089,7 +1236,7 @@ function initialize() {
     function startGame() {
 	mySavedState = myState.save();
 	myState.start();
-	mySmoothState = SmoothGameState.wrap( myState );
+	mySmoothState1 = SmoothGameState.wrap( myState );
 	mySmoothState.start();
     }
 
@@ -1179,21 +1326,34 @@ function initialize() {
 					    );
 
     var regions = Regions.create();
-    var grid = RegionGrid.create( {y: 480,
-                                   x: 0,
-                                   width: 480,
-                                   height: 200},
-                                  {cols: 6,
-                                   rows: 2} );
-    regions.add( $.extend( grid.cell( {col: 0, row: 0} ),
-                           {brush: {type: "flipper",
-                                    ascending: true} } ) );
-    regions.add( $.extend( grid.cell( {col: 3, row: 0} ),
-                           {brush: {type: "breakable-triangle",
-                                    rotation: 3} } ) );
-    regions.add( $.extend( grid.cell( {col: 1, row: 0} ),
-                           {brush: {type: "breakable-square"}} ) );
-    
+    var inventory = Inventory.create( {y: 480,
+                                       x: 0,
+                                       width: 480,
+                                       height: 200},
+                                      {cols: 3,
+                                       rows: 2},
+                                      {margins: 2} );
+    inventory.add( {type: "flipper", ascending: true} );
+    inventory.add( {type: "breakable-triangle", rotation: 3} );
+    inventory.add( {type: "breakable-square"} );
+    inventory.add( {type: "triangle", rotation: 3} );
+    inventory.add( {type: "square"} );
+
+    inventory.nextSelected();
+    inventory.nextSelected();
+    inventory.nextSelected();
+
+
+    function render( gfx ) {
+	if( mySmoothState ) {
+	    mySmoothState.render( gfx );
+	} else {
+	    myState.render( gfx );
+	}
+
+        inventory.render( gfx );
+    }
+
     var currentBrush = null;
 
     function configureElement( element ) {
@@ -1209,18 +1369,23 @@ function initialize() {
 	canvas,
 	{holdDelay: 500},
 	function( click ) {
-	    var region = regions.at( click );
-	    if( region ) {
-                return {
-                    tap: function() {
-                        if( currentBrush == region.brush ) {
-                            currentBrush = null;
-                        } else {
-                            currentBrush = region.brush;
+            if( inventory.region().contains( click ) ) {
+                var subregion = inventory.pageRegions().at( click );
+                if( subregion ) {
+                    return {
+                        tap: function() {
+                            if( currentBrush == subregion.item ) {
+                                inventory.setSelected( null );
+                                currentBrush = null;
+                            } else {
+                                inventory.setSelected( subregion );
+                                currentBrush = subregion.item;
+                            }
                         }
                     }
-                }		
-	    }
+                }
+                return;
+            }
 
 	    var cell = gamegraphics.cellAtPosition( click );
 	    if( !cell ) {
@@ -1245,10 +1410,6 @@ function initialize() {
 
     setInterval( function() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
-	regions.onRegions( function( region ) {
-            gamegraphics.drawColouredAABB( region, (region.brush == currentBrush) ? "yellow" : "#ddd" );
-            gamegraphics.drawElementIn( region.brush, region.rect() );
-	} );
 	render( gamegraphics );
     }, 1000.0 / 30.0 );
 }
