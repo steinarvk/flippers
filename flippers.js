@@ -291,10 +291,28 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	return {x: (cell.col + 0.5) * cellsize + offset.x,
 		y: (cell.row + 0.5) * cellsize + offset.y};
     }
-   
-    function drawFlippingFlipper( thing, degrees ) {
-	var c = center( thing );
-	var r = cellsize * 0.5;
+
+    function cellRect( cell ) {
+        return {x: cell.col * cellsize + offset.x,
+                y: cell.row * cellsize + offset.y,
+                width: cellsize,
+                height: cellsize};
+    }
+    
+    function rectCenter( rect ) {
+        return {x: rect.x + 0.5 * rect.width,
+                y: rect.y + 0.5 * rect.height};
+    }
+
+    function rectRadius( rect ) {
+        return Math.min( 0.5 * rect.width, 0.5 * rect.height );
+    }
+
+    function drawFlippingFlipper( thing, degrees, rect ) {
+        rect = rect || cellRect( thing );
+	var c = rectCenter( rect );
+	var r = rectRadius( rect );
+
 	var a = 2 * Math.PI * degrees / 360.0;
 	var cosa = Math.cos( a );
 	var sina = Math.sin( a );
@@ -306,11 +324,13 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	ctx.stroke();
     }
 
-    function drawFlipper( thing ) {
-	drawFlippingFlipper( thing, thing.ascending ? -45 : 45 );
+    function drawFlipper( thing, options, rect ) {
+	drawFlippingFlipper( thing, thing.ascending ? -45 : 45, rect );
     }
     
-    function drawSquare( thing, options ) {
+    function drawSquare( thing, options, rect ) {
+        rect = rect || cellRect( thing );
+
 	var size = 1.0;
 	var sp = 3;
 
@@ -320,11 +340,10 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	    size = 1.0 - 0.8 * options.disappear.phase;
 	}
 
-	var c = { x: offset.x + (0.5 + thing.col) * cellsize,
-		  y: offset.y + (0.5 + thing.row) * cellsize };
+	var c = rectCenter( rect );
 
 	for(var i = 0; i < 5; i++) {
-	    var r = cellsize * 0.5 * size * (0.6 + i * 0.1);
+	    var r = rectRadius( rect ) * size * (0.6 + i * 0.1);
 	    ctx.strokeRect( c.x - r,
 			    c.y - r,
 			    2 * r,
@@ -332,13 +351,14 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
     }
     
-    function drawTriangle( thing ) {
+    function drawTriangle( thing, options, rect  ) {
+        rect = rect || cellRect( thing );
+
 	ctx.strokeStyle = colourOf( "red", thing.deactivated );
 	var sp = 3;
 	var dx = [-1,1,1,-1];
 	var dy = [1,1,-1,-1];
-	var cx = offset.x + (thing.col+0.5) * cellsize;
-	var cy = offset.y + (thing.row+0.5) * cellsize;
+        var c = rectCenter( rect );
 	
 	for(var i = 0; i < 5; i++) {
 	    var begun = false;
@@ -347,8 +367,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	    ctx.beginPath();
 	    for(var j = 0; j < 4; j++) {
 		if( j == thing.rotation ) continue;
-		var x = cx + dx[j] * (cellsize * 0.5 - sp * i);
-		var y = cy + dy[j] * (cellsize * 0.5 - sp * i);
+		var x = c.x + dx[j] * (rectRadius( rect ) - sp * i);
+		var y = c.y + dy[j] * (rectRadius( rect ) - sp * i);
 		if( begun ) {
 		    ctx.lineTo( x, y );
 		} else {
@@ -363,14 +383,15 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
     }
     
-    function drawBreakableTriangle( thing, options ) {
+    function drawBreakableTriangle( thing, options, rect ) {
+        rect = rect || cellRect( thing );
+
 	ctx.strokeStyle = colourOf( "red", thing.deactivated );
 	var sp = 9;
 	var size = 1;
 	var dx = [-1,1,1,-1];
 	var dy = [1,1,-1,-1];
-	var cx = offset.x + (thing.col+0.5) * cellsize;
-	var cy = offset.y + (thing.row+0.5) * cellsize;
+        var c = rectCenter( rect );
 
 	if( options && options.disappear && options.disappear.phase ) {
 	    size = 1.0 - 0.8 * options.disappear.phase;
@@ -383,8 +404,8 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	    ctx.beginPath();
 	    for(var j = 0; j < 4; j++) {
 		if( j == thing.rotation ) continue;
-		var x = cx + dx[j] * (cellsize * 0.5 * size * (0.75 + 0.25 * i));
-		var y = cy + dy[j] * (cellsize * 0.5 * size * (0.75 + 0.25 * i));
+		var x = c.x + dx[j] * (rectRadius( rect ) * size * (0.75 + 0.25 * i));
+		var y = c.y + dy[j] * (rectRadius( rect ) * size * (0.75 + 0.25 * i));
 		if( begun ) {
 		    ctx.lineTo( x, y );
 		} else {
@@ -399,7 +420,9 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
     }
     
-    function drawBreakableSquare( thing, options ) {
+    function drawBreakableSquare( thing, options, rect ) {
+        rect = rect || cellRect( thing );
+
 	var size = 1.0;
 
 	ctx.strokeStyle = colourOf( "red", thing.deactivated );
@@ -408,11 +431,10 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	    size = 1.0 - 0.8 * options.disappear.phase;
 	}
 
-	var c = { x: offset.x + (0.5 + thing.col) * cellsize,
-		  y: offset.y + (0.5 + thing.row) * cellsize };
+        var c = rectCenter( rect );
 
 	for(var i = 0; i < 2; i++) {
-	    var r = cellsize * 0.5 * size * (0.75 + i * 0.25);
+	    var r = rectRadius( rect ) * size * (0.75 + i * 0.25);
 	    ctx.strokeRect( c.x - r,
 			    c.y - r,
 			    2 * r,
@@ -420,12 +442,14 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
     }
     
-    function drawSwitch( thing ) {
+    function drawSwitch( thing, options, rect ) {
+        rect = rect || cellRect( thing );
+
 	ctx.fillStyle = colourOf( "red", thing.deactivated );
 	ctx.beginPath();
-	ctx.arc( offset.x + (thing.col+0.5) * cellsize,
-		 offset.y + (thing.row+0.5) * cellsize,
-		 cellsize * 0.5,
+	ctx.arc( rectCenter( rect ).x,
+                 rectCenter( rect ).y,
+		 rectRadius( rect ),
 		 0,
 		 2 * Math.PI,
 		 false );
@@ -443,6 +467,10 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 
     function drawElement( thing ) {
 	drawFunctions[thing.type]( thing );
+    }
+
+    function drawElementInRect( thing, rect ) {
+        drawFunctions[thing.type]( thing, null, rect );
     }
 
     function cellAtPosition( pos ) {
@@ -523,6 +551,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	setBoardSize: setBoardSize,
 	drawBackground: drawBoard,
 	drawElement: drawElement,
+	drawElementIn: drawElementInRect,
 	drawEvent: drawEvent,
 	drawBall: drawBall,
 	cellAtPosition: cellAtPosition,
@@ -1159,16 +1188,13 @@ function initialize() {
                                   {cols: 6,
                                    rows: 2} );
     regions.add( $.extend( grid.cell( {col: 0, row: 0} ),
-			   {colour: "blue",
-                            brush: {type: "flipper",
+                           {brush: {type: "flipper",
                                     ascending: true} } ) );
     regions.add( $.extend( grid.cell( {col: 3, row: 0} ),
-			   {colour: "red",
-                            brush: {type: "breakable-triangle",
+                           {brush: {type: "breakable-triangle",
                                     rotation: 3} } ) );
     regions.add( $.extend( grid.cell( {col: 1, row: 0} ),
-			   {colour: "green",
-                            brush: {type: "breakable-square"}} ) );
+                           {brush: {type: "breakable-square"}} ) );
     
     var currentBrush = null;
 
@@ -1187,10 +1213,13 @@ function initialize() {
 	function( click ) {
 	    var region = regions.at( click );
 	    if( region ) {
-                console.log( "tapping region of colour " + region.colour );
                 return {
                     tap: function() {
-                        currentBrush = region.brush;
+                        if( currentBrush == region.brush ) {
+                            currentBrush = null;
+                        } else {
+                            currentBrush = region.brush;
+                        }
                     }
                 }		
 	    }
@@ -1219,7 +1248,8 @@ function initialize() {
     setInterval( function() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
 	regions.onRegions( function( region ) {
-	    gamegraphics.drawColouredAABB( region, region.colour );
+            gamegraphics.drawColouredAABB( region, (region.brush == currentBrush) ? "yellow" : "#ddd" );
+            gamegraphics.drawElementIn( region.brush, region.rect() );
 	} );
 	render( gamegraphics );
     }, 1000.0 / 30.0 );
