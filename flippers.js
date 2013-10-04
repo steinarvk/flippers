@@ -447,6 +447,24 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
         return Math.min( 0.5 * rect.width, 0.5 * rect.height );
     }
 
+    function colourOf( base, deactivated ) {
+        if( base == "red" ) {
+            if( !deactivated ) {
+	        return "#e11";
+            }
+            return "#911";
+        }
+
+        if( base == "green" ) {
+            if( !deactivated ) {
+                return "#1b1";
+            }
+            return "#151";
+        }
+
+        return "#111";
+    }
+
     function drawFlippingFlipper( thing, degrees, rect ) {
         rect = rect || cellRect( thing );
 	var c = rectCenter( rect );
@@ -456,7 +474,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	var cosa = Math.cos( a );
 	var sina = Math.sin( a );
 	
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 	ctx.beginPath();
 	ctx.moveTo( c.x - r * cosa, c.y - r * sina );
 	ctx.lineTo( c.x + r * cosa, c.y + r * sina );
@@ -473,7 +491,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	var size = 1.0;
 	var sp = 3;
 
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 
 	if( options && options.disappear && options.disappear.phase ) {
 	    size = 1.0 - 0.8 * options.disappear.phase;
@@ -493,7 +511,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     function drawTriangle( thing, options, rect  ) {
         rect = rect || cellRect( thing );
 
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 	var sp = 3;
 	var dx = [-1,1,1,-1];
 	var dy = [1,1,-1,-1];
@@ -525,7 +543,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     function drawBreakableTriangle( thing, options, rect ) {
         rect = rect || cellRect( thing );
 
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 	var sp = 9;
 	var size = 1;
 	var dx = [-1,1,1,-1];
@@ -564,7 +582,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 
 	var size = 1.0;
 
-	ctx.strokeStyle = colourOf( "red", thing.deactivated );
+	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 
 	if( options && options.disappear && options.disappear.phase ) {
 	    size = 1.0 - 0.8 * options.disappear.phase;
@@ -584,7 +602,7 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     function drawSwitch( thing, options, rect ) {
         rect = rect || cellRect( thing );
 
-	ctx.fillStyle = colourOf( "red", thing.deactivated );
+	ctx.fillStyle = colourOf( thing.colour, thing.deactivated );
 	ctx.beginPath();
 	ctx.arc( rectCenter( rect ).x,
                  rectCenter( rect ).y,
@@ -640,10 +658,12 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	t = linearClipAndScale( t, 0.4, 1.0 );
 	if( t <= 0 ) {
 	    drawFlipper( {col: event.element.col,
+                          colour: event.element.colour,
 			  row: event.element.row,
 			  ascending: event.originallyAscending } );
 	} else if( t >= 1 ) {
 	    drawFlipper( {col: event.element.col,
+                          colour: event.element.colour,
 			  row: event.element.row,
 			  ascending: !event.originallyAscending } );
 	} else {
@@ -1158,13 +1178,6 @@ var predefinedLevels = {
     {"size":{"cols":9,"rows":9},"origin":{"col":4,"row":9},"initialVelocity":{"dx":0,"dy":-1},"target":{"col":4,"row":0},"elements":[{"col":4,"row":8,"type":"flipper","ascending":true},{"col":5,"row":8,"type":"flipper","ascending":true},{"col":5,"row":5,"type":"flipper","ascending":false},{"col":3,"row":6,"type":"flipper","ascending":true},{"col":3,"row":4,"type":"flipper","ascending":false},{"col":1,"row":5,"type":"flipper","ascending":false},{"col":0,"row":4,"type":"flipper","ascending":false},{"col":1,"row":2,"type":"flipper","ascending":false},{"col":4,"row":0,"type":"flipper","ascending":false},{"col":4,"row":6,"type":"flipper","ascending":false},{"col":4,"row":7,"type":"flipper","ascending":true},{"col":0,"row":6,"type":"flipper","ascending":false},{"col":1,"row":7,"type":"flipper","ascending":false},{"col":1,"row":4,"type":"flipper","ascending":false},{"col":0,"row":3,"type":"flipper","ascending":true},{"col":0,"row":2,"type":"flipper","ascending":false},{"col":0,"row":1,"type":"flipper","ascending":true},{"col":2,"row":1,"type":"flipper","ascending":false},{"col":2,"row":2,"type":"flipper","ascending":true},{"col":6,"row":4,"type":"flipper","ascending":false},{"col":7,"row":8,"type":"flipper","ascending":false},{"col":8,"row":8,"type":"flipper","ascending":true},{"col":8,"row":6,"type":"flipper","ascending":false},{"col":6,"row":6,"type":"flipper","ascending":true},{"col":6,"row":8,"type":"flipper","ascending":false},{"col":8,"row":5,"type":"flipper","ascending":true},{"col":6,"row":5,"type":"flipper","ascending":false},{"col":7,"row":3,"type":"flipper","ascending":true},{"col":7,"row":0,"type":"flipper","ascending":false},{"col":5,"row":0,"type":"flipper","ascending":true},{"col":5,"row":1,"type":"flipper","ascending":false},{"col":8,"row":1,"type":"flipper","ascending":false},{"col":5,"row":2,"type":"flipper","ascending":false},{"col":4,"row":2,"type":"flipper","ascending":false},{"col":4,"row":1,"type":"flipper","ascending":true},{"col":7,"row":5,"type":"flipper","ascending":true}]}
 };
 
-function colourOf( base, deactivated ) {
-    if( deactivated ) {
-	return "#755";
-    }
-    return "#f55";
-}
-
 function arrayRemoveElement( ar, element ) {
     var i = ar.indexOf( element );
     if( i > -1 ) {
@@ -1236,7 +1249,7 @@ function initialize() {
     function startGame() {
 	mySavedState = myState.save();
 	myState.start();
-	mySmoothState1 = SmoothGameState.wrap( myState );
+	mySmoothState = SmoothGameState.wrap( myState );
 	mySmoothState.start();
     }
 
@@ -1333,16 +1346,37 @@ function initialize() {
                                       {cols: 3,
                                        rows: 2},
                                       {margins: 2} );
-    inventory.add( {type: "flipper", ascending: true} );
-    inventory.add( {type: "breakable-triangle", rotation: 3} );
-    inventory.add( {type: "breakable-square"} );
-    inventory.add( {type: "triangle", rotation: 3} );
-    inventory.add( {type: "square"} );
-
-    inventory.nextSelected();
-    inventory.nextSelected();
-    inventory.nextSelected();
-
+    (function () {
+        var colours = ["red", "green", null];
+        var elements = [ {type: "flipper", ascending: true},
+                         {type: "breakable-triangle", rotation: 3},
+                         {type: "breakable-square"},
+                         {type: "triangle", rotation: 3},
+                         {type: "square"},
+                         {type: "switch"} ];
+        
+        for(var k = 0; k < 2; k++) {
+            for(var i = 0; i < colours.length; i++) {
+                for(var j = 0; j < elements.length; j++) {
+                    var deactivated = k == 1;
+                    if( !colours[i] && elements[j].type == "switch" ) {
+                        continue;
+                    }
+                    if( deactivated &&
+                        (!colours[i] || elements[j].type == "switch") ) {
+                        continue;
+                    }
+                    inventory.add( $.extend( {},
+                                             elements[j],
+                                             {colour: colours[i]},
+                                             deactivated ?
+                                             {deactivated: true}
+                                             :
+                                             {} ) );
+                }
+            }
+        }
+    })();
 
     function render( gfx ) {
 	if( mySmoothState ) {
