@@ -1408,6 +1408,13 @@ function initialize() {
 	}
     );
 
+    var kb = new Kibo();
+    kb.down( "left", function() {
+        inventory.previousSelected();
+    } ).down( "right", function() {
+        inventory.nextSelected();
+    } );
+
     setInterval( function() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
 	render( gamegraphics );
