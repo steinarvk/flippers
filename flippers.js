@@ -1441,6 +1441,12 @@ function initialize() {
 	return mySmoothState != null;
     }
 
+    function attemptMutation() {
+        if( running() ) {
+            stopGame();
+        }
+    }
+
     function toggleGame() {
 	if( running() ) {
 	    stopGame();
@@ -1627,9 +1633,13 @@ function initialize() {
 
 	    return {
 		hold: function( m ) {
+                    attemptMutation();
+
 		    myState.removeElementAtCell( cell );
 		},
 		tap: function( m ) {
+                    attemptMutation();
+
                     var element = myState.elementAtCell( cell );
                     if( element ) {
                         myState.setElement( configureElement( element ) );
