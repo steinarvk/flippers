@@ -1193,9 +1193,13 @@ var GameState = (function() {
 	}	
     }
 
+    function loadState( state ) {
+        return createState( JSON.parse( JSON.stringify( state ) ) );
+    }
+
     return {
 	create: createBlankState,
-	load: createState,
+	load: loadState,
 	loadOld: convertOldState
     }
 })();
