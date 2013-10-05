@@ -264,10 +264,8 @@ var Inventory = {create: function( select, area, size, options ) {
         var n = numberOfPages();
         if( n == 0 ) {
             i = 0;
-        } else if( i >= n ) {
-            i = n - 1;
-        } else if( i <= 0 ) {
-            i = 0;
+        } else {
+            i = ((i % n) + n) % n;
         }
         currentPage = i;
     }
@@ -1529,12 +1527,17 @@ function initialize() {
 					    );
     var currentBrush = null;
 
-    var regions = Regions.create();
+    var buttonregions = Regions.create();
     var wholeCanvas = AABB.create( {x: 0, y: 0, width: 480, height: 800 } );
     var sections = wholeCanvas.vsplit( [ {fixed: 480},
                                          {share: 1},
                                          {share: 1} ] );
-    var inventorySection = sections[1];
+    var inventorySections = sections[1].hsplit( [ {fixed: 100}, {}, {fixed: 100} ] );
+    // sure would be nice if we had some pattern matching
+    var previousInventoryPageButton = inventorySections[0];
+    var inventorySection = inventorySections[1];
+    var nextInventoryPageButton = inventorySections[2];
+    
     var controlsSection = sections[2];
     var controlsSubsections = controlsSection.hsplit( [ {}, {}, {}, {}, {} ] );
     var playButtonSection = controlsSubsections[0];
@@ -1588,11 +1591,9 @@ function initialize() {
 
         inventory.render( gfx );
 
-        if( running() ) {
-            gfx.drawColouredAABB( playButtonSection, "blue" );
-        } else {
-            gfx.drawColouredAABB( playButtonSection, "red" );
-        }
+        buttonregions.onRegions( function( region ) {
+            gfx.drawColouredAABB( region, region.colour );
+        } );
     }
 
     function configureElement( element ) {
@@ -1604,10 +1605,27 @@ function initialize() {
         return element;
     }
 
+    buttonregions.add( $.extend( {handler: function() {
+        toggleGame();
+    }, colour: "red" }, playButtonSection ) );
+
+    buttonregions.add( $.extend( {handler: function() {
+        inventory.previousPage();
+    }, colour: "blue" }, previousInventoryPageButton ) );
+
+    buttonregions.add( $.extend( {handler: function() {
+        inventory.nextPage();
+    }, colour: "yellow" }, nextInventoryPageButton ) );
+
     Mouse.handle(
 	canvas,
 	{holdDelay: 500},
 	function( click ) {
+            var buttonregion = buttonregions.at( click );
+            if( buttonregion ) {
+                return {tap: buttonregion.handler};
+            }
+
             if( inventory.region().contains( click ) ) {
                 var subregion = inventory.pageRegions().at( click );
                 if( subregion ) {
@@ -1622,12 +1640,6 @@ function initialize() {
                     }
                 }
                 return;
-            }
-
-            if( playButtonSection.contains( click ) ) {
-                return {
-                    tap: toggleGame
-                };
             }
 
 	    var cell = gamegraphics.cellAtPosition( click );
