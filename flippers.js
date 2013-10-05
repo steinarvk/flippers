@@ -32,10 +32,8 @@ var LayoutShare = (function() {
             var proper = available * specShare( spec ) / totalShare;
             var minimal = specMin(spec);
             if( minimal >= proper ) {
-                console.log( "zero nonminimal share" );
                 return 0;
             }
-            console.log( "nominimal share " + specShare( spec ) );
             return specShare( spec );
         } ).reduce( sum );
         var totalMinimalSpace = specs.map( function( spec ) {
@@ -66,27 +64,34 @@ var LayoutShare = (function() {
     };
 })();
 
-var SteadyTimer = {create: function( target, hook ) {
+var SteadyTimer = {create: function( target, hook, options ) {
     var currentId = null;
     var lastTime = null;
     var accumulated = 0;
+    var isRunning = false;
 
     function onTrigger() {
         var now = new Date().getTime();
         if( lastTime ) {
-            var delta = now - lastTime;
-            accumulated += delta;
-            while( accumulated >= target ) {
-                hook();
-                accumulated -= target;
-            }
+            addTime( now - lastTime );
         }
         lastTime = now;
+    }
+
+    function addTime( delta ) {
+        accumulated += delta;
+        while( accumulated >= target ) {
+            hook();
+            accumulated -= target;
+        }
     }
     
     function start() {
         stop();
-        currentId = setInterval( onTrigger, 0.5 * target );
+        if( !options.manual ) {
+            currentId = setInterval( onTrigger, 0.5 * target );
+        }
+        isRunning = true;
     }
 
     function stop() {
@@ -94,16 +99,18 @@ var SteadyTimer = {create: function( target, hook ) {
             clearInterval( currentId );
             currentId = null;
         }
+        isRunning = false;
     }
 
     function running() {
-        return currentId != null;
+        return isRunning;
     }
 
     return {
         start: start,
         stop: stop,
-        running: running
+        running: running,
+        addTime: addTime
     }
 } };
 
@@ -1194,9 +1201,11 @@ var GameState = (function() {
 })();
 
 var SmoothGameState = { wrap: function( gamestate ) {
-    var target = 20;
+    var target = 40;
     var counter = 0;
-    var timer = SteadyTimer.create( 20.0, advance );
+    var timer = SteadyTimer.create( 7.0,
+                                    advance,
+                                    {manual: true} );
 
     function phase() {
 	return counter / target;
@@ -1270,6 +1279,20 @@ var SmoothGameState = { wrap: function( gamestate ) {
 	    stop();
 	}
     }
+
+    var lastCatchup = null;
+
+    function catchup() {
+        if( !timer.running() ) {
+            return;
+        }
+        var now = new Date().getTime();
+        if( lastCatchup ) {
+            var delta = now - lastCatchup;
+            timer.addTime( delta );
+        }
+        lastCatchup = now;
+    }
     
     function running() {
         return timer.running();
@@ -1288,6 +1311,8 @@ var SmoothGameState = { wrap: function( gamestate ) {
 	    return;
 	}
 
+        lastCatchup = null;
+
         timer.stop();
     }
 
@@ -1297,7 +1322,8 @@ var SmoothGameState = { wrap: function( gamestate ) {
 	running: running,
 	render: render,
         tickCounter: getTickCounter,
-        resetTickCounter: resetTickCounter
+        resetTickCounter: resetTickCounter,
+        catchup: catchup
     }
 } };
 
@@ -1618,10 +1644,13 @@ function initialize() {
         inventory.nextSelected();
     } );
     
-    SteadyTimer.create( 1000.0 / 30.0, function() {
+    setInterval( function() {
+        if( mySmoothState ) {
+            mySmoothState.catchup();
+        }
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
 	render( gamegraphics );
-    } ).start();
+    }, 1000 / 30.0 );
 }
 
 function declareResult( result ) {
