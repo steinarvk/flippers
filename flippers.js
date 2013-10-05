@@ -1656,11 +1656,16 @@ function initialize() {
     );
 
     var kb = new Kibo();
-    kb.down( "left", function() {
-        inventory.previousSelected();
-    } ).down( "right", function() {
-        inventory.nextSelected();
-    } );
+    kb
+        .down( "left", function() {
+            inventory.previousSelected();
+        } )
+        .down( "right", function() {
+            inventory.nextSelected();
+        } )
+        .down( "space", function() {
+            toggleGame();
+        } );
     
     setInterval( function() {
         if( mySmoothState ) {
