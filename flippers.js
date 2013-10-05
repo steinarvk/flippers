@@ -1,3 +1,71 @@
+var LayoutShare = (function() {
+    function specMin( spec ) {
+        if( spec.fixed ) {
+            return spec.fixed;
+        }
+        if( spec.min ) {
+            return spec.min;
+        }
+        return 0;
+    }
+
+    function specShare( spec ) {
+        if( spec.fixed ) {
+            return 0;
+        }
+        if( spec.share ) {
+            return spec.share;
+        }
+        return 1;
+    }
+
+    function sum( x, y ) {
+        return x + y;
+    }
+
+    function allot( available, specs ) {
+        var minimums = specs.map( specMin );
+        var total = minimums.reduce( sum );
+        var excess = available - total;
+        var totalShare = specs.map( specShare ).reduce( sum );
+        var totalNonminimalShare = specs.map( function( spec ) {
+            var proper = available * specShare( spec ) / totalShare;
+            var minimal = specMin(spec);
+            if( minimal >= proper ) {
+                console.log( "zero nonminimal share" );
+                return 0;
+            }
+            console.log( "nominimal share " + specShare( spec ) );
+            return specShare( spec );
+        } ).reduce( sum );
+        var totalMinimalSpace = specs.map( function( spec ) {
+            var proper = available * specShare( spec ) / totalShare;
+            var minimal = specMin(spec);
+            if( minimal >= proper ) {
+                return minimal;
+            }
+            return 0;
+        } ).reduce( sum );
+        var realExcess = available - totalMinimalSpace;
+
+        if( excess <= 0 ) {
+            return minimums;
+        }
+        return specs.map( function(spec) {
+            var proper = available * specShare( spec ) / totalShare;
+            var minimal = specMin(spec);
+            if( minimal >= proper ) {
+                return minimal;
+            }
+            return realExcess * specShare( spec ) / totalNonminimalShare;
+        } );
+    }
+
+    return {
+        allot: allot
+    };
+})();
+
 var AABB = {create: function( rect ) {
     function inside( p ) {
         return p.x >= rect.x
@@ -10,9 +78,37 @@ var AABB = {create: function( rect ) {
         return rect;
     }
 
+    function hsplit( specs ) {
+        var x0 = rect.x;
+        return LayoutShare.allot( rect.width, specs ).map( function(w) {
+            x0 += w;
+            return AABB.create( {x: x0 - w,
+                                 y: rect.y,
+                                 width: w,
+                                 height: rect.height} );
+        } );
+    }
+
+    function vsplit( specs ) {
+        var y0 = rect.y;
+        return LayoutShare.allot( rect.height, specs ).map( function(h) {
+            y0 += h;
+            return AABB.create( {x: rect.x,
+                                 y: y0 - h,
+                                 width: rect.width,
+                                 height: h } );
+        } );
+    }
+
     return {
         contains: inside,
-        rect: getRect
+        rect: getRect,
+        hsplit: hsplit,
+        vsplit: vsplit,
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height
     };
 } };
 
@@ -1341,14 +1437,20 @@ function initialize() {
     var currentBrush = null;
 
     var regions = Regions.create();
+    var wholeCanvas = AABB.create( {x: 0, y: 0, width: 480, height: 800 } );
+    var sections = wholeCanvas.vsplit( [ {fixed: 480},
+                                         {share: 1},
+                                         {share: 1} ] );
+    var inventorySection = sections[1];
+    var controlsSection = sections[2];
+    var controlsSubsections = controlsSection.hsplit( [ {}, {}, {}, {}, {} ] );
+    var playButtonSection = controlsSubsections[0];
+
     var inventory = Inventory.create(
         function(region) {
             currentBrush = region.item;
         },
-        {y: 480,
-         x: 0,
-         width: 480,
-         height: 200},
+        inventorySection,
         {cols: 3,
          rows: 2},
         {margins: 2} );
@@ -1392,6 +1494,12 @@ function initialize() {
 	}
 
         inventory.render( gfx );
+
+        if( running() ) {
+            gfx.drawColouredAABB( playButtonSection, "blue" );
+        } else {
+            gfx.drawColouredAABB( playButtonSection, "red" );
+        }
     }
 
     function configureElement( element ) {
@@ -1421,6 +1529,12 @@ function initialize() {
                     }
                 }
                 return;
+            }
+
+            if( playButtonSection.contains( click ) ) {
+                return {
+                    tap: toggleGame
+                };
             }
 
 	    var cell = gamegraphics.cellAtPosition( click );
