@@ -1197,10 +1197,14 @@ var GameState = (function() {
         return createState( JSON.parse( JSON.stringify( state ) ) );
     }
 
+    function loadOldState( state ) {
+        return convertOldState( JSON.parse( JSON.stringify( state ) ) );
+    }
+
     return {
 	create: createBlankState,
 	load: loadState,
-	loadOld: convertOldState
+	loadOld: loadOldState
     }
 })();
 
