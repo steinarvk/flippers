@@ -66,6 +66,47 @@ var LayoutShare = (function() {
     };
 })();
 
+var SteadyTimer = {create: function( target, hook ) {
+    var currentId = null;
+    var lastTime = null;
+    var accumulated = 0;
+
+    function onTrigger() {
+        var now = new Date().getTime();
+        if( lastTime ) {
+            var delta = now - lastTime;
+            accumulated += delta;
+            while( accumulated >= target ) {
+                hook();
+                accumulated -= target;
+            }
+        }
+        lastTime = now;
+    }
+    
+    function start() {
+        stop();
+        currentId = setInterval( onTrigger, 0.5 * target );
+    }
+
+    function stop() {
+        if( currentId ) {
+            clearInterval( currentId );
+            currentId = null;
+        }
+    }
+
+    function running() {
+        return currentId != null;
+    }
+
+    return {
+        start: start,
+        stop: stop,
+        running: running
+    }
+} };
+
 var AABB = {create: function( rect ) {
     function inside( p ) {
         return p.x >= rect.x
@@ -547,9 +588,9 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
     function colourOf( base, deactivated ) {
         if( base == "red" ) {
             if( !deactivated ) {
-	        return "#e11";
+	        return "#e32";
             }
-            return "#911";
+            return "#932";
         }
 
         if( base == "green" ) {
@@ -1153,9 +1194,9 @@ var GameState = (function() {
 })();
 
 var SmoothGameState = { wrap: function( gamestate ) {
-    var target = 40;
+    var target = 20;
     var counter = 0;
-    var timerId = null;
+    var timer = SteadyTimer.create( 20.0, advance );
 
     function phase() {
 	return counter / target;
@@ -1207,7 +1248,18 @@ var SmoothGameState = { wrap: function( gamestate ) {
 	gfx.drawBall( interpolatedBallPosition( ball ) );
     }
 
+    var tickCounter = 0;
+
+    function resetTickCounter() {
+        tickCounter = 0;
+    }
+
+    function getTickCounter() {
+        return tickCounter;
+    }
+
     function advance() {
+        tickCounter += 1;
 	counter += 1;
 	while( counter > target ) {
 	    gamestate.advance()
@@ -1220,31 +1272,32 @@ var SmoothGameState = { wrap: function( gamestate ) {
     }
     
     function running() {
-	return timerId != null;
+        return timer.running();
     }
     
     function start() {
 	if( running() ) {
 	    return;
 	}
-	
-	timerId = setInterval( advance, 10 );
+        
+        timer.start();
     }
     
     function stop() {
 	if( !running() ) {
 	    return;
 	}
-	
-	clearInterval( timerId );
-	timerId = null;
+
+        timer.stop();
     }
 
     return {
 	start: start,
 	stop: stop,
 	running: running,
-	render: render
+	render: render,
+        tickCounter: getTickCounter,
+        resetTickCounter: resetTickCounter
     }
 } };
 
@@ -1333,7 +1386,7 @@ function initialize() {
     jqcanvas = $(canvas);
 
     var myState = GameState.loadOld(
-	{"rows":7,"cols":7,"contents":[{"type":"flipper","col":4,"row":2,"ascending":false},{"type":"flipper","col":3,"row":1,"ascending":true},{"type":"flipper","col":5,"row":1,"ascending":false},{"type":"flipper","col":5,"row":3,"ascending":true},{"type":"flipper","col":5,"row":4,"ascending":true},{"type":"flipper","col":4,"row":4,"ascending":false},{"type":"flipper","col":2,"row":2,"ascending":true},{"type":"flipper","col":2,"row":3,"ascending":false},{"type":"flipper","col":1,"row":0,"ascending":false},{"type":"flipper","col":0,"row":0,"ascending":true},{"type":"flipper","col":0,"row":3,"ascending":false},{"type":"flipper","col":1,"row":3,"ascending":true}]}
+	{"rows":7,"cols":7,"contents":[]}
     );
     var mySmoothState = null;
     var mySavedState = null;
@@ -1564,11 +1617,11 @@ function initialize() {
     } ).down( "right", function() {
         inventory.nextSelected();
     } );
-
-    setInterval( function() {
+    
+    SteadyTimer.create( 1000.0 / 30.0, function() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
 	render( gamegraphics );
-    }, 1000.0 / 30.0 );
+    } ).start();
 }
 
 function declareResult( result ) {
