@@ -43,7 +43,7 @@ var RegionGrid = {create: function( area, size, options ) {
     };
 } };
 
-var Inventory = {create: function( area, size, options ) {
+var Inventory = {create: function( select, area, size, options ) {
     var grid = RegionGrid.create( area, size, options );
     var itemRegions = [];
     var pageSize = size.cols * size.rows;
@@ -56,6 +56,7 @@ var Inventory = {create: function( area, size, options ) {
         if( region ) {
             setPage( region.page );
         }
+        select( selected );
     }
 
     function region() {
@@ -698,16 +699,6 @@ var DiagramGraphics = { create: function(canvas, area, boardsize) {
 	}
 	return f( event, t );
     }
-
-    function cellAtPosition( pos ) {
-	var x = (pos.x - offset.x) / cellsize;
-	var y = (pos.y - offset.y) / cellsize;
-	if( x < 0 || y < 0 || x >= boardColumns || y >= boardRows ) {
-	    return null;
-	}
-	return { col: Math.floor( x ),
-		 row: Math.floor( y ) };
-    }
     
     setBoardSize( boardsize );
 
@@ -1347,15 +1338,20 @@ function initialize() {
 					      {cols: 9,
 					       rows: 9}
 					    );
+    var currentBrush = null;
 
     var regions = Regions.create();
-    var inventory = Inventory.create( {y: 480,
-                                       x: 0,
-                                       width: 480,
-                                       height: 200},
-                                      {cols: 3,
-                                       rows: 2},
-                                      {margins: 2} );
+    var inventory = Inventory.create(
+        function(region) {
+            currentBrush = region.item;
+        },
+        {y: 480,
+         x: 0,
+         width: 480,
+         height: 200},
+        {cols: 3,
+         rows: 2},
+        {margins: 2} );
     (function () {
         var colours = ["red", "green", null];
         var elements = [ {type: "flipper", ascending: true},
@@ -1398,8 +1394,6 @@ function initialize() {
         inventory.render( gfx );
     }
 
-    var currentBrush = null;
-
     function configureElement( element ) {
         if( element.rotation !== undefined ) {
             element.rotation = (element.rotation + 1) % 4;
@@ -1420,10 +1414,8 @@ function initialize() {
                         tap: function() {
                             if( currentBrush == subregion.item ) {
                                 inventory.setSelected( null );
-                                currentBrush = null;
                             } else {
                                 inventory.setSelected( subregion );
-                                currentBrush = subregion.item;
                             }
                         }
                     }
