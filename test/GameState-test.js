@@ -4,6 +4,70 @@ var GameState = require("../src/GameState");
 
 var PredefinedLevels = require("../src/PredefinedLevels" );
 
+function calculateExit( state, limit ) {
+    limit = limit || 1000;
+    var game = GameState.load( state );
+
+    game.start();
+    
+    for(var i = 0; i < limit; i++) {
+        if( game.status() != "running" ) {
+            return game.ball();
+        }
+        game.advance();
+    }
+
+    return null;
+}
+
+buster.testCase( "Scenarios", {
+    "empty": function() {
+        var ball = calculateExit( {size: {cols: 3, rows: 3},
+                                   origin: {col: 1, row: 3},
+                                   initialVelocity: {dx: 0, dy: -1},
+                                   target: {col: 1, row: -1},
+                                   elements: []
+                                   } );
+        buster.assert.equals( ball.position, {col: 1, row: -1} );
+    },
+    "basic ascending flip": function() {
+        var ball = calculateExit( {size: {cols: 3, rows: 3},
+                                   origin: {col: 1, row: 3},
+                                   initialVelocity: {dx: 0, dy: -1},
+                                   target: {col: 1, row: -1},
+                                   elements: [{type: "flipper",
+                                               col: 1,
+                                               row: 1,
+                                               ascending: true}]
+                                   } );
+        buster.assert.equals( ball.position, {col: 3, row: 1} );
+    },
+    "basic descending flip": function() {
+        var ball = calculateExit( {size: {cols: 3, rows: 3},
+                                   origin: {col: 1, row: 3},
+                                   initialVelocity: {dx: 0, dy: -1},
+                                   target: {col: 1, row: -1},
+                                   elements: [{type: "flipper",
+                                               col: 1,
+                                               row: 1,
+                                               ascending: false}]
+                                   } );
+        buster.assert.equals( ball.position, {col: -1, row: 1} );
+    },
+    "basic head-on bounce": function() {
+        var ball = calculateExit( {size: {cols: 3, rows: 3},
+                                   origin: {col: 1, row: 3},
+                                   initialVelocity: {dx: 0, dy: -1},
+                                   target: {col: 1, row: -1},
+                                   elements: [{type: "square",
+                                               col: 1,
+                                               row: 1}]
+                                   } );
+        buster.assert.equals( ball.position, {col: 1, row: 3} );
+    }
+} );
+
+
 buster.testCase( "GameState", {
     "no mutation of loaded level (old level format)": function() {
         var data = {"rows":7,"cols":7,"contents":[{"type":"flipper","col":6,"row":5,"ascending":true},{"type":"flipper","col":6,"row":1,"ascending":false},{"type":"flipper","col":4,"row":1,"ascending":true},{"type":"flipper","col":4,"row":3,"ascending":true},{"type":"flipper","col":3,"row":3,"ascending":true},{"type":"flipper","col":2,"row":3,"ascending":false},{"type":"flipper","col":2,"row":1,"ascending":false},{"type":"flipper","col":0,"row":1,"ascending":true}]};
