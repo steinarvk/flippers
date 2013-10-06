@@ -1,0 +1,40 @@
+Patterns of the form
+ /x\
+ x|x
+ \x/
+
+Where the corners are fixed, the center is a fixed square,
+and the x's are flippers.
+
+16 states.
+
+Proceed by symmetry assuming lower flipper is /. 8 states.
+
+ ?
+? /
+ /
+
+4 states: trivial right.
+
+4 states left.
+
+ /
+/ \
+ /
+
+Left.
+
+ \
+? \
+ /
+
+2 states: straight ahead.
+
+ /
+\ \
+ /
+
+Back.
+
+This pattern is especially interesting because it can lead to all four directions!
+
