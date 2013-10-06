@@ -1,8 +1,7 @@
 var config = module.exports;
 
-config["Flippers tests"] = {
+config["LayoutShare tests"] = {
     rootPath: "../",
     environment: "node",
-    sources: ["flippers.js"],
-    tests: ["test/flippers-test.js"]
+    tests: ["test/*-test.js"]
 };
