@@ -79,6 +79,21 @@ buster.testCase( "Scenarios", {
                                               row: 1}]
                                    } );
         buster.assert.equals( ball.position, {col: 1, row: -1} );
+    },
+    "problematic switch situation": function() {
+        var ball = calculateExit( {"size":{"cols":7,"rows":7},"origin":{"col":3,"row":7},"initialVelocity":{"dx":0,"dy":-1},"target":{"col":3,"row":7},"elements":[{"col":3,"row":3,"type":"switch","colour":"red"},{"col":3,"row":2,"type":"square","colour":"red","deactivated":true},{"col":3,"row":4,"type":"triangle","rotation":3,"colour":"red","deactivated":true}]} );
+
+        buster.assert.equals( ball.position, {col: -1, row: 4} );
+    },
+    "switch situation sanity check": function() {
+        var ball = calculateExit( {"size":{"cols":7,"rows":7},"origin":{"col":3,"row":7},"initialVelocity":{"dx":0,"dy":-1},"target":{"col":3,"row":7},"elements":[{"col":3,"row":2,"type":"square","colour":"red","deactivated":true},{"col":3,"row":4,"type":"triangle","rotation":0,"colour":"red","deactivated":true},{"col":3,"row":6,"type":"switch","colour":"red"}]} );
+
+        buster.assert.equals( ball.position, {col: -1, row: 4} );
+    },
+    "deactivated elements": function() {
+        var ball = calculateExit( {"size":{"cols":7,"rows":7},"origin":{"col":3,"row":7},"initialVelocity":{"dx":0,"dy":-1},"target":{"col":3,"row":7},"elements":[{"col":3,"row":2,"type":"square","colour":"red","deactivated":true},{"col":3,"row":4,"type":"triangle","rotation":0,"colour":"red","deactivated":true}]} );
+
+        buster.assert.equals( ball.position, {col: 3, row: -1} );
     }
 } );
 
