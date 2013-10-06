@@ -20,6 +20,7 @@ module.exports = {create: function() {
 	if( rv ) {
 	    return rv[0];
 	}
+        return null;
     }
 
     function onEachRegion( f ) {

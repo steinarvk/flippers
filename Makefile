@@ -14,6 +14,9 @@ test:
 
 bundle: $(BUNDLE_NAME)
 
+root: bundle
+	cp $(BUNDLE_NAME) .
+
 android: bundle
 	cp $(EXTRA_ASSETS) $(ANDROID_TARGET)
 	cp $(BUNDLE_NAME) $(ANDROID_TARGET)

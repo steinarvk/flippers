@@ -1,5 +1,15 @@
-module.exports = { handle: function( root, options, handler ) {
+module.exports = { create: function( root, options, handler ) {
     var context = null;
+
+    var lastPosition = null;
+
+    function handleMove( e ) {
+        lastPosition = extract( e );
+    }
+
+    function getLastPosition() {
+        return lastPosition;
+    }
 
     function now() {
 	return new Date().getTime();
@@ -56,6 +66,7 @@ module.exports = { handle: function( root, options, handler ) {
 		return {x: e.touches[0].pageX - root.style.left,
 			y: e.touches[0].pageY - root.style.top};
 	    }
+            return null;
 	} else {
 	    return {
 		x: e.pageX - root.style.left,
@@ -85,5 +96,10 @@ module.exports = { handle: function( root, options, handler ) {
 	console.log( "element " + root );
 	root.onmousedown = handleDown;
 	root.onmouseup = handleUp;
+        root.onmousemove = handleMove;
     }
+
+    return {
+        lastPosition: getLastPosition
+    };
 } };

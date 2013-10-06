@@ -6,6 +6,7 @@ var Inventory = require("./Inventory");
 var Mouse = require("./Mouse");
 var Regions = require("./Regions");
 var PredefinedLevels = require("./PredefinedLevels");
+var Menu = require("./Menu");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -55,6 +56,55 @@ function initialize() {
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
 
+    $("#flippersGame").append( $(canvas) );
+
+    runPregameMenu();
+}
+
+function runPregameMenu() {
+    var canvas = document.getElementById( "flippersCanvas" );
+
+    var testMenu = Menu.create(
+        canvas,
+        {x: 0, y: 0, width: 480, height: 800},
+        [
+            {text: "Hello",
+             activate: function() {
+                 cancelEverything();
+                 runGame();
+             }},
+            {text: "World",
+             activate: function() {
+                 console.log( "World activated" );
+             }}
+        ] );
+
+
+    // This is clearly a problem. There should be a
+    // single "Screen" and many "Scenes" -- Scene has a draw
+    // method, Screen calls it.
+    var cancelId = setInterval( function() {
+        testMenu.draw()
+    }, 1000.0 / 30.0 );
+
+    // Similarly, Screen constructs a single mouse handler
+    // and gives the events to the active scene.
+
+    var mouse = Mouse.create(
+	canvas,
+	{holdDelay: 500},
+        testMenu.mouseHandler
+    );
+
+    testMenu.setMouse( mouse );
+
+    function cancelEverything() {
+        clearInterval( cancelId );
+    }
+}
+
+function runGame() {
+    var canvas = document.getElementById( "flippersCanvas" );
     var jqcanvas = $(canvas);
 
     var myState = GameState.loadOld(
@@ -69,7 +119,7 @@ function initialize() {
     }
 
     function startGame() {
-	mySavedState = myState.save();
+       	mySavedState = myState.save();
 	myState.start();
 	mySmoothState = SmoothGameState.wrap( myState );
 	mySmoothState.start();
@@ -114,7 +164,6 @@ function initialize() {
     }
 
     $("#flippersGame")
-	.append( jqcanvas )
 	.append( $(document.createElement("br")) )
 	.append( $(document.createElement("button"))
 		 .attr( "id", "startstopbutton" )
@@ -222,20 +271,6 @@ function initialize() {
         }
     })();
 
-    function render( gfx ) {
-	if( mySmoothState ) {
-	    mySmoothState.render( gfx );
-	} else {
-	    myState.render( gfx );
-	}
-
-        inventory.render( gfx );
-
-        buttonregions.onRegions( function( region ) {
-            gfx.drawColouredAABB( region, region.colour );
-        } );
-    }
-
     function configureElement( element ) {
         if( element.rotation !== undefined ) {
             element.rotation = (element.rotation + 1) % 4;
@@ -257,7 +292,8 @@ function initialize() {
         inventory.nextPage();
     }, colour: "yellow" }, nextInventoryPageButton ) );
 
-    Mouse.handle(
+
+    var mouse = Mouse.create(
 	canvas,
 	{holdDelay: 500},
 	function( click ) {
@@ -307,6 +343,21 @@ function initialize() {
 	}
     );
 
+
+    function render( gfx ) {
+	if( mySmoothState ) {
+	    mySmoothState.render( gfx );
+	} else {
+	    myState.render( gfx );
+	}
+
+        inventory.render( gfx );
+
+        buttonregions.onRegions( function( region ) {
+            gfx.drawColouredAABB( region, region.colour );
+        } );
+    }
+
     var kb = new Kibo();
     kb
         .down( "left", function() {
@@ -327,5 +378,6 @@ function initialize() {
 	render( gamegraphics );
     }, 1000 / 30.0 );
 }
+
 
 module.exports.initialize = initialize;
