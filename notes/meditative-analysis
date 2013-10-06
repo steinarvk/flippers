@@ -1,0 +1,80 @@
+Analysis of the pattern:
+
+/x\
+xxx
+\x/
+
+Where the outer corners are
+fixed and the x's are all
+flippers.
+
+Summary: this pattern always results in a 90 degree
+rotation.
+
+Of course the family of patterns is symmetric, so this
+means that whatever direction you enter from, you
+will leave rotated by 90 degrees.
+
+It is impossible for a pattern of this kind to either
+turn the ball straight around, or to allow it to pass
+straight through.
+
+(We can prove this easily without resorting to
+exhaustion:
+     a
+    ABA
+   aBABa
+    ABA
+     a
+
+The ball is initially in state a, and will end
+up in state a. Transitions are a->A, A->B, B->A, B->a.
+Clearly the ball must visit a capital letter an odd
+number of times. Since direction changes (only) when
+visiting a capital letter and then always by 90 degrees,
+the direction is changed by 180n + 90 degrees, that is,
+90 or 270 degrees.)
+
+An interesting thing about the pattern is that running
+the ball after travelling through the pattern leaves it
+in another configuration in the same family.
+
+I haven't yet studied the way the patterns transition
+into each other compared to the output rotation.
+
+32 total patterns
+
+ ?
+\??
+ \
+
+8 patterns simple left
+
+ ?
+??/
+ /
+
+8 patterns simple right
+
+16 remaining patterns
+
+ ?    ?
+/\?  ?/\
+ \    /
+
+8 patterns, medium left, medium right
+
+8 remaining patterns
+
+ x    x
+//x  x\\
+ \    /
+
+all go left, right
+
+ \    /
+\\\  ///
+ /    \
+
+
+2 patterns: complex left, complex right
