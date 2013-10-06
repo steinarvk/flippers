@@ -64,7 +64,22 @@ buster.testCase( "Scenarios", {
                                                row: 1}]
                                    } );
         buster.assert.equals( ball.position, {col: 1, row: 3} );
-    }
+    },
+    "flip and head-on-bounce": function() {
+        var ball = calculateExit( {size: {cols: 3, rows: 3},
+                                   origin: {col: 1, row: 3},
+                                   initialVelocity: {dx: 0, dy: -1},
+                                   target: {col: 1, row: -1},
+                                   elements: [{type: "flipper",
+                                               col: 1,
+                                               row: 1,
+                                               ascending: false},
+                                             {type: "square",
+                                              col: 0,
+                                              row: 1}]
+                                   } );
+        buster.assert.equals( ball.position, {col: 1, row: -1} );
+    },
 } );
 
 
