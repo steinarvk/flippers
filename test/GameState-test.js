@@ -79,7 +79,7 @@ buster.testCase( "Scenarios", {
                                               row: 1}]
                                    } );
         buster.assert.equals( ball.position, {col: 1, row: -1} );
-    },
+    }
 } );
 
 
