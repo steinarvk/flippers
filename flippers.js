@@ -1706,3 +1706,8 @@ function declareResult( result ) {
     }
 }
 
+
+if( module && module.exports !== undefined ) {
+    module.exports.LayoutShare = LayoutShare;
+    module.exports.SteadyTimer = SteadyTimer;
+}
