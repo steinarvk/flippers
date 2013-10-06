@@ -233,7 +233,11 @@ function runGame() {
 
     var inventory = Inventory.create(
         function(region) {
-            currentBrush = region.item;
+            if( region == null ) {
+                currentBrush = null;
+            } else {
+                currentBrush = region.item;
+            }
         },
         inventorySection,
         {cols: 3,
