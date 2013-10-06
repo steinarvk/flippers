@@ -50,12 +50,12 @@ function initialize() {
     var canvasWidth = 480;
     var canvasHeight = 800;
 
-    canvas = document.createElement( "canvas" );
+    var canvas = document.createElement( "canvas" );
     canvas.id = "flippersCanvas";
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
 
-    jqcanvas = $(canvas);
+    var jqcanvas = $(canvas);
 
     var myState = GameState.loadOld(
 	{"rows":7,"cols":7,"contents":[]}
@@ -277,14 +277,14 @@ function initialize() {
                                 inventory.setSelected( subregion );
                             }
                         }
-                    }
+                    };
                 }
-                return;
+                return null;
             }
 
 	    var cell = gamegraphics.cellAtPosition( click );
 	    if( !cell ) {
-		return;
+		return null;
 	    }
 
 	    return {
@@ -303,7 +303,7 @@ function initialize() {
                         myState.setElement( $.extend( {}, cell, currentBrush ) );
                     }
 		}
-	    }
+	    };
 	}
     );
 
