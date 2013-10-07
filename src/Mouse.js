@@ -34,6 +34,10 @@ module.exports = { create: function( root, options, handler ) {
 		trigger( "hold" );
 	    }, options.holdDelay );
 	}
+
+        if( Modernizr.touch ) {
+            lastPosition = pos;
+        }
     }
 
     function trigger( type, pos ) {
@@ -58,6 +62,9 @@ module.exports = { create: function( root, options, handler ) {
 
     function up( pos ) {
 	trigger( "tap", pos );
+        if( Modernizr.touch ) {
+            lastPosition = null;
+        }
     }
     
     function extract( e ) {
