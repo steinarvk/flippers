@@ -31,7 +31,7 @@ var Menu = {create: function(canvas, area, items) {
         var heightSlack = 0.9;
         var maxWidth = Math.floor( area.width * 0.9 );
         var height = Math.min( 150, Math.floor( area.height * 0.9 / items.length ) );
-        
+
         var padding = 0.1;
 
         var pad = Math.max( maxWidth * padding * 0.5, height * padding * 0.5 );

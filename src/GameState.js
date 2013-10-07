@@ -40,6 +40,19 @@ module.exports = (function() {
 	);
     };
 
+    function decorateStateWithDefaults( state ) {
+        var origin = state.origin || defaultOrigin( state.size );
+        var vel = state.initialVelocity || defaultInitialVelocity( origin );
+        var target = state.target || defaultTarget( state.size );
+        return {
+            size: state.size,
+            origin: origin,
+            initialVelocity: vel,
+            target: target,
+            elements: state.elements            
+        };
+    }
+
     function createState( state ) {
 	var events = null;
 
@@ -359,6 +372,7 @@ module.exports = (function() {
     }
 
     function loadState( state ) {
+        state = decorateStateWithDefaults( state );
         return createState( JSON.parse( JSON.stringify( state ) ) );
     }
 

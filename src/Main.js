@@ -126,6 +126,9 @@ function runGame() {
     }
 
     function stopGame() {
+        if( !running() ) {
+            return;
+        }
 	setState( GameState.load( mySavedState ) );
     }
 
@@ -145,6 +148,30 @@ function runGame() {
 	} else {
 	    startGame();
 	}
+    }
+
+    function clearGame() {
+        stopGame();
+
+        var st = myState.save();
+        var minsize = 3;
+        var maxsize = 9;
+
+        if( st.elements.length == 0 ) {
+            // Cycle through different widths/heights.
+            var n = (Math.floor( st.size.cols / 2 ) + 1) * 2 + 1;
+            if( n > maxsize ) {
+                n = minsize;
+            }
+
+            st.size.cols = st.size.rows = n;
+
+            st.origin = st.initialVelocity = st.target = null;
+        } else {
+            st.elements = [];
+        }
+
+        loadLevel( JSON.stringify( st ) );
     }
 
     function saveLevel() {
@@ -228,8 +255,14 @@ function runGame() {
     var nextInventoryPageButton = inventorySections[2];
     
     var controlsSection = sections[2];
-    var controlsSubsections = controlsSection.hsplit( [ {}, {}, {}, {}, {} ] );
+    var controlsSubsections = controlsSection.hsplit( [ {},
+                                                        {},
+                                                        {},
+                                                        {},
+                                                        {},
+                                                        {} ] );
     var playButtonSection = controlsSubsections[0];
+    var clearButtonSection = controlsSubsections[5];
 
     var inventory = Inventory.create(
         function(region) {
@@ -287,6 +320,10 @@ function runGame() {
     buttonregions.add( $.extend( {handler: function() {
         toggleGame();
     }, colour: "red" }, playButtonSection ) );
+
+    buttonregions.add( $.extend( {handler: function() {
+        clearGame();
+    }, colour: "purple" }, clearButtonSection ) );
 
     buttonregions.add( $.extend( {handler: function() {
         inventory.previousPage();
