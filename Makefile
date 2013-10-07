@@ -21,7 +21,7 @@ android: bundle
 	cp $(EXTRA_ASSETS) $(ANDROID_TARGET)
 	cp $(BUNDLE_NAME) $(ANDROID_TARGET)
 
-$(BUNDLE_NAME): src/bootstrap.js src/AABB.js src/DiagramGraphics.js src/GameState.js src/Inventory.js src/LayoutShare.js src/Main.js src/Map2D.js src/Mouse.js src/PredefinedLevels.js src/RegionGrid.js src/Regions.js src/SmoothGameState.js src/SteadyTimer.js src/Util.js
+$(BUNDLE_NAME): src/bootstrap.js src/AABB.js src/DiagramGraphics.js src/GameState.js src/Inventory.js src/LayoutShare.js src/Main.js src/Map2D.js src/Mouse.js src/PredefinedLevels.js src/RegionGrid.js src/Regions.js src/SmoothGameState.js src/SteadyTimer.js src/Util.js src/Solver.js
 	mkdir -p generated/
 	browserify --debug src/bootstrap.js > $@
 
