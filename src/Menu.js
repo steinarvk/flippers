@@ -1,16 +1,11 @@
 var Regions = require("./Regions");
 var AABB = require("./AABB");
 
-var Menu = {create: function(canvas, area, items) {
+var Menu = {create: function(canvas, area, items, mouse) {
     var ctx = canvas.getContext("2d");
     var regions = Regions.create();
     var fontStyle = null;
     var fontWidth = null;
-    var mouse = null;
-
-    function setMouse( m ) {
-        mouse =  m;
-    }
 
     function regionIsActive( region ) {
         if( !mouse ) {
@@ -93,8 +88,7 @@ var Menu = {create: function(canvas, area, items) {
 
     return {
         draw: draw,
-        mouseHandler: mouseHandler,
-        setMouse: setMouse
+        mouseHandler: mouseHandler
     };
 } };
 

@@ -7,6 +7,7 @@ var Mouse = require("./Mouse");
 var Regions = require("./Regions");
 var PredefinedLevels = require("./PredefinedLevels");
 var Menu = require("./Menu");
+var Screen = require("./Screen");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -58,54 +59,56 @@ function initialize() {
 
     $("#flippersGame").append( $(canvas) );
 
-    runPregameMenu();
+    var dropdown = $( "<select/>", {id: "predefinedLevelSelector"} );
+    for(var name in PredefinedLevels) {
+	$( "<option/>", {value: name,
+			 text: name} ).appendTo( dropdown );
+    }
+
+    $("#flippersGame")
+	.append( $(document.createElement("br")) )
+	.append( $(document.createElement("button"))
+		 .attr( "id", "startstopbutton" )
+		 .html( "Start" ) )
+	.append( $(document.createElement("textarea"))
+		 .attr( "id", "leveldata" ) )
+	.append( $(document.createElement("button"))
+		 .attr( "id", "savebutton" )
+		 .html( "Save" ) )
+	.append( $(document.createElement("button"))
+		 .attr( "id", "loadbutton" )
+		 .html( "Load" ) )
+	.append( dropdown )
+	.append( $("<button/>")
+                 .attr( "id", "loadpredefinedbutton" )
+		 .html( "Load predefined" ) );
+
+    var screen = Screen.create( canvas );
+
+    screen.setScene( makePregameMenu( screen, 1 ) );
 }
 
-function runPregameMenu() {
-    var canvas = document.getElementById( "flippersCanvas" );
-
-    var testMenu = Menu.create(
-        canvas,
+function makePregameMenu( screen, n ) {
+    return Menu.create(
+        screen.canvas(),
         {x: 0, y: 0, width: 480, height: 800},
         [
             {text: "Hello",
              activate: function() {
-                 cancelEverything();
-                 runGame();
+                 screen.setScene( makeGame() );
              }},
-            {text: "World",
+            {text: "World " + n,
              activate: function() {
-                 console.log( "World activated" );
+                 screen.setScene( makePregameMenu( screen, n + 1 ) );
              }}
-        ] );
-
-
-    // This is clearly a problem. There should be a
-    // single "Screen" and many "Scenes" -- Scene has a draw
-    // method, Screen calls it.
-    var cancelId = setInterval( function() {
-        testMenu.draw()
-    }, 1000.0 / 30.0 );
-
-    // Similarly, Screen constructs a single mouse handler
-    // and gives the events to the active scene.
-
-    var mouse = Mouse.create(
-	canvas,
-	{holdDelay: 500},
-        testMenu.mouseHandler
-    );
-
-    testMenu.setMouse( mouse );
-
-    function cancelEverything() {
-        clearInterval( cancelId );
-    }
+        ],
+        screen.mouse() );
 }
 
-function runGame() {
+function makeGame() {
     var canvas = document.getElementById( "flippersCanvas" );
     var jqcanvas = $(canvas);
+    var ctx = canvas.getContext("2d");
 
     var myState = GameState.loadOld(
 	{"rows":7,"cols":7,"contents":[]}
@@ -113,6 +116,29 @@ function runGame() {
     var mySmoothState = null;
     var mySavedState = null;
 
+    $("#startstopbutton").click( toggleGame );
+    $("#savebutton").click( function() {
+	$("#leveldata").val( saveLevel() );
+    } );
+    $("#loadbutton").click( function() {
+	var data = $("#leveldata").val();
+	console.log( "loading " + data );
+	loadLevel( data );
+    } );
+    $("#loadpredefinedbutton").click( function() {
+	var key = $("#predefinedLevelSelector").val();
+	var level = PredefinedLevels[ key ];
+	if( !level ) {
+	    console.log( "No such level!" );
+	    return;
+	}
+        if( level.origin ) {
+	    setState( GameState.load( level ) );
+        } else {
+            setState( GameState.loadOld( level ) );
+        }
+    } );
+		 
     function setState( newstate ) {
 	myState = newstate;
 	mySmoothState = null;
@@ -184,53 +210,6 @@ function runGame() {
 
     console.log( "Game beginning!");
 
-    var dropdown = $( "<select/>", {id: "predefinedLevelSelector"} );
-    for(var name in PredefinedLevels) {
-	$( "<option/>", {value: name,
-			 text: name} ).appendTo( dropdown );
-    }
-
-    $("#flippersGame")
-	.append( $(document.createElement("br")) )
-	.append( $(document.createElement("button"))
-		 .attr( "id", "startstopbutton" )
-		 .html( "Start" )
-		 .click( toggleGame ) )
-	.append( $(document.createElement("textarea"))
-		 .attr( "id", "leveldata" ) )
-	.append( $(document.createElement("button"))
-		 .attr( "id", "savebutton" )
-		 .html( "Save" )
-		 .click( function() {
-		     $("#leveldata").val( saveLevel() );
-		 } ) )
-	.append( $(document.createElement("button"))
-		 .attr( "id", "loadbutton" )
-		 .html( "Load" )
-		 .click( function() {
-		     var data = $("#leveldata").val();
-		     console.log( "loading " + data );
-		     loadLevel( data );
-		 } ) )
-	.append( dropdown )
-	.append( $("<button/>")
-		 .html( "Load predefined" )
-		 .click( function() {
-		     var key = dropdown.val();
-		     var level = PredefinedLevels[ key ];
-		     if( !level ) {
-			 console.log( "No such level!" );
-			 return;
-		     }
-                     if( level.origin ) {
-		         setState( GameState.load( level ) );
-                     } else {
-                         setState( GameState.loadOld( level ) );
-                     }
-		 } ) );
-		 
-    ctx = canvas.getContext( "2d" );
-    jqcanvas = $("#flippersCanvas");
 
 
     var gamegraphics = DiagramGraphics.create( canvas,
@@ -334,56 +313,51 @@ function runGame() {
     }, colour: "yellow" }, nextInventoryPageButton ) );
 
 
-    var mouse = Mouse.create(
-	canvas,
-	{holdDelay: 500},
-	function( click ) {
-            var buttonregion = buttonregions.at( click );
-            if( buttonregion ) {
-                return {tap: buttonregion.handler};
-            }
-
-            if( inventory.region().contains( click ) ) {
-                var subregion = inventory.pageRegions().at( click );
-                if( subregion ) {
-                    return {
-                        tap: function() {
-                            if( currentBrush == subregion.item ) {
-                                inventory.setSelected( null );
-                            } else {
-                                inventory.setSelected( subregion );
-                            }
+    function mouseHandler( click ) {
+        var buttonregion = buttonregions.at( click );
+        if( buttonregion ) {
+            return {tap: buttonregion.handler};
+        }
+        
+        if( inventory.region().contains( click ) ) {
+            var subregion = inventory.pageRegions().at( click );
+            if( subregion ) {
+                return {
+                    tap: function() {
+                        if( currentBrush == subregion.item ) {
+                            inventory.setSelected( null );
+                        } else {
+                            inventory.setSelected( subregion );
                         }
-                    };
-                }
-                return null;
-            }
-
-	    var cell = gamegraphics.cellAtPosition( click );
-	    if( !cell ) {
-		return null;
-	    }
-
-	    return {
-		hold: function( m ) {
-                    attemptMutation();
-
-		    myState.removeElementAtCell( cell );
-		},
-		tap: function( m ) {
-                    attemptMutation();
-
-                    var element = myState.elementAtCell( cell );
-                    if( element ) {
-                        myState.setElement( configureElement( element ) );
-                    } else if( currentBrush ) {
-                        myState.setElement( $.extend( {}, cell, currentBrush ) );
                     }
-		}
-	    };
+                };
+            }
+            return null;
+        }
+        
+	var cell = gamegraphics.cellAtPosition( click );
+	if( !cell ) {
+	    return null;
 	}
-    );
-
+        
+	return {
+	    hold: function( m ) {
+                attemptMutation();
+                
+		myState.removeElementAtCell( cell );
+	    },
+	    tap: function( m ) {
+                attemptMutation();
+                
+                var element = myState.elementAtCell( cell );
+                if( element ) {
+                    myState.setElement( configureElement( element ) );
+                } else if( currentBrush ) {
+                    myState.setElement( $.extend( {}, cell, currentBrush ) );
+                }
+	    }
+	};
+    }
 
     function render( gfx ) {
 	if( mySmoothState ) {
@@ -411,13 +385,16 @@ function runGame() {
             toggleGame();
         } );
     
-    setInterval( function() {
-        if( mySmoothState ) {
-            mySmoothState.catchup();
-        }
-	ctx.clearRect( 0, 0, canvas.width, canvas.height );
-	render( gamegraphics );
-    }, 1000 / 30.0 );
+    return {
+        draw: function() {
+            if( mySmoothState ) {
+                mySmoothState.catchup();
+            }
+	    ctx.clearRect( 0, 0, canvas.width, canvas.height );
+	    render( gamegraphics );
+        },
+        mouseHandler: mouseHandler
+    };
 }
 
 
