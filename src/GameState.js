@@ -272,6 +272,13 @@ module.exports = (function() {
 	    return elementAt( cell.col, cell.row );
 	}
 
+        function arrayRemoveElement( arr, el ) {
+            var index = arr.indexOf( el );
+            if( index > -1 ) {
+                arr.splice( index, 1 );
+            }
+        }
+
 	function removeElementAtCell( cell ) {
 	    var el = elementAtCell( cell );
 	    if( el ) {
@@ -311,7 +318,7 @@ module.exports = (function() {
 	    onSquares: onSquares,
 	    ball: function(){ return state.ball; },
 	    size: function(){ return state.size; }
-	}	
+	};	
     }
 
     function loadState( state ) {
@@ -326,5 +333,5 @@ module.exports = (function() {
 	create: createBlankState,
 	load: loadState,
 	loadOld: loadOldState
-    }
+    };
 })();

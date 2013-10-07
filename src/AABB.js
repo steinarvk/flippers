@@ -1,6 +1,6 @@
 var LayoutShare = require("./LayoutShare");
 
-module.exports = {create: function( rect ) {
+var AABB = {create: function( rect ) {
     function inside( p ) {
         return p.x >= rect.x
             && p.y >= rect.y
@@ -45,3 +45,5 @@ module.exports = {create: function( rect ) {
         height: rect.height
     };
 } };
+
+module.exports = AABB;

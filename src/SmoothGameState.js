@@ -124,5 +124,5 @@ module.exports = { wrap: function( gamestate ) {
         tickCounter: getTickCounter,
         resetTickCounter: resetTickCounter,
         catchup: catchup
-    }
+    };
 } };

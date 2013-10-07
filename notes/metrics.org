@@ -1,0 +1,46 @@
+* Metrics
+** Noninteractive connections (bad)
+Amount of connections in the final puzzle that the player has
+no opportunity to influence (e.g. zero distance so can't
+place a block between them).
+** Long stretches (bad)
+Amount of distance travelled beyond 1 tile after each bounce.
+E.g. a bounce + 1 tile space + a bounce + 1 tile space is
+"free". A bounce + 5 tile spaces costs 4.
+** Dull pieces (bad)
+Number of pieces in the final solution that have other pieces
+in no more than two other directions.
+** Omitted piece path confusion (good)
+For each omitted piece in the puzzle (solution - puzzle):
+  Number of bounces before the ball leaves the board, after
+  it would have hit the omitted piece
+Hard cap at the complexity of the puzzle.
+
+** Never-hit pieces (bad)
+Number of pieces that are never hit in the solution.
+** Complexity (good)
+Number of bounces in the final solution
+** Post-puzzle complexity (good)
+Number of interactions after the last omitted piece,
+in the solution.
+
+Too little of this makes the puzzle not so much an
+interactive game and more of a demonstration of
+fancy stuff followed by a quiz testing whether you
+paid attention.
+
+Pre-puzzle complexity is neutral -- neither good
+nor bad. It's "useless", but it helps obscure the
+solution.
+** Twice-hit pieces (good)
+Number of times a piece is hit beyond the first time in
+the final solution.
+** Correctness (boolean, required)
+The solution actually ends up with the ball at the target.
+** Uniqueness (boolean, required)
+There are no solutions except the proposed solution.
+
+
+
+
+
