@@ -39,6 +39,7 @@ module.exports = { create: function(canvas, area, boardsize) {
 	};
     }
 
+    autofitBoard();
 
     function drawBall( pos ) {
 	ctx.fillStyle = "#000";

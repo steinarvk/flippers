@@ -93,11 +93,16 @@ function makePregameMenu( screen, n ) {
         screen.canvas(),
         {x: 0, y: 0, width: 480, height: 800},
         [
-            {text: "Hello",
+            {text: "Puzzle",
              activate: function() {
-                 screen.setScene( makeGame() );
+                 var level = PredefinedLevels["Puzzle 10 -- place a single flipper"];
+                 screen.setScene( makeGame( screen, level ) );
              }},
-            {text: "World " + n,
+            {text: "Freeform",
+             activate: function() {
+                 screen.setScene( makeGame( screen, null ) );
+             }},
+            {text: "Test " + n,
              activate: function() {
                  screen.setScene( makePregameMenu( screen, n + 1 ) );
              }}
@@ -105,14 +110,28 @@ function makePregameMenu( screen, n ) {
         screen.mouse() );
 }
 
-function makeGame() {
-    var canvas = document.getElementById( "flippersCanvas" );
+function makeGame( screen, presetPuzzle ) {
+    var canvas = screen.canvas();
     var jqcanvas = $(canvas);
     var ctx = canvas.getContext("2d");
 
-    var myState = GameState.loadOld(
-	{"rows":7,"cols":7,"contents":[]}
-    );
+    var myState = null;
+
+    if( presetPuzzle ) {
+        myState = GameState.load( presetPuzzle );
+    } else {
+        myState = GameState.loadOld(
+	    {"rows":7,"cols":7,"contents":[]}
+        );
+    }
+
+    var buildMode = !presetPuzzle;
+    var presetGame = null;
+
+    if( !buildMode ) {
+        presetGame = GameState.load( presetPuzzle );
+    }
+
     var mySmoothState = null;
     var mySavedState = null;
 
@@ -121,11 +140,18 @@ function makeGame() {
 	$("#leveldata").val( saveLevel() );
     } );
     $("#loadbutton").click( function() {
+        if( !buildMode ) {
+            return;
+        }
 	var data = $("#leveldata").val();
 	console.log( "loading " + data );
 	loadLevel( data );
     } );
     $("#loadpredefinedbutton").click( function() {
+        if( !buildMode ) {
+            return;
+        }
+
 	var key = $("#predefinedLevelSelector").val();
 	var level = PredefinedLevels[ key ];
 	if( !level ) {
@@ -138,6 +164,11 @@ function makeGame() {
             setState( GameState.loadOld( level ) );
         }
     } );
+
+    if( !buildMode ) {
+        $("#loadbutton").prop("disabled", true);
+        $("#loadpredefinedbutton").prop("disabled", true);
+    }
 		 
     function setState( newstate ) {
 	myState = newstate;
@@ -177,6 +208,10 @@ function makeGame() {
     }
 
     function clearGame() {
+        if( !buildMode ) {
+            return;
+        }
+
         stopGame();
 
         var st = myState.save();
@@ -210,8 +245,6 @@ function makeGame() {
 
     console.log( "Game beginning!");
 
-
-
     var gamegraphics = DiagramGraphics.create( canvas,
 					      {x: 0,
 					       y: 0,
@@ -242,6 +275,7 @@ function makeGame() {
                                                         {} ] );
     var playButtonSection = controlsSubsections[0];
     var clearButtonSection = controlsSubsections[5];
+    var backButtonSection = controlsSubsections[3];
 
     var inventory = Inventory.create(
         function(region) {
@@ -296,6 +330,18 @@ function makeGame() {
         return element;
     }
 
+    function cellIsFixed( cell ) {
+        if( buildMode ) {
+            return false;
+        }
+
+        if( presetGame.elementAtCell( cell ) ) {
+            return true;
+        }
+
+        return false;
+    }
+
     buttonregions.add( $.extend( {handler: function() {
         toggleGame();
     }, colour: "red" }, playButtonSection ) );
@@ -303,6 +349,10 @@ function makeGame() {
     buttonregions.add( $.extend( {handler: function() {
         clearGame();
     }, colour: "purple" }, clearButtonSection ) );
+
+    buttonregions.add( $.extend( {handler: function() {
+        screen.setScene( makePregameMenu( screen, 100 ) );
+    }, colour: "magenta" }, backButtonSection ) );
 
     buttonregions.add( $.extend( {handler: function() {
         inventory.previousPage();
@@ -343,11 +393,19 @@ function makeGame() {
 	return {
 	    hold: function( m ) {
                 attemptMutation();
+
+                if( cellIsFixed( cell ) ) {
+                    return;
+                }
                 
 		myState.removeElementAtCell( cell );
 	    },
 	    tap: function( m ) {
                 attemptMutation();
+
+                if( cellIsFixed( cell ) ) {
+                    return;
+                }
                 
                 var element = myState.elementAtCell( cell );
                 if( element ) {
@@ -390,7 +448,6 @@ function makeGame() {
             if( mySmoothState ) {
                 mySmoothState.catchup();
             }
-	    ctx.clearRect( 0, 0, canvas.width, canvas.height );
 	    render( gamegraphics );
         },
         mouseHandler: mouseHandler
