@@ -166,7 +166,21 @@ module.exports = (function() {
         function switchCollision( ball, element ) {
             var v = ball.outgoingVelocity;
 
-            onEachElement( function(switched) {
+	    if( !element.pressed ) {
+		element.pressed = true;
+		triggerSwitch( element );
+	    }
+
+            state.ball = ball = {
+                position: {col: element.col,
+                           row: element.row},
+                incomingVelocity: v,
+                outgoingVelocity: v
+            };
+        }
+
+	function triggerSwitch( element ) {
+	    onEachElement( function(switched) {
                 if( switched.type != "switch"
                     && switched.colour == element.colour ) {
                     switched.deactivated = !switched.deactivated;
@@ -176,13 +190,11 @@ module.exports = (function() {
                                newActive: !switched.deactivated} );
                 }
             } );
-            state.ball = ball = {
-                position: {col: element.col,
-                           row: element.row},
-                incomingVelocity: v,
-                outgoingVelocity: v
-            };
-        }
+	}
+
+	function leaveSwitch( element ) {
+	    element.pressed = false;
+	}
 
 	var collisions = {
 	    "flipper": flipperCollision,
@@ -191,6 +203,10 @@ module.exports = (function() {
 	    "triangle": triangleCollision,
 	    "breakable-triangle": triangleCollision,
             "switch": switchCollision
+	};
+
+	var onBallLeaves = {
+	    "switch": leaveSwitch
 	};
 	
 	function checkCell( pos ) {
@@ -215,6 +231,19 @@ module.exports = (function() {
 	    }
 	}
 
+	function ballLeaves( position ) {
+	    var el = elementAt( position.col, position.row );
+
+	    if( !el || el.deactivated ) {
+		return;
+	    }
+
+	    var f = onBallLeaves[ el.type ];
+	    if( f ) {
+		f( el );
+	    }
+	}
+
 	function advance() {
 	    if( state.status != "running" ) {
 		return;
@@ -224,9 +253,17 @@ module.exports = (function() {
 
 	    var v = state.ball.outgoingVelocity;
 
+	    var originalPosition = JSON.stringify( state.ball.position );
+
 	    ballEnters( {col: state.ball.position.col + v.dx,
 			 row: state.ball.position.row + v.dy },
 			state.ball.outgoingVelocity );
+
+	    var positionChanged = JSON.stringify( state.ball.position ) != originalPosition;
+	    if( positionChanged ) {
+		originalPosition = JSON.parse( originalPosition );
+		ballLeaves( originalPosition );
+	    }
 
 
 	    if( !checkCell( state.ball.position ) ) {
