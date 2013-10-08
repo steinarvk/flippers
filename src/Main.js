@@ -10,6 +10,7 @@ var Menu = require("./Menu");
 var Screen = require("./Screen");
 var Picture = require("./Picture");
 var Sound = require("./Sound");
+var Stopwatch = require("./Stopwatch");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -111,24 +112,76 @@ function makePregameMenu( screen, n ) {
             {text: "Picture",
              activate: function() {
                  screen.setScene( makeMediaScene( screen ) );
+             }},
+            {text: "Html",
+             activate: function() {
+                 screen.setScene( makeHtmlScene( screen ) );
              }}
         ],
         screen.mouse() );
 }
 
+function makeHtmlScene( screen ) {
+    var x = $(document.createElement("div"))
+            .html("Hello world!")
+            .css( "width", "200px" )
+            .css( "left", "140px" )
+            .css( "top", "600px" )
+            .css( "height", "3em" )
+            .css( "text-align", "center" )
+            .css( "position", "fixed" )
+            .css( "pointer-events", "none" )
+            .css( "background-color", "magenta" )
+            .appendTo( "#flippersGame" );
+
+    x.css( "-webkit-animation", "mymovein 2s ease-out" );
+//    x.css( "-webkit-animation-fill-mode", "forwards" );
+//    Doesn't work on Android
+
+    setTimeout( function() {
+        console.log( "setting aimation" );
+        x.css( "-webkit-animation", "mymoveout 1s ease-in" );
+        x.css( "opacity", "0.0" );
+    }, 5000 );
+
+    var flag = false;
+
+    setTimeout( function() {
+        screen.setScene( makePregameMenu( screen, -5 ) );
+    }, 10000 );
+    return {
+        mouseHandler: function(click) {
+            if( flag ) {
+                x.css( "background-color", "yellow" );
+            } else {
+                x.css( "background-color", "blue" );
+            }
+            flag = !flag;
+        },
+        exit: function() {
+            x.remove();
+        }
+    }
+}
+
 function makeMediaScene( screen ) {
+    var t = 20000;
     setTimeout( function() {
         screen.setScene( makePregameMenu( screen, 1 ) );
-    }, 5000 );
+    }, t );
     var pics = Picture.load( { my: "./test.png" } ).pictures;
     var ctx = screen.canvas().getContext("2d");
 //    Sound.load( { my: "./impactStone.ogg" }, function(rv) {
 //        rv.sounds.my.play();
 //    } );
+    var sw = Stopwatch.create();
+    var h = screen.canvas().height / t;
+    var last = null;
     return {
         draw: function() {
             if( pics.my ) {
-                ctx.drawImage( pics.my, 0, 0 );
+                var x = Math.floor( sw.ms() * h );
+                ctx.drawImage( pics.my, 0, x );
             }
         }
     }

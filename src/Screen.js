@@ -20,7 +20,7 @@ var Screen = { create: function( canvas, options ) {
 
     function draw() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
-        if( scene ) {
+        if( scene && scene.draw ) {
             scene.draw();
         }
     }
@@ -33,10 +33,18 @@ var Screen = { create: function( canvas, options ) {
     }
 
     function setScene( newScene ) {
+        if( scene && scene.exit ) {
+            scene.exit();
+        }
         scene = newScene;
+        if( scene && scene.enter ) {
+            scene.enter();
+        }
     }
         
     function destroy() {
+        setScene( null );
+
         clearInterval( drawTimerId );
         drawTimerId = null;
         mouse = null;
