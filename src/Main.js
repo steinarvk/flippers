@@ -8,6 +8,8 @@ var Regions = require("./Regions");
 var PredefinedLevels = require("./PredefinedLevels");
 var Menu = require("./Menu");
 var Screen = require("./Screen");
+var Picture = require("./Picture");
+var Sound = require("./Sound");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -105,9 +107,31 @@ function makePregameMenu( screen, n ) {
             {text: "Test " + n,
              activate: function() {
                  screen.setScene( makePregameMenu( screen, n + 1 ) );
+             }},
+            {text: "Picture",
+             activate: function() {
+                 screen.setScene( makeMediaScene( screen ) );
              }}
         ],
         screen.mouse() );
+}
+
+function makeMediaScene( screen ) {
+    setTimeout( function() {
+        screen.setScene( makePregameMenu( screen, 1 ) );
+    }, 5000 );
+    var pics = Picture.load( { my: "./test.png" } ).pictures;
+    var ctx = screen.canvas().getContext("2d");
+//    Sound.load( { my: "./impactStone.ogg" }, function(rv) {
+//        rv.sounds.my.play();
+//    } );
+    return {
+        draw: function() {
+            if( pics.my ) {
+                ctx.drawImage( pics.my, 0, 0 );
+            }
+        }
+    }
 }
 
 function makeGame( screen, presetPuzzle ) {
