@@ -13,6 +13,7 @@ var Sound = require("./Sound");
 var Stopwatch = require("./Stopwatch");
 var GridMenu = require("./GridMenu");
 var Map2D = require("./Map2D");
+var Icon = require("./Icon");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -217,6 +218,9 @@ function makeGame( screen, presetPuzzle ) {
     var canvas = screen.canvas();
     var jqcanvas = $(canvas);
     var ctx = canvas.getContext("2d");
+    var pics = Picture.load( {
+        back: "./assets/back_button.png"
+    } ).pictures;
 
     var myState = null;
 
@@ -477,9 +481,16 @@ function makeGame( screen, presetPuzzle ) {
         clearGame();
     }, colour: "purple" }, clearButtonSection ) );
 
-    buttonregions.add( $.extend( {handler: function() {
-        screen.setScene( makePregameMenu( screen, 100 ) );
-    }, colour: "magenta" }, backButtonSection ) );
+    buttonregions.add( Icon.create(
+        backButtonSection,
+        pics,
+        "back",
+        {
+            tap: function() {
+                screen.setScene( makePregameMenu( screen, 100 ) );
+            } 
+        }
+    ) );
 
     buttonregions.add( $.extend( {handler: function() {
         inventory.previousPage();
@@ -493,7 +504,11 @@ function makeGame( screen, presetPuzzle ) {
     function mouseHandler( click ) {
         var buttonregion = buttonregions.at( click );
         if( buttonregion ) {
-            return {tap: buttonregion.handler};
+            if( buttonregion.mouseHandler ) {
+                return buttonregion.mouseHandler( click );
+            } else {
+                return {tap: buttonregion.handler};
+            }
         }
         
         if( inventory.region().contains( click ) ) {
@@ -564,7 +579,11 @@ function makeGame( screen, presetPuzzle ) {
         inventory.render( gfx );
 
         buttonregions.onRegions( function( region ) {
-            gfx.drawColouredAABB( region, region.colour );
+            if( region.draw ) {
+                region.draw( ctx );
+            } else {
+                gfx.drawColouredAABB( region, region.colour );
+            }
         } );
     }
 
