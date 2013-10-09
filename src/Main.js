@@ -12,6 +12,7 @@ var Picture = require("./Picture");
 var Sound = require("./Sound");
 var Stopwatch = require("./Stopwatch");
 var GridMenu = require("./GridMenu");
+var Map2D = require("./Map2D");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -379,49 +380,73 @@ function makeGame( screen, presetPuzzle ) {
     var clearButtonSection = controlsSubsections[5];
     var backButtonSection = controlsSubsections[3];
 
-    var inventory = Inventory.create(
-        function(region) {
-            if( region == null ) {
-                currentBrush = null;
-            } else {
-                currentBrush = region.item;
-            }
-        },
-        inventorySection,
-        {cols: 3,
-         rows: 2},
-        {margins: 2} );
-    (function () {
-        var colours = ["red", "green", null];
-        var elements = [ {type: "flipper", ascending: true},
-                         {type: "breakable-triangle", rotation: 3},
-                         {type: "breakable-square"},
-                         {type: "triangle", rotation: 3},
-                         {type: "square"},
-                         {type: "switch"} ];
-        
-        for(var k = 0; k < 2; k++) {
-            for(var i = 0; i < colours.length; i++) {
-                for(var j = 0; j < elements.length; j++) {
-                    var deactivated = k == 1;
-                    if( !colours[i] && elements[j].type == "switch" ) {
-                        continue;
+    var inventory = null;
+    var revInvMap = Map2D.create();
+
+    if( presetPuzzle ) {
+        inventory = Inventory.create(
+            function(region) {
+                if( region == null || region.blank ) {
+                    currentBrush = null;
+                } else {
+                    currentBrush = region;
+                }
+            },
+            inventorySection,
+            {cols: 3, rows: 2},
+            {margins: 2}
+        );
+        for(var i = 0; i < presetPuzzle.inventory.length; i++) {
+            var item = presetPuzzle.inventory[i];
+            console.log( "adding " + JSON.stringify( item ) );
+            inventory.add( item );
+        }
+    } else {
+        // Add full post-scarcity palette
+        (function () {
+            inventory = Inventory.create(
+                function(region) {
+                    if( region == null ) {
+                        currentBrush = null;
+                    } else {
+                        currentBrush = region;
                     }
-                    if( deactivated &&
-                        (!colours[i] || elements[j].type == "switch") ) {
-                        continue;
+                },
+                inventorySection,
+                {cols: 3,
+                 rows: 2},
+                {margins: 2} );
+            var colours = ["red", "green", null];
+            var elements = [ {type: "flipper", ascending: true},
+                             {type: "breakable-triangle", rotation: 3},
+                             {type: "breakable-square"},
+                             {type: "triangle", rotation: 3},
+                             {type: "square"},
+                             {type: "switch"} ];
+            
+            for(var k = 0; k < 2; k++) {
+                for(var i = 0; i < colours.length; i++) {
+                    for(var j = 0; j < elements.length; j++) {
+                        var deactivated = k == 1;
+                        if( !colours[i] && elements[j].type == "switch" ) {
+                            continue;
+                        }
+                        if( deactivated &&
+                            (!colours[i] || elements[j].type == "switch") ) {
+                            continue;
+                        }
+                        inventory.add( $.extend( {},
+                                                 elements[j],
+                                                 {colour: colours[i]},
+                                                 deactivated ?
+                                                 {deactivated: true}
+                                                 :
+                                                 {} ) );
                     }
-                    inventory.add( $.extend( {},
-                                             elements[j],
-                                             {colour: colours[i]},
-                                             deactivated ?
-                                             {deactivated: true}
-                                             :
-                                             {} ) );
                 }
             }
-        }
-    })();
+        })();
+    }
 
     function configureElement( element ) {
         if( element.rotation !== undefined ) {
@@ -476,7 +501,7 @@ function makeGame( screen, presetPuzzle ) {
             if( subregion ) {
                 return {
                     tap: function() {
-                        if( currentBrush == subregion.item ) {
+                        if( currentBrush && currentBrush.item == subregion.item ) {
                             inventory.setSelected( null );
                         } else {
                             inventory.setSelected( subregion );
@@ -499,6 +524,12 @@ function makeGame( screen, presetPuzzle ) {
                 if( cellIsFixed( cell ) ) {
                     return;
                 }
+                var region = revInvMap.get( cell.col, cell.row );
+                if( region ) {
+                    region.blank = false;
+                }
+
+                revInvMap.remove( cell.col, cell.row );
                 
 		myState.removeElementAtCell( cell );
 	    },
@@ -513,7 +544,11 @@ function makeGame( screen, presetPuzzle ) {
                 if( element ) {
                     myState.setElement( configureElement( element ) );
                 } else if( currentBrush ) {
-                    myState.setElement( $.extend( {}, cell, currentBrush ) );
+                    if( presetPuzzle ) {
+                        revInvMap.set( cell.col, cell.row, currentBrush );
+                        currentBrush.blank = true;
+                    }
+                    myState.setElement( $.extend( {}, cell, currentBrush.item ) );
                 }
 	    }
 	};

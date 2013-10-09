@@ -54,9 +54,11 @@ module.exports = {create: function( select, area, size, options ) {
 
     function draw( gfx ) {
         onActiveItems( function(itemregion) {
-            gfx.drawInventoryItemIn( itemregion.item,
-                                     {selected: itemregion == selected},
-                                     itemregion.rect() );
+            if( !itemregion.blank ) {
+                gfx.drawInventoryItemIn( itemregion.item,
+                                         {selected: itemregion == selected},
+                                         itemregion.rect() );
+            }
         } );
     }
     
