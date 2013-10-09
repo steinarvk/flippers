@@ -11,6 +11,7 @@ var Screen = require("./Screen");
 var Picture = require("./Picture");
 var Sound = require("./Sound");
 var Stopwatch = require("./Stopwatch");
+var GridMenu = require("./GridMenu");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -91,6 +92,25 @@ function initialize() {
     screen.setScene( makePregameMenu( screen, 1 ) );
 }
 
+function makeLevelActivator( f, level ) {
+    return function() { f( level ); }
+}
+
+function makeLevelSelectMenu( screen, levels, onLevel ) {
+    var selections = [];
+    for(var label in levels) {
+        selections.push( {text: label,
+                          activate: makeLevelActivator( onLevel, levels[label] )} );
+    }
+    return GridMenu.create(
+        screen.canvas(),
+        screen.area(),
+        {cols: 6, rows: 10},
+        selections,
+        screen.mouse()
+    );
+}
+
 function makePregameMenu( screen, n ) {
     return Menu.create(
         screen.canvas(),
@@ -98,9 +118,14 @@ function makePregameMenu( screen, n ) {
         [
             {text: "Puzzle",
              activate: function() {
-                 var level = PredefinedLevels["Puzzle 10 -- place a single flipper"];
-                 screen.setScene( makeGame( screen, level ) );
-             }},
+                 screen.setScene( makeLevelSelectMenu(
+                     screen,
+                     PredefinedLevels,
+                     function(level) {
+                         screen.setScene( makeGame( screen, level ) );
+                     }
+                 ) )
+             } },
             {text: "Freeform",
              activate: function() {
                  screen.setScene( makeGame( screen, null ) );

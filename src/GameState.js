@@ -374,6 +374,9 @@ module.exports = (function() {
     }
 
     function loadState( state ) {
+        if( !state.size ) {
+            return loadOldState( state );
+        }
         state = decorateStateWithDefaults( state );
         return createState( JSON.parse( JSON.stringify( state ) ) );
     }

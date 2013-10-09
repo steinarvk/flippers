@@ -58,10 +58,15 @@ var Screen = { create: function( canvas, options ) {
         return canvas;
     }
 
+    function getArea() {
+        return {x: 0, y: 0, width: canvas.width, height: canvas.height};
+    }
+
     return {
         setScene: setScene,
         destroy: destroy,
         mouse: getMouse,
+        area: getArea,
         canvas: getCanvas
     };
 } };
