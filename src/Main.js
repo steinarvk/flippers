@@ -589,15 +589,12 @@ function makeGame( screen, presetPuzzle ) {
                 var element = myState.elementAtCell( cell );
                 if( element ) {
                     myState.setElement( configureElement( element ) );
-                } else if( currentBrush ) {
+                } else if( currentBrush && !currentBrush.blank ) {
                     if( presetPuzzle ) {
                         revInvMap.set( cell.col, cell.row, currentBrush );
                         currentBrush.blank = true;
                     }
                     myState.setElement( $.extend( {}, cell, currentBrush.item ) );
-                    if( presetPuzzle ) {
-                        currentBrush = null;
-                    }
                 }
 	    }
 	};
