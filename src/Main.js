@@ -235,8 +235,22 @@ function makeGame( screen, presetPuzzle ) {
     var buildMode = !presetPuzzle;
     var presetGame = null;
 
+    var gamegraphics = DiagramGraphics.create( canvas,
+					      {x: 0,
+					       y: 0,
+					       width: 480,
+					       height: 480},
+					      {cols: 9,
+					       rows: 9}
+					    );
     if( !buildMode ) {
         presetGame = GameState.load( presetPuzzle );
+        var shade = Map2D.create();
+        for(var i = 0; i < presetPuzzle.elements.length; i++) {
+            var el = presetPuzzle.elements[i];
+            shade.set( el.col, el.row, true );
+        }
+        gamegraphics.setBoardShading( shade );
     }
 
     var mySmoothState = null;
@@ -352,14 +366,6 @@ function makeGame( screen, presetPuzzle ) {
 
     console.log( "Game beginning!");
 
-    var gamegraphics = DiagramGraphics.create( canvas,
-					      {x: 0,
-					       y: 0,
-					       width: 480,
-					       height: 480},
-					      {cols: 9,
-					       rows: 9}
-					    );
     var currentBrush = null;
 
     var buttonregions = Regions.create();

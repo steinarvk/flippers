@@ -6,11 +6,20 @@ module.exports = { create: function(canvas, area, boardsize) {
     var cellsize = null;
     var offset = null;
 
+    var boardShading = null;
+
     function drawBoard() {
 	for(var i = 0; i < boardsize.cols; i++) {
             for(var j = 0; j < boardsize.rows; j++) {
 		var isWhite = (i%2) == (j%2);
-		ctx.fillStyle = isWhite ? "#caa" : "#aac";
+                var shaded = boardShading && boardShading.get(i,j);
+
+		if( shaded ) {
+                    ctx.fillStyle = isWhite ? "#a88" : "#88a";
+                } else {
+                    ctx.fillStyle = isWhite ? "#caa" : "#aac";
+                }
+
 		ctx.fillRect( offset.x + i * cellsize,
 			      offset.y + j * cellsize,
 			      cellsize,
@@ -25,6 +34,10 @@ module.exports = { create: function(canvas, area, boardsize) {
 	}
 	boardsize = sz;
 	autofitBoard();
+    }
+
+    function setBoardShading( shading ) {
+        boardShading = shading;
     }
 
     function autofitBoard() {
@@ -350,6 +363,7 @@ module.exports = { create: function(canvas, area, boardsize) {
         
     return {
 	setBoardSize: setBoardSize,
+        setBoardShading: setBoardShading,
 	drawBackground: drawBoard,
 	drawElement: drawElement,
 	drawElementIn: drawElementInRect,
