@@ -250,10 +250,11 @@ function makeGame( screen, presetPuzzle ) {
     if( !buildMode ) {
         presetGame = GameState.load( presetPuzzle );
         var shade = Map2D.create();
-        for(var i = 0; i < presetPuzzle.elements.length; i++) {
-            var el = presetPuzzle.elements[i];
-            shade.set( el.col, el.row, true );
-        }
+        presetGame.onSquares( function( cell, element ) {
+            if( element ) {
+                shade.set( cell.col, cell.row, true );
+            }
+        } );
         gamegraphics.setBoardShading( shade );
     }
 
