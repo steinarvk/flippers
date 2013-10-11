@@ -595,6 +595,9 @@ function makeGame( screen, presetPuzzle ) {
                         currentBrush.blank = true;
                     }
                     myState.setElement( $.extend( {}, cell, currentBrush.item ) );
+                    if( presetPuzzle ) {
+                        currentBrush = null;
+                    }
                 }
 	    }
 	};
