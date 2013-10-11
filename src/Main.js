@@ -219,7 +219,11 @@ function makeGame( screen, presetPuzzle ) {
     var jqcanvas = $(canvas);
     var ctx = canvas.getContext("2d");
     var pics = Picture.load( {
-        back: "./assets/back_button.png"
+        back: "./assets/symbols_back.png",
+        left: "./assets/symbols_left.png",
+        right: "./assets/symbols_right.png",
+        play: "./assets/symbols_play.png",
+        clear: "./assets/symbols_clear.png"
     } ).pictures;
 
     var myState = null;
@@ -479,13 +483,21 @@ function makeGame( screen, presetPuzzle ) {
         return false;
     }
 
-    buttonregions.add( $.extend( {handler: function() {
-        toggleGame();
-    }, colour: "red" }, playButtonSection ) );
+    buttonregions.add( Icon.create(
+        playButtonSection,
+        pics,
+        "play",
+        { tap: toggleGame },
+        { maxfill: 0.75 }
+    ) );
 
-    buttonregions.add( $.extend( {handler: function() {
-        clearGame();
-    }, colour: "purple" }, clearButtonSection ) );
+    buttonregions.add( Icon.create(
+        clearButtonSection,
+        pics,
+        "clear",
+        { tap: clearGame },
+        { maxfill: 0.75 }
+    ) );
 
     buttonregions.add( Icon.create(
         backButtonSection,
@@ -495,17 +507,25 @@ function makeGame( screen, presetPuzzle ) {
             tap: function() {
                 screen.setScene( makePregameMenu( screen, 100 ) );
             } 
-        }
+        },
+        { maxfill: 0.75 }
     ) );
 
-    buttonregions.add( $.extend( {handler: function() {
-        inventory.previousPage();
-    }, colour: "blue" }, previousInventoryPageButton ) );
+    buttonregions.add( Icon.create(
+        previousInventoryPageButton,
+        pics,
+        "left",
+        { tap: inventory.previousPage },
+        { maxfill: 0.75 }
+    ) );
 
-    buttonregions.add( $.extend( {handler: function() {
-        inventory.nextPage();
-    }, colour: "yellow" }, nextInventoryPageButton ) );
-
+    buttonregions.add( Icon.create(
+        nextInventoryPageButton,
+        pics,
+        "right",
+        { tap: inventory.nextPage },
+        { maxfill: 0.75 }
+    ) );
 
     function mouseHandler( click ) {
         var buttonregion = buttonregions.at( click );

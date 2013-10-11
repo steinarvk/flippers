@@ -1,6 +1,6 @@
 var AABB = require("./AABB");
 
-var Icon = {create: function(region,pictures,name,handler) {
+var Icon = {create: function(region,pictures,name,handler,options) {
     var pad = null;
     var pic = null;
     var sz = null;
@@ -15,9 +15,15 @@ var Icon = {create: function(region,pictures,name,handler) {
         }
 
         pic = pictures[name];
+        
+        var maxfill = (options && options.maxfill) || 1.0;
 
-        var sc = Math.min( region.width / pic.width,
-                           region.height / pic.height );
+        console.log( "maxfill for " + name + " is " + maxfill );
+
+        var sc = Math.min( maxfill * region.width / pic.width,
+                           maxfill * region.height / pic.height );
+
+        console.log( " scaling " + sc );
        
         sz = {width: Math.floor( pic.width * sc ),
               height: Math.floor( pic.height * sc )};
