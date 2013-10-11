@@ -11,6 +11,9 @@ var Screen = require("./Screen");
 var Picture = require("./Picture");
 var Sound = require("./Sound");
 var Stopwatch = require("./Stopwatch");
+var GridMenu = require("./GridMenu");
+var Map2D = require("./Map2D");
+var Icon = require("./Icon");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -91,6 +94,25 @@ function initialize() {
     screen.setScene( makePregameMenu( screen, 1 ) );
 }
 
+function makeLevelActivator( f, level ) {
+    return function() { f( level ); }
+}
+
+function makeLevelSelectMenu( screen, levels, onLevel ) {
+    var selections = [];
+    for(var label in levels) {
+        selections.push( {text: label,
+                          activate: makeLevelActivator( onLevel, levels[label] )} );
+    }
+    return GridMenu.create(
+        screen.canvas(),
+        screen.area(),
+        {cols: 6, rows: 10},
+        selections,
+        screen.mouse()
+    );
+}
+
 function makePregameMenu( screen, n ) {
     return Menu.create(
         screen.canvas(),
@@ -98,9 +120,14 @@ function makePregameMenu( screen, n ) {
         [
             {text: "Puzzle",
              activate: function() {
-                 var level = PredefinedLevels["Puzzle 10 -- place a single flipper"];
-                 screen.setScene( makeGame( screen, level ) );
-             }},
+                 screen.setScene( makeLevelSelectMenu(
+                     screen,
+                     PredefinedLevels,
+                     function(level) {
+                         screen.setScene( makeGame( screen, level ) );
+                     }
+                 ) )
+             } },
             {text: "Freeform",
              activate: function() {
                  screen.setScene( makeGame( screen, null ) );
@@ -191,6 +218,13 @@ function makeGame( screen, presetPuzzle ) {
     var canvas = screen.canvas();
     var jqcanvas = $(canvas);
     var ctx = canvas.getContext("2d");
+    var pics = Picture.load( {
+        back: "./assets/symbols_back.png",
+        left: "./assets/symbols_left.png",
+        right: "./assets/symbols_right.png",
+        play: "./assets/symbols_play.png",
+        clear: "./assets/symbols_clear.png"
+    } ).pictures;
 
     var myState = null;
 
@@ -205,8 +239,22 @@ function makeGame( screen, presetPuzzle ) {
     var buildMode = !presetPuzzle;
     var presetGame = null;
 
+    var gamegraphics = DiagramGraphics.create( canvas,
+					      {x: 0,
+					       y: 0,
+					       width: 480,
+					       height: 480},
+					      {cols: 9,
+					       rows: 9}
+					    );
     if( !buildMode ) {
         presetGame = GameState.load( presetPuzzle );
+        var shade = Map2D.create();
+        for(var i = 0; i < presetPuzzle.elements.length; i++) {
+            var el = presetPuzzle.elements[i];
+            shade.set( el.col, el.row, true );
+        }
+        gamegraphics.setBoardShading( shade );
     }
 
     var mySmoothState = null;
@@ -322,14 +370,6 @@ function makeGame( screen, presetPuzzle ) {
 
     console.log( "Game beginning!");
 
-    var gamegraphics = DiagramGraphics.create( canvas,
-					      {x: 0,
-					       y: 0,
-					       width: 480,
-					       height: 480},
-					      {cols: 9,
-					       rows: 9}
-					    );
     var currentBrush = null;
 
     var buttonregions = Regions.create();
@@ -354,49 +394,73 @@ function makeGame( screen, presetPuzzle ) {
     var clearButtonSection = controlsSubsections[5];
     var backButtonSection = controlsSubsections[3];
 
-    var inventory = Inventory.create(
-        function(region) {
-            if( region == null ) {
-                currentBrush = null;
-            } else {
-                currentBrush = region.item;
-            }
-        },
-        inventorySection,
-        {cols: 3,
-         rows: 2},
-        {margins: 2} );
-    (function () {
-        var colours = ["red", "green", null];
-        var elements = [ {type: "flipper", ascending: true},
-                         {type: "breakable-triangle", rotation: 3},
-                         {type: "breakable-square"},
-                         {type: "triangle", rotation: 3},
-                         {type: "square"},
-                         {type: "switch"} ];
-        
-        for(var k = 0; k < 2; k++) {
-            for(var i = 0; i < colours.length; i++) {
-                for(var j = 0; j < elements.length; j++) {
-                    var deactivated = k == 1;
-                    if( !colours[i] && elements[j].type == "switch" ) {
-                        continue;
+    var inventory = null;
+    var revInvMap = Map2D.create();
+
+    if( presetPuzzle ) {
+        inventory = Inventory.create(
+            function(region) {
+                if( region == null || region.blank ) {
+                    currentBrush = null;
+                } else {
+                    currentBrush = region;
+                }
+            },
+            inventorySection,
+            {cols: 3, rows: 2},
+            {margins: 2}
+        );
+        for(var i = 0; i < presetPuzzle.inventory.length; i++) {
+            var item = presetPuzzle.inventory[i];
+            console.log( "adding " + JSON.stringify( item ) );
+            inventory.add( item );
+        }
+    } else {
+        // Add full post-scarcity palette
+        (function () {
+            inventory = Inventory.create(
+                function(region) {
+                    if( region == null ) {
+                        currentBrush = null;
+                    } else {
+                        currentBrush = region;
                     }
-                    if( deactivated &&
-                        (!colours[i] || elements[j].type == "switch") ) {
-                        continue;
+                },
+                inventorySection,
+                {cols: 3,
+                 rows: 2},
+                {margins: 2} );
+            var colours = ["red", "green", null];
+            var elements = [ {type: "flipper", ascending: true},
+                             {type: "breakable-triangle", rotation: 3},
+                             {type: "breakable-square"},
+                             {type: "triangle", rotation: 3},
+                             {type: "square"},
+                             {type: "switch"} ];
+            
+            for(var k = 0; k < 2; k++) {
+                for(var i = 0; i < colours.length; i++) {
+                    for(var j = 0; j < elements.length; j++) {
+                        var deactivated = k == 1;
+                        if( !colours[i] && elements[j].type == "switch" ) {
+                            continue;
+                        }
+                        if( deactivated &&
+                            (!colours[i] || elements[j].type == "switch") ) {
+                            continue;
+                        }
+                        inventory.add( $.extend( {},
+                                                 elements[j],
+                                                 {colour: colours[i]},
+                                                 deactivated ?
+                                                 {deactivated: true}
+                                                 :
+                                                 {} ) );
                     }
-                    inventory.add( $.extend( {},
-                                             elements[j],
-                                             {colour: colours[i]},
-                                             deactivated ?
-                                             {deactivated: true}
-                                             :
-                                             {} ) );
                 }
             }
-        }
-    })();
+        })();
+    }
 
     function configureElement( element ) {
         if( element.rotation !== undefined ) {
@@ -419,31 +483,62 @@ function makeGame( screen, presetPuzzle ) {
         return false;
     }
 
-    buttonregions.add( $.extend( {handler: function() {
-        toggleGame();
-    }, colour: "red" }, playButtonSection ) );
+    buttonregions.add( Icon.create(
+        playButtonSection,
+        pics,
+        "play",
+        { tap: toggleGame },
+        { maxfill: 0.75 }
+    ) );
 
-    buttonregions.add( $.extend( {handler: function() {
-        clearGame();
-    }, colour: "purple" }, clearButtonSection ) );
+    if( buildMode ) {
+        buttonregions.add( Icon.create(
+            clearButtonSection,
+            pics,
+            "clear",
+            { tap: clearGame },
+            { maxfill: 0.75 }
+        ) );
+    }
 
-    buttonregions.add( $.extend( {handler: function() {
-        screen.setScene( makePregameMenu( screen, 100 ) );
-    }, colour: "magenta" }, backButtonSection ) );
+    buttonregions.add( Icon.create(
+        backButtonSection,
+        pics,
+        "back",
+        {
+            tap: function() {
+                screen.setScene( makePregameMenu( screen, 100 ) );
+            } 
+        },
+        { maxfill: 0.75 }
+    ) );
 
-    buttonregions.add( $.extend( {handler: function() {
-        inventory.previousPage();
-    }, colour: "blue" }, previousInventoryPageButton ) );
-
-    buttonregions.add( $.extend( {handler: function() {
-        inventory.nextPage();
-    }, colour: "yellow" }, nextInventoryPageButton ) );
-
+    if( inventory.numberOfPages() > 1 ) {
+        buttonregions.add( Icon.create(
+            previousInventoryPageButton,
+            pics,
+            "left",
+            { tap: inventory.previousPage },
+            { maxfill: 0.75 }
+        ) );
+        
+        buttonregions.add( Icon.create(
+            nextInventoryPageButton,
+            pics,
+            "right",
+            { tap: inventory.nextPage },
+            { maxfill: 0.75 }
+        ) );
+    }
 
     function mouseHandler( click ) {
         var buttonregion = buttonregions.at( click );
         if( buttonregion ) {
-            return {tap: buttonregion.handler};
+            if( buttonregion.mouseHandler ) {
+                return buttonregion.mouseHandler( click );
+            } else {
+                return {tap: buttonregion.handler};
+            }
         }
         
         if( inventory.region().contains( click ) ) {
@@ -451,7 +546,7 @@ function makeGame( screen, presetPuzzle ) {
             if( subregion ) {
                 return {
                     tap: function() {
-                        if( currentBrush == subregion.item ) {
+                        if( currentBrush && currentBrush.item == subregion.item ) {
                             inventory.setSelected( null );
                         } else {
                             inventory.setSelected( subregion );
@@ -474,6 +569,12 @@ function makeGame( screen, presetPuzzle ) {
                 if( cellIsFixed( cell ) ) {
                     return;
                 }
+                var region = revInvMap.get( cell.col, cell.row );
+                if( region ) {
+                    region.blank = false;
+                }
+
+                revInvMap.remove( cell.col, cell.row );
                 
 		myState.removeElementAtCell( cell );
 	    },
@@ -488,7 +589,11 @@ function makeGame( screen, presetPuzzle ) {
                 if( element ) {
                     myState.setElement( configureElement( element ) );
                 } else if( currentBrush ) {
-                    myState.setElement( $.extend( {}, cell, currentBrush ) );
+                    if( presetPuzzle ) {
+                        revInvMap.set( cell.col, cell.row, currentBrush );
+                        currentBrush.blank = true;
+                    }
+                    myState.setElement( $.extend( {}, cell, currentBrush.item ) );
                 }
 	    }
 	};
@@ -504,7 +609,11 @@ function makeGame( screen, presetPuzzle ) {
         inventory.render( gfx );
 
         buttonregions.onRegions( function( region ) {
-            gfx.drawColouredAABB( region, region.colour );
+            if( region.draw ) {
+                region.draw( ctx );
+            } else {
+                gfx.drawColouredAABB( region, region.colour );
+            }
         } );
     }
 
