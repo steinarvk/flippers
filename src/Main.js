@@ -491,13 +491,15 @@ function makeGame( screen, presetPuzzle ) {
         { maxfill: 0.75 }
     ) );
 
-    buttonregions.add( Icon.create(
-        clearButtonSection,
-        pics,
-        "clear",
-        { tap: clearGame },
-        { maxfill: 0.75 }
-    ) );
+    if( buildMode ) {
+        buttonregions.add( Icon.create(
+            clearButtonSection,
+            pics,
+            "clear",
+            { tap: clearGame },
+            { maxfill: 0.75 }
+        ) );
+    }
 
     buttonregions.add( Icon.create(
         backButtonSection,
@@ -511,21 +513,23 @@ function makeGame( screen, presetPuzzle ) {
         { maxfill: 0.75 }
     ) );
 
-    buttonregions.add( Icon.create(
-        previousInventoryPageButton,
-        pics,
-        "left",
-        { tap: inventory.previousPage },
-        { maxfill: 0.75 }
-    ) );
-
-    buttonregions.add( Icon.create(
-        nextInventoryPageButton,
-        pics,
-        "right",
-        { tap: inventory.nextPage },
-        { maxfill: 0.75 }
-    ) );
+    if( inventory.numberOfPages() > 1 ) {
+        buttonregions.add( Icon.create(
+            previousInventoryPageButton,
+            pics,
+            "left",
+            { tap: inventory.previousPage },
+            { maxfill: 0.75 }
+        ) );
+        
+        buttonregions.add( Icon.create(
+            nextInventoryPageButton,
+            pics,
+            "right",
+            { tap: inventory.nextPage },
+            { maxfill: 0.75 }
+        ) );
+    }
 
     function mouseHandler( click ) {
         var buttonregion = buttonregions.at( click );
