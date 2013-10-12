@@ -1,16 +1,66 @@
 var sys = require("sys");
 var http = require("http");
+var request = require("request");
+var querystring = require("querystring");
 
 var port = 5900;
 
-var state = [];
+var db = "http://localhost:5984/flippers/";
+
+function jsonRequest( handler ) {
+    return function(error, response, body) {
+        if( !error
+            && response.statusCode >= 200
+            && response.statusCode <= 299 ) {
+            var data = null;
+            try {
+                if(typeof body == "object" ) {
+                    // For a json POST request the request module does this
+                    data = body;
+                } else {
+                    data = JSON.parse( body );
+                }
+            }
+            catch( err ) {
+                handler( "JSON parse error", null );
+                return;
+            }
+            handler( null, data );
+        } else {
+            if( response && response.statusCode ) {
+                if( typeof body == "object" ) {
+                    handler( "Error: " + JSON.stringify( body ), null );
+                } else if( error ) {
+                    handler( "Error: (" + response.statusCode + ") " + error, null );
+                } else {
+                    handler( "Error: (" + response.statusCode + ")", null );
+                }
+
+            } else {
+                handler( "Error: (-)" + error, null );
+            }
+        }
+    };
+}
 
 function couchPost( doc, cont ) {
-    cont( "not yet implemented", null );
+    var url = db;
+    request( {method: "POST",
+               uri: url,
+               json: doc},
+              jsonRequest( function( error, data ) {
+                  if( error ) {
+                      cont( error, null );
+                  } else {
+                      cont( null, data.id );
+                  }
+              } ) );
 }
 
 function couchView( viewName, args, cont ) {
-    cont( null, "not yet implemented" );
+    var base = db + "_design/flippers/_view/" + viewName;
+    var url = base + "?" + querystring.stringify( args );
+    request.get( url, jsonRequest( cont ) );
 }
 
 function handleGetPuzzleById( finish, puzzleId ) {
@@ -22,7 +72,7 @@ function handleGetPuzzleById( finish, puzzleId ) {
                   {from: puzzleId,
                    to: puzzleId,
                    limit: 1},
-                  function( data, error ) {
+                  function( error, data ) {
                       if( data ) {
                           if( data.rows.length > 0
                               && data.rows[0].key == puzzleId) {
@@ -39,9 +89,13 @@ function handleGetPuzzleById( finish, puzzleId ) {
 function handleListPuzzles( finish ) {
     couchView( "puzzlesByName",
                   {limit: 10},
-                  function( data, error ) {
+                  function( error, data ) {
                       if( data ) {
-                          finish( data );
+                          finish( data.rows.map( function( entry ) {
+                              return {id: entry.id,
+                                      name: entry.key,
+                                      author: entry.value.author};
+                          } ) );
                       } else {
                           finish( {error: error} );
                       }
@@ -49,7 +103,7 @@ function handleListPuzzles( finish ) {
 }
 
 function handleGetPuzzles( finish, url ) {
-    if( url.length > 2 ) {
+    if( url.length >= 2 ) {
         handleGetPuzzleById( finish, url[1] );
     }
 
@@ -58,9 +112,12 @@ function handleGetPuzzles( finish, url ) {
 
 function handlePostPuzzle( finish, url, data ) {
     couchPost( data,
-               function( result, id ) {
-                   finish( {result: result,
-                            id: id} );
+               function( error, id ) {
+                   if( error ) {
+                       finish( {error: error} );
+                   } else {
+                       finish( {id: id} );
+                   }
                } );
 }
 
@@ -76,7 +133,7 @@ var app = http.createServer(function(request, response) {
 
     var components = request.url.split("/");
     components.shift();
-
+    
     var handlerName = components[0];
 
     var handler = null;
