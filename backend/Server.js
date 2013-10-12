@@ -60,6 +60,7 @@ function couchPost( doc, cont ) {
 function couchView( viewName, args, cont ) {
     var base = db + "_design/flippers/_view/" + viewName;
     var url = base + "?" + querystring.stringify( args );
+    sys.puts( "mjau: " + url );
     request.get( url, jsonRequest( cont ) );
 }
 
@@ -69,11 +70,15 @@ function handleGetPuzzleById( finish, puzzleId ) {
     }
     
     couchView( "puzzlesById",
-                  {from: puzzleId,
-                   to: puzzleId,
+                  {key: JSON.stringify( puzzleId ),
                    limit: 1},
                   function( error, data ) {
                       if( data ) {
+                          sys.puts( JSON.stringify( data ) );
+                          sys.puts( "wanted " + puzzleId );
+                          sys.puts( "got " + data.rows[0].key );
+                          sys.puts( "match " + (puzzleId == data.rows[0].key ) );
+                          sys.puts( "len " + data.rows.length );
                           if( data.rows.length > 0
                               && data.rows[0].key == puzzleId) {
                               finish( {result: data.rows[0].value } );
@@ -105,9 +110,9 @@ function handleListPuzzles( finish ) {
 function handleGetPuzzles( finish, url ) {
     if( url.length >= 2 ) {
         handleGetPuzzleById( finish, url[1] );
+    } else {
+        handleListPuzzles( finish );
     }
-
-    handleListPuzzles( finish );
 }
 
 function handlePostPuzzle( finish, url, data ) {
@@ -133,6 +138,8 @@ var app = http.createServer(function(request, response) {
 
     var components = request.url.split("/");
     components.shift();
+
+    sys.puts( "Request (" + request.method + "): " + request.url );
     
     var handlerName = components[0];
 

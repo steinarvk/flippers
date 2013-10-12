@@ -14,6 +14,7 @@ var Stopwatch = require("./Stopwatch");
 var GridMenu = require("./GridMenu");
 var Map2D = require("./Map2D");
 var Icon = require("./Icon");
+var Backend = require("./Backend");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -95,7 +96,7 @@ function initialize() {
 }
 
 function makeLevelActivator( f, level ) {
-    return function() { f( level ); }
+    return function() { f( level ); };
 }
 
 function makeLevelSelectMenu( screen, levels, onLevel ) {
@@ -113,6 +114,52 @@ function makeLevelSelectMenu( screen, levels, onLevel ) {
     );
 }
 
+function makeOnlinePuzzleLoader( screen, id ) {
+    var backend = Backend.create();
+
+    backend.fetchPuzzle( id, function( error, puzzle ) {
+        if( error || !puzzle || !puzzle.result ) {
+            console.log( "failed to fetch puzzle" );
+            screen.setScene( makePregameMenu( screen, 89 ) );
+            return;
+        }
+
+        console.log( JSON.stringify( puzzle ) );
+
+        screen.setScene( makeGame( screen, puzzle.result.puzzle ) );
+    } );
+
+    return {};
+}
+
+function makeOnlinePuzzlesMenu( screen ) {
+    var backend = Backend.create();
+
+    backend.fetchPuzzleList( function( error, puzzles ) {
+        if( error ) {
+            console.log( "failed to fetch puzzle list" );
+            screen.setScene( makePregameMenu( screen, 0 ) );
+            return;
+        }
+
+        screen.setScene( Menu.create(
+            screen.canvas(),
+            screen.area(),
+            puzzles.map( function( entry ) {
+                return {
+                    text: entry.name + " (" + entry.author + ")",
+                    activate: function() {
+                        screen.setScene( makeOnlinePuzzleLoader( screen, entry.id ) );
+                    }
+                };
+            } ),
+            screen.mouse()
+        ) );
+    } );
+
+    return {};
+}
+
 function makePregameMenu( screen, n ) {
     return Menu.create(
         screen.canvas(),
@@ -126,23 +173,15 @@ function makePregameMenu( screen, n ) {
                      function(level) {
                          screen.setScene( makeGame( screen, level ) );
                      }
-                 ) )
+                 ) );
              } },
             {text: "Freeform",
              activate: function() {
                  screen.setScene( makeGame( screen, null ) );
              }},
-            {text: "Test " + n,
+            {text: "Online",
              activate: function() {
-                 screen.setScene( makePregameMenu( screen, n + 1 ) );
-             }},
-            {text: "Picture",
-             activate: function() {
-                 screen.setScene( makeMediaScene( screen ) );
-             }},
-            {text: "Html",
-             activate: function() {
-                 screen.setScene( makeHtmlScene( screen ) );
+                 screen.setScene( makeOnlinePuzzlesMenu( screen ) );
              }}
         ],
         screen.mouse() );
