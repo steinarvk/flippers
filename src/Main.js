@@ -112,7 +112,8 @@ function makeLevelSelectMenu( screen, levels, onLevel ) {
         screen.area(),
         {cols: 6, rows: 10},
         selections,
-        screen.mouse()
+        screen.mouse(),
+        {back: function() { screen.setScene( makeRoot(screen) ); }}
     );
 }
 
@@ -167,11 +168,16 @@ function makeOnlinePuzzlesMenu( screen ) {
                     }
                 };
             } ),
-            screen.mouse()
+            screen.mouse(),
+            {back: function() { screen.setScene( makeRoot(screen) ); }}
         ) );
     } );
 
     return {};
+}
+
+function makeRoot( screen ) {
+    return makePregameMenu( screen, 1 );
 }
 
 function makePregameMenu( screen, n ) {
@@ -198,7 +204,9 @@ function makePregameMenu( screen, n ) {
                  screen.setScene( makeOnlinePuzzlesMenu( screen ) );
              }}
         ],
-        screen.mouse() );
+        screen.mouse(),
+        {back: function() { screen.setScene( makeRoot(screen) ); }}
+    );
 }
 
 function makeHtmlScene( screen ) {
@@ -452,7 +460,9 @@ function makePuzzleSaver( screen, puzzle ) {
             }
             
             return null;
-        }
+        },
+
+        back: onBack
     };
 }
 
@@ -901,7 +911,8 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
             }
 	    render( gamegraphics );
         },
-        mouseHandler: mouseHandler
+        mouseHandler: mouseHandler,
+        back: function() { screen.setScene( makeRoot(screen) ); }
     };
 }
 

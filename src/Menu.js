@@ -2,7 +2,7 @@ var Regions = require("./Regions");
 var AABB = require("./AABB");
 var Label = require("./Label");
 
-var Menu = {create: function(canvas, area, items, mouse) {
+var Menu = {create: function(canvas, area, items, mouse, options) {
     var ctx = canvas.getContext("2d");
     var regions = Regions.create();
     var fontStyle = null;
@@ -95,7 +95,8 @@ var Menu = {create: function(canvas, area, items, mouse) {
 
     return {
         draw: draw,
-        mouseHandler: mouseHandler
+        mouseHandler: mouseHandler,
+        back: (options && options.back)
     };
 } };
 

@@ -62,6 +62,22 @@ var Screen = { create: function( canvas, options ) {
         return {x: 0, y: 0, width: canvas.width, height: canvas.height};
     }
 
+    function onBack() {
+        if( scene && scene.back ) {
+            scene.back();
+        }
+    }
+
+    function setupUniversalKeys() {
+        var kb = new Kibo();
+
+        kb.down( "backspace", function() {
+            onBack();
+        } );
+    }
+
+    setupUniversalKeys();
+
     return {
         setScene: setScene,
         destroy: destroy,

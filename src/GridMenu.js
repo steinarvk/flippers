@@ -104,7 +104,8 @@ var Menu = {create: function(canvas, area, grid, items, mouse, options) {
 
     return {
         draw: draw,
-        mouseHandler: mouseHandler
+        mouseHandler: mouseHandler,
+        back: (options && options.back)
     };
 } };
 
