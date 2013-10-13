@@ -15,7 +15,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.3.1 r9886"
-   sodipodi:docname="New document 1">
+   sodipodi:docname="symbols.svg">
   <defs
      id="defs4">
     <linearGradient
@@ -148,6 +148,18 @@
          stdDeviation="7.1590515"
          id="feGaussianBlur6295" />
     </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter3852"
+       x="-0.10863969"
+       width="1.2172794"
+       y="-0.13401363"
+       height="1.2680273">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="8.0959032"
+         id="feGaussianBlur3854" />
+    </filter>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -157,8 +169,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.84690588"
-     inkscape:cx="328.67405"
-     inkscape:cy="736.12701"
+     inkscape:cx="129.12413"
+     inkscape:cy="405.51176"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -303,6 +315,25 @@
          id="rect6244"
          d="m 124.69141,635.03027 -67.06169,71.80673 67.06169,71.80673 0,-37.84345 75.68691,0 0,-67.92655 -75.68691,0 0,-37.84346 z"
          style="fill:#00917c;fill-opacity:1;stroke:#000000;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    </g>
+    <g
+       id="g3856"
+       transform="translate(-28.33845,23.615375)"
+       inkscape:export-filename="/home/svk/dev/flippers/assets/symbols_check.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <path
+         id="path10-4"
+         sodipodi:nodetypes="ccccccc"
+         d="M 485.3398,647.11916 C 463.6765,632.26591 453.42687,619.27541 453.42687,619.27541 413.42073,642.8483 370.93458,726.54971 370.93458,726.54971 351.02368,698.52004 331.004,690.702 331.004,690.702 c -9.00014,12.02647 -24.51382,28.05428 -24.51382,28.05428 36.1838,9.74505 66.55511,45.50564 66.55511,45.50564 C 438.70069,661.18414 485.3398,647.11916 485.3398,647.11916 z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:7;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter3852)"
+         inkscape:connector-curvature="0" />
+      <path
+         id="path10"
+         sodipodi:nodetypes="ccccccc"
+         d="M 485.3398,647.11916 C 463.6765,632.26591 453.42687,619.27541 453.42687,619.27541 413.42073,642.8483 370.93458,726.54971 370.93458,726.54971 351.02368,698.52004 331.004,690.702 331.004,690.702 c -9.00014,12.02647 -24.51382,28.05428 -24.51382,28.05428 36.1838,9.74505 66.55511,45.50564 66.55511,45.50564 C 438.70069,661.18414 485.3398,647.11916 485.3398,647.11916 z"
+         style="fill:#3ab500;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:7;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         inkscape:connector-curvature="0" />
     </g>
   </g>
 </svg>

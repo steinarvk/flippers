@@ -281,6 +281,7 @@ function makePuzzleSaver( screen, puzzle ) {
         left: "./assets/symbols_left.png",
         right: "./assets/symbols_right.png",
         play: "./assets/symbols_play.png",
+        check: "./assets/symbols_check.png",
         clear: "./assets/symbols_clear.png"
     } ).pictures;
 
@@ -320,7 +321,7 @@ function makePuzzleSaver( screen, puzzle ) {
     buttonregions.add( Icon.create(
         controlsSubsections[0],
         pics,
-        "clear",
+        "check",
         { tap: onAccept },
         { maxfill: 0.75 }
     ) );
@@ -477,6 +478,7 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
         left: "./assets/symbols_left.png",
         right: "./assets/symbols_right.png",
         play: "./assets/symbols_play.png",
+        check: "./assets/symbols_check.png",
         clear: "./assets/symbols_clear.png"
     } ).pictures;
 
@@ -650,7 +652,7 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     var playButtonSection = controlsSubsections[0];
     var clearButtonSection = controlsSubsections[5];
     var backButtonSection = controlsSubsections[3];
-    var saveButtonSection = controlsSubsections[2];
+    var saveButtonSection = controlsSubsections[4];
 
     var inventory = null;
     var revInvMap = Map2D.create();
@@ -767,10 +769,9 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
         buttonregions.add( Icon.create(
             saveButtonSection,
             pics,
-            "clear",
+            "check",
             {
                 tap: function() {
-                    console.log( "Hello" );
                     showSavePuzzleDialog();
                 }
             },
