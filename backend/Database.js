@@ -49,6 +49,10 @@ DesignDoc.validate_doc_update = function(newDoc, oldDoc, userCtx) {
         }
     };
 
+    if( newDoc._deleted ) {
+        return;
+    }
+
     if( newDoc.type == "puzzle" ) {
         validatePuzzleDocument( newDoc );
     } else {

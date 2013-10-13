@@ -34,7 +34,17 @@ var Backend = {create: function(baseUrl) {
     }
 
     function postPuzzle( puzzleData, next ) {
-        next( "not implemented yet" );
+        var fullUrl = baseUrl + "puzzles";
+
+        var postData = JSON.stringify( puzzleData );
+
+        $.post( fullUrl, postData )
+            .done( function( data ) {
+                next( null, data.id );
+            } )
+            .fail( function() {
+                next( "unable to post puzzle" );
+            } );
     }
 
     return {

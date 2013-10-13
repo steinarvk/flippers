@@ -117,6 +117,16 @@ function makeLevelSelectMenu( screen, levels, onLevel ) {
 function makeOnlinePuzzleLoader( screen, id ) {
     var backend = Backend.create();
 
+/*
+    backend.postPuzzle( {name: "Puzzle 10",
+                         type: "puzzle",
+                         author: "kaw",
+                         puzzle: PredefinedLevels["10"]},
+                        function( error, data ) {
+                            console.log( "woo " + JSON.stringify( data ) );
+                        } );
+*/
+
     backend.fetchPuzzle( id, function( error, puzzle ) {
         if( error || !puzzle || !puzzle.result ) {
             console.log( "failed to fetch puzzle" );
