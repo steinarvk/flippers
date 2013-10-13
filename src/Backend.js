@@ -86,7 +86,7 @@ var Backend = {create: function(baseUrl) {
     }
 
     function fetchPuzzle( id, next ) {
-        var fullUrl = baseUrl + "puzzles/" + id + "/";
+        var fullUrl = baseUrl + "puzzles?id=" + id;
 
         console.log( "request " + fullUrl );
 
