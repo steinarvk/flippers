@@ -364,6 +364,8 @@ function makePuzzleSaver( screen, puzzle ) {
     }
 
     function normalizePiece( piece ) {
+        delete piece.col;
+        delete piece.row;
         if( piece.ascending ) {
             piece.ascending = false;
         }
