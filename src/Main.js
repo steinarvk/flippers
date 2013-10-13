@@ -15,6 +15,8 @@ var GridMenu = require("./GridMenu");
 var Map2D = require("./Map2D");
 var Icon = require("./Icon");
 var Backend = require("./Backend");
+var Label = require("./Label");
+var Random = require("./Random");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -239,7 +241,7 @@ function makeHtmlScene( screen ) {
         exit: function() {
             x.remove();
         }
-    }
+    };
 }
 
 function makeMediaScene( screen ) {
@@ -262,10 +264,199 @@ function makeMediaScene( screen ) {
                 ctx.drawImage( pics.my, 0, x );
             }
         }
-    }
+    };
 }
 
-function makeGame( screen, presetPuzzle ) {
+function makePuzzleSaver( screen, puzzle ) {
+    var pics = Picture.load( {
+        back: "./assets/symbols_back.png",
+        left: "./assets/symbols_left.png",
+        right: "./assets/symbols_right.png",
+        play: "./assets/symbols_play.png",
+        clear: "./assets/symbols_clear.png"
+    } ).pictures;
+
+    var ctx = screen.canvas().getContext("2d");
+
+    var puzzleName = "Puzzle " + Random.letters(6);
+    var puzzleAuthor = "web user";
+
+    var buttonregions = Regions.create();
+    var wholeCanvas = AABB.create( screen.area() );
+    var sections = wholeCanvas.vsplit( [ {fixed: screen.area().width},
+                                         {share: 1},
+                                         {share: 1} ] );
+    var controlsSection = sections[2];
+    var controlsSubsections = controlsSection.hsplit( [ {},
+                                                        {},
+                                                        {},
+                                                        {},
+                                                        {},
+                                                        {} ] );
+    var textSections = sections[1].vsplit( [{}, {}, {}, {}] );
+    var labels = [];
+    var mkLabel = function( text ) {
+        var rv = Label.create( screen.canvas(),
+                               textSections[ labels.length ],
+                               text,
+                               {maxSize: 40} );
+        labels.push( rv );
+        return rv;
+    };
+
+    var authorLabel = mkLabel( puzzleAuthor );
+    var nameLabel = mkLabel( puzzleName );
+    var dimensionsLabel = mkLabel( "" + puzzle.size.cols + "x" + puzzle.size.rows );
+    var inventorySizeLabel = mkLabel( "" );
+
+    buttonregions.add( Icon.create(
+        controlsSubsections[0],
+        pics,
+        "clear",
+        { tap: onAccept },
+        { maxfill: 0.75 }
+    ) );
+
+    buttonregions.add( Icon.create(
+        controlsSubsections[5],
+        pics,
+        "back",
+        { tap: onBack },
+        { maxfill: 0.75 }
+    ) );
+
+
+    var gamegraphics = DiagramGraphics.create( screen.canvas(),
+                                               sections[0],
+					       {cols: 9,
+					        rows: 9}
+					     );
+
+    var state = GameState.load( puzzle );
+    
+    var inventoryCells = [];
+
+    function updateShading() {
+        var shade = Map2D.create();
+        state.onSquares( function(cell, element) {
+            if( element ) {
+                shade.set( cell.col, cell.row, true );
+            }
+        } );
+        for(var i = 0; i < inventoryCells.length; i++) {
+            shade.set( inventoryCells[i].col,
+                       inventoryCells[i].row,
+                       false );
+        }
+        gamegraphics.setBoardShading( shade );
+    }
+
+    function onBack() {
+        screen.setScene( makeGame( screen, null, state.save() ) );
+    }
+
+    function normalizePiece( piece ) {
+        if( piece.ascending ) {
+            piece.ascending = false;
+        }
+        if( piece.rotation ) {
+            piece.rotation = 0;
+        }
+        return piece;
+    }
+
+    function onAccept() {
+        var st = GameState.load( state.save() );
+        var inv = [];
+        for(var i = 0; i < inventoryCells.length; i++) {
+            var element = st.elementAtCell( inventoryCells[i] );
+
+            inv.push( normalizePiece( element ) );
+
+            st.removeElementAtCell( inventoryCells[i] );
+        }
+
+        var puz = st.save();
+
+        puz.inventory = inv;
+
+        var rv = {type: "puzzle",
+                  name: puzzleName,
+                  author: puzzleAuthor,
+                  puzzle: puz};
+
+        var backend = Backend.create();
+
+        backend.postPuzzle( rv,
+                            function( error, id ) {
+                                if( id ) {
+                                    screen.setScene( makeOnlinePuzzleLoader(
+                                        screen,
+                                        id
+                                    ) );
+                                } else {
+                                    console.log( "Error posting puzzle" );
+                                }
+                            } );
+    }
+
+    function toggleInventoryCell( cell ) {
+        var i = 0;
+        for(i = 0; i < inventoryCells.length; i++) {
+            var c = inventoryCells[i];
+            if( c.col == cell.col && c.row == cell.row ) {
+                break;
+            }
+        }
+        if( i >= inventoryCells.length ) {
+            inventoryCells.push( cell );
+        } else {
+            inventoryCells.splice( i, 1 );
+        }
+        updateShading();
+        updateInventoryLabel();
+    }
+
+    function updateInventoryLabel() {
+        inventorySizeLabel.setText( "" + (inventoryCells.length) + " pieces" );
+    }
+
+    updateShading();
+    updateInventoryLabel();
+
+    return {
+        draw: function() {
+            state.render( gamegraphics );
+
+            buttonregions.onRegions( function( region ) {
+                region.draw( ctx );
+            } );
+
+            for( var i in labels ) {
+                labels[i].render();
+            }
+        },
+
+        mouseHandler: function(click) {
+            var button = buttonregions.at( click );
+            if( button ) {
+                return button.mouseHandler( click );
+            }
+
+            var cell = gamegraphics.cellAtPosition( click );
+
+            if( cell && state.elementAtCell( cell ) ) {
+                return {tap: function() {
+                    toggleInventoryCell( cell );
+                } };
+            }
+            
+            return null;
+        }
+    };
+}
+
+function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     var canvas = screen.canvas();
     var jqcanvas = $(canvas);
     var ctx = canvas.getContext("2d");
@@ -281,6 +472,8 @@ function makeGame( screen, presetPuzzle ) {
 
     if( presetPuzzle ) {
         myState = GameState.load( presetPuzzle );
+    } else if( preloadedPuzzle ) {
+        myState = GameState.load( preloadedPuzzle );
     } else {
         myState = GameState.loadOld(
 	    {"rows":7,"cols":7,"contents":[]}
@@ -515,59 +708,8 @@ function makeGame( screen, presetPuzzle ) {
         })();
     }
 
-    function hideSavePuzzleDialog() {
-        $("#createPuzzleDialog").hide();
-    }
-
     function showSavePuzzleDialog() {
-        var el = $("#createPuzzleDialog");
-        if( !el.length ) {
-            el = $( document.createElement( "div" ) )
-                .attr( "id", "createPuzzleDialog" )
-                .css( { "position": "fixed",
-                        "background-color": "blue",
-                        "left": "0px",
-                        "top": "0px",
-                        "width": "480px",
-                        "height": "800px"} )
-                .append( $(document.createElement("input"))
-                         .attr("id", "createPuzzleDialogName")
-                         .attr("type", "text")
-                         .val( "Unnamed" ) )
-                .append( $(document.createElement("input"))
-                         .attr("id", "createPuzzleDialogAuthor")
-                         .attr("type", "text")
-                         .val( "Anonymous") )
-                .append( $(document.createElement("button"))
-                         .html( "Save" )
-                         .click( function() {
-                             var puzzle =
-                                     { author: $("#createPuzzleDialogAuthor").val(),
-                                       type: "puzzle",
-                                       name: $("#createPuzzleDialogName").val(),
-                                       puzzle: JSON.parse( JSON.stringify( myState.save() ) ) };
-                             var backend = Backend.create();
-                             backend.postPuzzle( puzzle,
-                                                 function( error, id ) {
-                                                     hideSavePuzzleDialog();
-
-                                                     if( error ) {
-                                                         return;
-                                                     }
-
-                                                     screen.setScene( makeOnlinePuzzleLoader( screen, id ) );
-                                                 } );
-                                                 
-                             console.log("Save!" );
-                         } ) )
-                .append( $(document.createElement("button"))
-                         .html( "Cancel" )
-                         .click( function() {
-                             hideSavePuzzleDialog();
-                         } ) )
-                .appendTo( "#flippersGame" );
-        }
-        el.show();
+        screen.setScene( makePuzzleSaver( screen, myState.save() ) );
     }
 
     function configureElement( element ) {
