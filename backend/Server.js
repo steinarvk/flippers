@@ -2,6 +2,7 @@ var sys = require("sys");
 var http = require("http");
 var request = require("request");
 var querystring = require("querystring");
+var url = require("url");
 
 var port = 5900;
 
@@ -91,31 +92,100 @@ function handleGetPuzzleById( finish, puzzleId ) {
                   } );
 }
 
-function handleListPuzzles( finish ) {
-    couchView( "puzzlesByName",
-                  {limit: 10},
-                  function( error, data ) {
-                      if( data ) {
-                          finish( data.rows.map( function( entry ) {
-                              return {id: entry.id,
-                                      name: entry.key,
-                                      author: entry.value.author};
-                          } ) );
-                      } else {
-                          finish( {error: error} );
-                      }
-                  } );
-}
-
-function handleGetPuzzles( finish, url ) {
-    if( url.length >= 2 ) {
-        handleGetPuzzleById( finish, url[1] );
+function finishPaginatedList( finish, pageSize, error, data, reverse, skip ) {
+    if( data ) {
+        if( !data.total_rows ) {
+            finish( {total_rows: 0,
+                     result: []} );
+            return;
+        }
+        var total_rows = data.total_rows;
+        if( skip > 0 ) {
+            data.rows.splice( 0, skip );
+        }
+        if( reverse ) {
+            data.rows.reverse();
+        }
+        var nextEl = null;
+        if( data.rows.length > pageSize ) {
+            nextEl = data.rows.pop();
+        }
+        var firstEl = data.rows[0];
+        var rows = data.rows.map( function( entry ) {
+            return {id: entry.id,
+                    name: entry.key,
+                    author: entry.value.author};
+        } );
+        var rv = {
+            total_rows: total_rows,
+            page_size: pageSize,
+            prev_key: firstEl.key,
+            prev_id: firstEl.id,
+            result: rows
+        };
+        if( nextEl ) {
+            rv.next_key = nextEl.key;
+            rv.next_id = nextEl.id;
+        }
+        
+        finish( rv );
     } else {
-        handleListPuzzles( finish );
+        finish( {error: error} );
     }
 }
 
-function handlePostPuzzle( finish, url, data ) {
+function handleListPuzzlesPrev( finish, pageSize, to_key, to_id ) {
+    couchView( "puzzlesByName",
+               {limit: pageSize + 1,
+                startkey: to_key,
+                startkey_docid: to_id,
+                descending: true},
+               function( error, data ) {
+                   finishPaginatedList( finish, pageSize, error, data, true );
+               } );
+}
+
+function handleListPuzzlesNext( finish, pageSize, from_key, from_id ) {
+    couchView( "puzzlesByName",
+               {limit: pageSize + 1,
+                startkey: from_key,
+                startkey_docid: from_id,
+                descending: false},
+               function( error, data ) {
+                   finishPaginatedList( finish, pageSize, error, data, false );
+               } );
+}
+
+function handleListPuzzles( finish, pageSize ) {
+    couchView( "puzzlesByName",
+                  {limit: pageSize + 1},
+                  function( error, data ) {
+                      finishPaginatedList( finish, pageSize, error, data, false );
+                   } );
+}
+
+function handleGetPuzzles( finish, args ) {
+    var pageSize = 10;
+
+    if( args.query.id ) {
+        handleGetPuzzleById( finish, args.query.id );
+    } else if( args.query.next_key && args.query.next_id ) {
+        handleListPuzzlesNext( finish,
+                               pageSize,
+                               args.query.next_key,
+                               args.query.next_id );
+    } else if( args.query.prev_id && args.query.prev_id ) {
+        handleListPuzzlesPrev( finish,
+                               pageSize,
+                               args.query.prev_key,
+                               args.query.prev_id );
+    } else {
+        handleListPuzzles( finish,
+                           pageSize);
+    }
+}
+
+function handlePostPuzzle( finish, args, data ) {
     couchPost( data,
                function( error, id ) {
                    if( error ) {
@@ -136,7 +206,9 @@ var Handlers = {
 var app = http.createServer(function(request, response) {
     response.writeHeader( 200, {"Content-Type": "application/json"} );
 
-    var components = request.url.split("/");
+    var args = url.parse( request.url, true );
+
+    var components = args.pathname.split("/");
     components.shift();
 
     sys.puts( "Request (" + request.method + "): " + request.url );
@@ -161,7 +233,7 @@ var app = http.createServer(function(request, response) {
     
     if( request.method == "GET" ) {
         try {
-            handler( finish, components );
+            handler( finish, args );
         }
         catch( err ) {
             finish( { error: err.message } );
@@ -174,7 +246,7 @@ var app = http.createServer(function(request, response) {
         
         request.on("end", function() {
             try {
-                handler( finish, components, JSON.parse( fullData ) );
+                handler( finish, args, JSON.parse( fullData ) );
             }
             catch( err ) {
                 finish( { error: err.message } );

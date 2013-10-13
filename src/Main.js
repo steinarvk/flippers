@@ -149,29 +149,61 @@ function makeOnlinePuzzleLoader( screen, id ) {
 
 function makeOnlinePuzzlesMenu( screen ) {
     var backend = Backend.create();
+    var pics = Picture.load( {
+        back: "./assets/symbols_back.png",
+        left: "./assets/symbols_left.png",
+        right: "./assets/symbols_right.png",
+        play: "./assets/symbols_play.png",
+        check: "./assets/symbols_check.png",
+        clear: "./assets/symbols_clear.png"
+    } ).pictures;
 
-    backend.fetchPuzzleList( function( error, puzzles ) {
+    function makeEntry( entry ) {
+        return {
+            text: entry.name + " (" + entry.author + ")",
+            activate: function() {
+                screen.setScene( makeOnlinePuzzleLoader( screen,
+                                                         entry.id ) );
+            }
+        };
+    }
+
+    function displayResult( error, puzzlespage ) {
+        function onPaged() {
+            displayResult( null, puzzlespage );
+        }
+
         if( error ) {
             console.log( "failed to fetch puzzle list" );
             screen.setScene( makePregameMenu( screen, 0 ) );
             return;
         }
 
+        var prevEntry = {text: "Previous",
+                         activate: function() {
+                             puzzlespage.prev( onPaged );
+                         }};
+        var nextEntry = {text: "Next",
+                         activate: function() {
+                             puzzlespage.next( onPaged );
+                         }};
+
+        var entries = puzzlespage.rows().map( makeEntry );
+
+        var menuEntries = [];
+        
+        menuEntries = menuEntries.concat( [prevEntry], entries, [nextEntry] );
+
         screen.setScene( Menu.create(
             screen.canvas(),
             screen.area(),
-            puzzles.map( function( entry ) {
-                return {
-                    text: entry.name + " (" + entry.author + ")",
-                    activate: function() {
-                        screen.setScene( makeOnlinePuzzleLoader( screen, entry.id ) );
-                    }
-                };
-            } ),
+            menuEntries,
             screen.mouse(),
             {back: function() { screen.setScene( makeRoot(screen) ); }}
         ) );
-    } );
+    }
+
+    backend.fetchPuzzleList( displayResult );
 
     return {};
 }
