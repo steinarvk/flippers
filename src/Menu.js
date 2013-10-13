@@ -1,11 +1,13 @@
 var Regions = require("./Regions");
 var AABB = require("./AABB");
+var Label = require("./Label");
 
 var Menu = {create: function(canvas, area, items, mouse) {
     var ctx = canvas.getContext("2d");
     var regions = Regions.create();
     var fontStyle = null;
     var fontWidth = null;
+    var labels = [];
 
     function regionIsActive( region ) {
         if( !mouse ) {
@@ -45,9 +47,20 @@ var Menu = {create: function(canvas, area, items, mouse) {
                                        y: area.y + y + pad,
                                        width: maxWidth - 2 * pad,
                                        height: height - 2 * pad} );
+            labels.push( Label.create( canvas, region, items[i].text ) );
             y += height;
             regions.add( $.extend( region, {item: items[i]} ) );
         }
+
+        var sz = Math.min.apply( null, labels.map( function(x){
+            return x.getSize();
+        } ) );
+        
+        console.log( "normalize on size " + sz );
+
+        labels.forEach( function(label) {
+            label.setSize( sz );
+        } );
     })();
 
     function draw() {
@@ -60,16 +73,10 @@ var Menu = {create: function(canvas, area, items, mouse) {
                 ctx.fillStyle = "blue";
             }
             ctx.fillRect( r.x, r.y, r.width, r.height );
-
-            ctx.fillStyle = "black";
-
-            ctx.font = fontStyle;
-            ctx.textBaseline = "top";
-            ctx.textAlign = "center";
-            ctx.fillText( region.item.text,
-                          r.x + r.width * 0.5,
-                          r.y );
         } );
+
+        labels.forEach( function(x) { x.render(); } );
+
     }
 
     function mouseHandler(p) {
