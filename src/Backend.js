@@ -40,6 +40,7 @@ var Backend = {create: function(baseUrl) {
 
         $.post( fullUrl, postData )
             .done( function( data ) {
+                console.log( "hmm " + JSON.stringify( data ) );
                 next( null, data.id );
             } )
             .fail( function() {

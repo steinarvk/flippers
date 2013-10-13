@@ -114,6 +114,8 @@ function makeLevelSelectMenu( screen, levels, onLevel ) {
     );
 }
 
+
+
 function makeOnlinePuzzleLoader( screen, id ) {
     var backend = Backend.create();
 
@@ -443,6 +445,7 @@ function makeGame( screen, presetPuzzle ) {
     var playButtonSection = controlsSubsections[0];
     var clearButtonSection = controlsSubsections[5];
     var backButtonSection = controlsSubsections[3];
+    var saveButtonSection = controlsSubsections[2];
 
     var inventory = null;
     var revInvMap = Map2D.create();
@@ -512,6 +515,61 @@ function makeGame( screen, presetPuzzle ) {
         })();
     }
 
+    function hideSavePuzzleDialog() {
+        $("#createPuzzleDialog").hide();
+    }
+
+    function showSavePuzzleDialog() {
+        var el = $("#createPuzzleDialog");
+        if( !el.length ) {
+            el = $( document.createElement( "div" ) )
+                .attr( "id", "createPuzzleDialog" )
+                .css( { "position": "fixed",
+                        "background-color": "blue",
+                        "left": "0px",
+                        "top": "0px",
+                        "width": "480px",
+                        "height": "800px"} )
+                .append( $(document.createElement("input"))
+                         .attr("id", "createPuzzleDialogName")
+                         .attr("type", "text")
+                         .val( "Unnamed" ) )
+                .append( $(document.createElement("input"))
+                         .attr("id", "createPuzzleDialogAuthor")
+                         .attr("type", "text")
+                         .val( "Anonymous") )
+                .append( $(document.createElement("button"))
+                         .html( "Save" )
+                         .click( function() {
+                             var puzzle =
+                                     { author: $("#createPuzzleDialogAuthor").val(),
+                                       type: "puzzle",
+                                       name: $("#createPuzzleDialogName").val(),
+                                       puzzle: JSON.parse( JSON.stringify( myState.save() ) ) };
+                             var backend = Backend.create();
+                             backend.postPuzzle( puzzle,
+                                                 function( error, id ) {
+                                                     hideSavePuzzleDialog();
+
+                                                     if( error ) {
+                                                         return;
+                                                     }
+
+                                                     screen.setScene( makeOnlinePuzzleLoader( screen, id ) );
+                                                 } );
+                                                 
+                             console.log("Save!" );
+                         } ) )
+                .append( $(document.createElement("button"))
+                         .html( "Cancel" )
+                         .click( function() {
+                             hideSavePuzzleDialog();
+                         } ) )
+                .appendTo( "#flippersGame" );
+        }
+        el.show();
+    }
+
     function configureElement( element ) {
         if( element.rotation !== undefined ) {
             element.rotation = (element.rotation + 1) % 4;
@@ -548,6 +606,21 @@ function makeGame( screen, presetPuzzle ) {
             "clear",
             { tap: clearGame },
             { maxfill: 0.75 }
+        ) );
+    }
+
+    if( buildMode ) {
+        buttonregions.add( Icon.create(
+            saveButtonSection,
+            pics,
+            "clear",
+            {
+                tap: function() {
+                    console.log( "Hello" );
+                    showSavePuzzleDialog();
+                }
+            },
+            {maxfill: 0.75}
         ) );
     }
 
