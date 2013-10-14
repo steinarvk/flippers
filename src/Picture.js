@@ -4,7 +4,7 @@ var Picture = (function() {
         img.onload = function() {
             result.pictures[ name ] = img;
             result.remaining--;
-        }
+        };
         img.src = picture;
     }
 

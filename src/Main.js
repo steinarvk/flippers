@@ -8,7 +8,6 @@ var Regions = require("./Regions");
 var PredefinedLevels = require("./PredefinedLevels");
 var Menu = require("./Menu");
 var Screen = require("./Screen");
-var Picture = require("./Picture");
 var Sound = require("./Sound");
 var Stopwatch = require("./Stopwatch");
 var GridMenu = require("./GridMenu");
@@ -17,6 +16,8 @@ var Icon = require("./Icon");
 var Backend = require("./Backend");
 var Label = require("./Label");
 var Random = require("./Random");
+var Resources = require("./Resources");
+var Globals = require("./Globals");
 
 function elementDeactivatable( element ) {
     return element.type != "switch";
@@ -60,6 +61,15 @@ function cycleElement( cell, element ) {
 function initialize() {
     var canvasWidth = 480;
     var canvasHeight = 800;
+
+    Globals.resources = Resources.create( {
+        back: "./assets/symbols_back.png",
+        left: "./assets/symbols_left.png",
+        right: "./assets/symbols_right.png",
+        play: "./assets/symbols_play.png",
+        check: "./assets/symbols_check.png",
+        clear: "./assets/symbols_clear.png"
+    } );
 
     var canvas = document.createElement( "canvas" );
     canvas.id = "flippersCanvas";
@@ -149,14 +159,7 @@ function makeOnlinePuzzleLoader( screen, id ) {
 
 function makeOnlinePuzzlesMenu( screen ) {
     var backend = Backend.create();
-    var pics = Picture.load( {
-        back: "./assets/symbols_back.png",
-        left: "./assets/symbols_left.png",
-        right: "./assets/symbols_right.png",
-        play: "./assets/symbols_play.png",
-        check: "./assets/symbols_check.png",
-        clear: "./assets/symbols_clear.png"
-    } ).pictures;
+    var pics = Globals.resources.store;
 
     function makeEntry( entry ) {
         return {
@@ -284,38 +287,8 @@ function makeHtmlScene( screen ) {
     };
 }
 
-function makeMediaScene( screen ) {
-    var t = 20000;
-    setTimeout( function() {
-        screen.setScene( makePregameMenu( screen, 1 ) );
-    }, t );
-    var pics = Picture.load( { my: "./test.png" } ).pictures;
-    var ctx = screen.canvas().getContext("2d");
-//    Sound.load( { my: "./impactStone.ogg" }, function(rv) {
-//        rv.sounds.my.play();
-//    } );
-    var sw = Stopwatch.create();
-    var h = screen.canvas().height / t;
-    var last = null;
-    return {
-        draw: function() {
-            if( pics.my ) {
-                var x = Math.floor( sw.ms() * h );
-                ctx.drawImage( pics.my, 0, x );
-            }
-        }
-    };
-}
-
 function makePuzzleSaver( screen, puzzle ) {
-    var pics = Picture.load( {
-        back: "./assets/symbols_back.png",
-        left: "./assets/symbols_left.png",
-        right: "./assets/symbols_right.png",
-        play: "./assets/symbols_play.png",
-        check: "./assets/symbols_check.png",
-        clear: "./assets/symbols_clear.png"
-    } ).pictures;
+    var pics = Globals.resources.store;
 
     var ctx = screen.canvas().getContext("2d");
 
@@ -507,14 +480,7 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     var canvas = screen.canvas();
     var jqcanvas = $(canvas);
     var ctx = canvas.getContext("2d");
-    var pics = Picture.load( {
-        back: "./assets/symbols_back.png",
-        left: "./assets/symbols_left.png",
-        right: "./assets/symbols_right.png",
-        play: "./assets/symbols_play.png",
-        check: "./assets/symbols_check.png",
-        clear: "./assets/symbols_clear.png"
-    } ).pictures;
+    var pics = Globals.resources.store;
 
     var myState = null;
 

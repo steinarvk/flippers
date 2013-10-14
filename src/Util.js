@@ -5,6 +5,11 @@ function arrayRemoveElement( ar, element ) {
     }
 }
 
+function endsWith( s, suffix ) {
+    return s.indexOf( suffix, s.length - suffix.length ) !== -1;
+}
+
 module.exports = {
-    arrayRemoveElement: arrayRemoveElement
+    arrayRemoveElement: arrayRemoveElement,
+    endsWith: endsWith
 }
