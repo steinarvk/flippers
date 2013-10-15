@@ -67,6 +67,7 @@ function initialize() {
         left: "./assets/symbols_left.png",
         right: "./assets/symbols_right.png",
         play: "./assets/symbols_play.png",
+        stop: "./assets/symbols_stop.png",
         check: "./assets/symbols_check.png",
         clear: "./assets/symbols_clear.png"
     } );
@@ -553,7 +554,9 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
         $("#loadbutton").prop("disabled", true);
         $("#loadpredefinedbutton").prop("disabled", true);
     }
-		 
+
+    var playstopbutton = null;
+
     function setState( newstate ) {
 	myState = newstate;
 	mySmoothState = null;
@@ -564,12 +567,17 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
 	myState.start();
 	mySmoothState = SmoothGameState.wrap( myState );
 	mySmoothState.start();
+
+        playstopbutton.setIcon( "stop" );
     }
 
     function stopGame() {
         if( !running() ) {
             return;
         }
+
+        playstopbutton.setIcon( "play" );
+
 	setState( GameState.load( mySavedState ) );
     }
 
@@ -747,13 +755,12 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
         return false;
     }
 
-    buttonregions.add( Icon.create(
-        playButtonSection,
-        pics,
-        "play",
-        { tap: toggleGame },
-        { maxfill: 0.75 }
-    ) );
+    playstopbutton = Icon.create( playButtonSection,
+                                  pics,
+                                  "play",
+                                  { tap: toggleGame },
+                                  { maxfill: 0.75 } );
+    buttonregions.add( playstopbutton );
 
     if( buildMode ) {
         buttonregions.add( Icon.create(

@@ -6,6 +6,13 @@ var Icon = {create: function(region,pictures,name,handler,options) {
     var sz = null;
     var subregion = null;
 
+    function setIconName(newName) {
+        name = newName;
+        pic = null;
+
+        autoload();
+    }
+
     function autoload() {
         if( pic ) {
             return;
@@ -57,6 +64,7 @@ var Icon = {create: function(region,pictures,name,handler,options) {
     }
 
     return $.extend( {
+        setIcon: setIconName,
         draw: draw,
         mouseHandler: mouseHandler
     }, AABB.create( region ) );
