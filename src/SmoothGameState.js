@@ -36,6 +36,8 @@ module.exports = { wrap: function( gamestate ) {
 	
 	gfx.drawBackground();
 
+        gfx.drawGoals( gamestate.origin(), gamestate.target() );
+
 	var ball = gamestate.ball();
 
 	var t = phase();

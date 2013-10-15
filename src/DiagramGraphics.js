@@ -41,14 +41,15 @@ module.exports = { create: function(canvas, area, boardsize) {
     }
 
     function autofitBoard() {
-	var padding = 50.0;
+	var padding = 0;
+        var pad_cols = 1, pad_rows = 1;
 	cellsize = Math.ceil(
-	    (Math.min( (area.width - 2 * padding) / boardsize.cols,
-		       (area.height - 2 * padding) / boardsize.rows ) / 2)
+	    (Math.min( (area.width - 2 * padding) / (boardsize.cols + 2 * pad_cols),
+		       (area.height - 2 * padding) / (boardsize.rows + 2 * pad_rows) ) / 2)
 	) * 2;
 	offset = {
-	    x: area.x + (area.width - boardsize.cols * cellsize) * 0.5,
-	    y: area.y + (area.height - boardsize.rows * cellsize) * 0.5
+	    x: area.x + (area.width - (boardsize.cols) * cellsize) * 0.5,
+	    y: area.y + (area.height - (boardsize.rows)* cellsize) * 0.5
 	};
     }
 
@@ -146,6 +147,46 @@ module.exports = { create: function(canvas, area, boardsize) {
 			    2 * r,
 			    2 * r );
 	}
+    }
+
+    function drawOriginAndExit( origin, exit ) {
+        drawDirectionUpArrow( origin );
+        drawDirectionUpArrow( exit );
+    }
+
+    function drawDirectionUpArrow( cell ) {
+        // For now it's always up, so let's simplify this as far as it goes.
+        // We'll be switching to image-based graphics soon enough anyway.
+        ctx.strokeStyle = "#5a5";
+        ctx.fillStyle = "#0a0";
+
+        var rect = cellRect( cell );
+        var c = rectCenter( rect );
+        var r = rectRadius( rect ) * 0.75;
+
+        ctx.beginPath();
+
+        var begun = false;
+        var x0, y0;
+
+        for(var i = 0; i < 3; i++) {
+            var a = -Math.PI * 0.5 + i * (2/3 * Math.PI);
+            var x = c.x + r * Math.cos( a );
+            var y = c.y + r * Math.sin( a );
+
+            if( begun ) {
+                ctx.lineTo( x, y );
+            } else {
+                x0 = x;
+                y0 = y;
+                ctx.moveTo( x, y );
+                begun = true;
+            }
+        }
+
+        ctx.lineTo( x0, y0 );
+
+        ctx.fill();
     }
     
     function drawTriangle( thing, options, rect  ) {
@@ -370,6 +411,7 @@ module.exports = { create: function(canvas, area, boardsize) {
 	drawInventoryItemIn: drawInventoryItemIn,
 	drawEvent: drawEvent,
 	drawBall: drawBall,
+        drawGoals: drawOriginAndExit,
 	cellAtPosition: cellAtPosition,
         drawColouredAABB: drawColouredAABB
     };

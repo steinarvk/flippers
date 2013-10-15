@@ -12,7 +12,7 @@ module.exports = (function() {
 
     function defaultTarget( boardsize ) {
 	return  {col: Math.floor( boardsize.cols / 2 ),
-		 row: boardsize.rows};
+		 row: -1};
     }
 
     function createBlankState( boardsize ) {
@@ -314,6 +314,8 @@ module.exports = (function() {
 
 	    onEachElement( gfx.drawElement );
 
+            gfx.drawGoals( state.origin, state.target );
+
 	    if( state.ball ) {
 		gfx.drawBall( {x: (0.5 + state.ball.position.col),
 			       y: (0.5 + state.ball.position.row) } );
@@ -368,6 +370,8 @@ module.exports = (function() {
 	    removeElementAtCell: removeElementAtCell,
 	    setElement: setElement,
 	    onSquares: onSquares,
+            origin: function() { return state.origin; },
+            target: function() { return state.target; },
 	    ball: function(){ return state.ball; },
 	    size: function(){ return state.size; }
 	};	
