@@ -165,7 +165,7 @@ function handleListPuzzles( finish, pageSize ) {
 }
 
 function handleGetPuzzles( finish, args ) {
-    var pageSize = 10;
+    var pageSize = 5;
 
     if( args.query.id ) {
         handleGetPuzzleById( finish, args.query.id );
