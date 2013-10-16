@@ -25,8 +25,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.1977058"
-     inkscape:cx="400.93897"
-     inkscape:cy="385.02692"
+     inkscape:cx="259.83587"
+     inkscape:cy="251.43819"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -213,7 +213,7 @@
          inkscape:collect="always" />
     </filter>
     <linearGradient
-       gradientTransform="translate(-85.01535,3.5423063)"
+       gradientTransform="translate(-75.831125,2.7073767)"
        gradientUnits="userSpaceOnUse"
        y2="978.20373"
        x2="404.72124"
@@ -223,7 +223,7 @@
        xlink:href="#linearGradient3871"
        inkscape:collect="always" />
     <linearGradient
-       gradientTransform="translate(-85.01535,3.5423063)"
+       gradientTransform="translate(-92.529718,-3.9720599)"
        gradientUnits="userSpaceOnUse"
        y2="886.92473"
        x2="363.43823"
@@ -334,6 +334,58 @@
        gradientUnits="userSpaceOnUse"
        id="radialGradient5344-3"
        xlink:href="#linearGradient5323-4"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="translate(-92.529718,-3.1371303)"
+       gradientUnits="userSpaceOnUse"
+       y2="886.92474"
+       x2="363.43823"
+       y1="886.92474"
+       x1="136.92523"
+       id="linearGradient3885-0"
+       xlink:href="#linearGradient3879-9"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient3879-9">
+      <stop
+         id="stop3881-2"
+         offset="0"
+         style="stop-color:#365030;stop-opacity:1;" />
+      <stop
+         id="stop3883-9"
+         offset="1"
+         style="stop-color:#188000;stop-opacity:1;" />
+    </linearGradient>
+    <linearGradient
+       gradientTransform="translate(-92.529718,-3.1371303)"
+       gradientUnits="userSpaceOnUse"
+       y2="886.92474"
+       x2="363.43823"
+       y1="886.92474"
+       x1="136.92523"
+       id="linearGradient3156"
+       xlink:href="#linearGradient3879-9"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient3158">
+      <stop
+         id="stop3160"
+         offset="0"
+         style="stop-color:#365030;stop-opacity:1;" />
+      <stop
+         id="stop3162"
+         offset="1"
+         style="stop-color:#188000;stop-opacity:1;" />
+    </linearGradient>
+    <linearGradient
+       y2="886.92474"
+       x2="363.43823"
+       y1="886.92474"
+       x1="136.92523"
+       gradientTransform="translate(96.147862,215.72846)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3166"
+       xlink:href="#linearGradient3879-9"
        inkscape:collect="always" />
   </defs>
   <metadata
@@ -496,31 +548,31 @@
     <text
        sodipodi:linespacing="125%"
        id="text3037"
-       y="996.86603"
-       x="9.4461365"
-       style="font-size:72px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:url(#linearGradient3877);fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Linux Libertine O;-inkscape-font-specification:Linux Libertine O Bold"
+       y="996.03113"
+       x="18.630362"
+       style="font-size:72px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:url(#linearGradient3877);fill-opacity:1;stroke:#000000;stroke-width:3;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Ubuntu;-inkscape-font-specification:Ubuntu Medium"
        xml:space="preserve"
        inkscape:export-filename="/home/svk/dev/flippers/assets/gfx_failed.png"
        inkscape:export-xdpi="90"
        inkscape:export-ydpi="90"><tspan
-         style="fill:url(#linearGradient3877);fill-opacity:1"
-         y="996.86603"
-         x="9.4461365"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;fill:url(#linearGradient3877);fill-opacity:1;font-family:Ubuntu;-inkscape-font-specification:Ubuntu Medium;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none"
+         y="996.03113"
+         x="18.630362"
          id="tspan3039"
          sodipodi:role="line">Try again</tspan></text>
     <text
        sodipodi:linespacing="125%"
        id="text3037-9"
-       y="915.16302"
-       x="50.465881"
-       style="font-size:72px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:url(#linearGradient3885);fill-opacity:1;stroke:#000000;stroke-opacity:1;font-family:Linux Libertine O;-inkscape-font-specification:Linux Libertine O Bold"
+       y="907.64868"
+       x="42.951515"
+       style="font-size:72px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:url(#linearGradient3885);fill-opacity:1;stroke:#000000;stroke-opacity:1;font-family:Ubuntu;-inkscape-font-specification:Ubuntu Medium;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none"
        xml:space="preserve"
        inkscape:export-filename="/home/svk/dev/flippers/assets/gfx_solved.png"
        inkscape:export-xdpi="90"
        inkscape:export-ydpi="90"><tspan
-         style="fill:url(#linearGradient3885);fill-opacity:1"
-         y="915.16302"
-         x="50.465881"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;fill:url(#linearGradient3885);fill-opacity:1;font-family:Ubuntu;-inkscape-font-specification:Ubuntu Medium;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none"
+         y="907.64868"
+         x="42.951515"
          id="tspan3039-2"
          sodipodi:role="line">Solved!</tspan></text>
     <path
@@ -1256,5 +1308,20 @@
        inkscape:export-filename="/home/svk/dev/flippers/assets/block_black_switch.png"
        inkscape:export-xdpi="90.313164"
        inkscape:export-ydpi="90.313164" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text3037-9-2"
+       y="1127.3491"
+       x="231.62912"
+       style="font-size:72px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:url(#linearGradient3166);fill-opacity:1;stroke:#000000;stroke-opacity:1;font-family:Ubuntu;-inkscape-font-specification:Ubuntu Medium"
+       xml:space="preserve"
+       inkscape:export-filename="/home/svk/dev/flippers/assets/gfx_solved.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"><tspan
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;fill:url(#linearGradient3166);fill-opacity:1;font-family:Ubuntu;-inkscape-font-specification:Ubuntu Medium"
+         y="1127.3491"
+         x="231.62912"
+         id="tspan3039-2-3"
+         sodipodi:role="line">Congratulations</tspan></text>
   </g>
 </svg>
