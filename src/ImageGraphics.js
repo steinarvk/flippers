@@ -189,9 +189,17 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
     }
 
     function drawInventoryItemIn( item, options, rect ) {
-        // Draw indication using options.selected
-        drawColouredRect( rect, options.selected ? "yellow" : "#ddd" );
         drawElementInRect( item, rect );
+
+        // Draw indication using options.selected
+        if( options.selected ) {
+	    ctx.fillStyle = "rgba(255,255,0,0.5)";
+
+            ctx.fillRect( rect.x,
+                          rect.y,
+                          rect.width,
+                          rect.height );
+        }
     }
 
     function drawColouredRect( rect, colour ) {
