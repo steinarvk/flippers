@@ -1,4 +1,5 @@
 var AABB = require("./AABB");
+var BoardFitter = require("./BoardFitter");
 
 module.exports = { create: function(canvas, area, boardsize) {
     var ctx = canvas.getContext( "2d" );
@@ -41,16 +42,9 @@ module.exports = { create: function(canvas, area, boardsize) {
     }
 
     function autofitBoard() {
-	var padding = 0;
-        var pad_cols = 1, pad_rows = 1;
-	cellsize = Math.ceil(
-	    (Math.min( (area.width - 2 * padding) / (boardsize.cols + 2 * pad_cols),
-		       (area.height - 2 * padding) / (boardsize.rows + 2 * pad_rows) ) / 2)
-	) * 2;
-	offset = {
-	    x: area.x + (area.width - (boardsize.cols) * cellsize) * 0.5,
-	    y: area.y + (area.height - (boardsize.rows)* cellsize) * 0.5
-	};
+        var rv = BoardFitter.create( area, boardsize );
+        cellsize = rv.cellsize();
+        offset = rv.offset();
     }
 
     autofitBoard();
@@ -317,16 +311,7 @@ module.exports = { create: function(canvas, area, boardsize) {
     }
 
     function cellAtPosition( pos ) {
-	var x = Math.floor( (pos.x - offset.x) / cellsize );
-	var y = Math.floor( (pos.y - offset.y) / cellsize );
-	if( x < 0
-	    || y < 0
-	    || x >= boardsize.cols
-	    || y >= boardsize.rows ) {
-	    return null;
-	}
-	return {col: x,
-		row: y};
+        return BoardFitter.create( area, boardsize ).cellAtPosition( pos );
     }
     
     function linearClipAndScale( t, x0, x1 ) {

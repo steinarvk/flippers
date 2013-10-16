@@ -1,5 +1,6 @@
 var AABB = require("./AABB");
 var DiagramGraphics = require("./DiagramGraphics");
+var ImageGraphics = require("./ImageGraphics");
 var GameState = require("./GameState");
 var SmoothGameState = require("./SmoothGameState");
 var Inventory = require("./Inventory");
@@ -62,7 +63,7 @@ function initialize() {
     var canvasWidth = 480;
     var canvasHeight = 800;
 
-    Globals.resources = Resources.create( {
+    var assetNames = {
         back: "./assets/symbols_back.png",
         left: "./assets/symbols_left.png",
         right: "./assets/symbols_right.png",
@@ -70,7 +71,35 @@ function initialize() {
         stop: "./assets/symbols_stop.png",
         check: "./assets/symbols_check.png",
         clear: "./assets/symbols_clear.png"
-    } );
+    };
+    (function() {
+        var colours = ["black", "red", "blue", "green"];
+        var disabled_suffixes = [ "", "_disabled" ];
+        var solidities = [ "hollow", "solid" ];
+        var shapes = [ "square", "tri" ];
+        for(var coli = 0; coli < colours.length; coli++) {
+            var col = colours[coli];
+            
+            for( var dsi = 0; dsi < disabled_suffixes.length; dsi++) {
+                var suffix = disabled_suffixes[ dsi ];
+                
+                assetNames[ "block_switch_" + col + suffix ] = "./assets/block_" + col + "_switch" + suffix + ".png";
+                assetNames[ "block_flipper_" + col + suffix ] = "./assets/block_flipper_" + col +  suffix + ".png";
+                
+                for(var i = 0; i < shapes.length; i++) {
+                    var shape = shapes[i];
+                    
+                    for(var j = 0; j < solidities.length; j++) {
+                        var solidity = solidities[j];
+                        var name = "block_" + shape + "_" + col + "_" + solidity + suffix;
+                        assetNames[ name ] = "./assets/" + name + ".png";
+                    }
+                }
+                
+            }
+        }
+    })();
+    Globals.resources = Resources.create( assetNames );
 
     var canvas = document.createElement( "canvas" );
     canvas.id = "flippersCanvas";
@@ -341,11 +370,12 @@ function makePuzzleSaver( screen, puzzle ) {
     ) );
 
 
-    var gamegraphics = DiagramGraphics.create( screen.canvas(),
-                                               sections[0],
-					       {cols: 9,
-					        rows: 9}
-					     );
+    var gamegraphics = ImageGraphics.create( screen.canvas(),
+                                             Globals.resources.store,
+                                             sections[0],
+					     {cols: 9,
+					      rows: 9}
+					   );
 
     var state = GameState.load( puzzle );
     
@@ -498,14 +528,15 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     var buildMode = !presetPuzzle;
     var presetGame = null;
 
-    var gamegraphics = DiagramGraphics.create( canvas,
-					      {x: 0,
-					       y: 0,
-					       width: 480,
-					       height: 480},
-					      {cols: 9,
-					       rows: 9}
-					    );
+    var gamegraphics = ImageGraphics.create( canvas,
+                                             Globals.resources.store,
+					     {x: 0,
+					      y: 0,
+					      width: 480,
+					      height: 480},
+					     {cols: 9,
+					      rows: 9}
+					   );
     if( !buildMode ) {
         presetGame = GameState.load( presetPuzzle );
         var shade = Map2D.create();
