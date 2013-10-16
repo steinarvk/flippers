@@ -71,9 +71,9 @@ var Menu = {create: function(canvas, area, grid, items, mouse, options) {
             var r = region;
             
             if( regionIsActive( r ) ) {
-                ctx.fillStyle = "yellow";
+                ctx.fillStyle = "#ccf";
             } else {
-                ctx.fillStyle = "blue";
+                ctx.fillStyle = "#99c";
             }
             ctx.fillRect( r.x, r.y, r.width, r.height );
 
