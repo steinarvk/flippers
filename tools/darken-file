@@ -1,0 +1,7 @@
+#!/bin/bash
+INPUT=$1
+OUTPUT=$2
+cp $INPUT $OUTPUT
+COMMAND="(simple-foo \"$OUTPUT\")"
+echo $COMMAND
+gimp -i -b "$COMMAND" -b '(gimp-quit 0)'

@@ -1,0 +1,7 @@
+#!/bin/bash
+FILENAMES=`ls block_*.png | grep -v disabled`
+echo $FILENAMES
+for fn in $FILENAMES; do
+    OUTFN=`echo $fn | sed "s/.png/_disabled.png/"`
+    ./darken-file $fn $OUTFN
+done
