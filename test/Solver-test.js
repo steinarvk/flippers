@@ -63,5 +63,37 @@ buster.testCase( "Solver search", {
         
         buster.refute.equals( placed, null );
         buster.assert.equals( placed.ascending, false );
-} } );
+    },
+    "realistic uniqueness": function() {
+        var puzzle = {"size":{"cols":7,"rows":7},
+                      "origin":{"col":3,"row":7},
+                      "initialVelocity":{"dx":0,"dy":-1},
+                      "target":{"col":3,"row":-1},
+                      "inventory": [{type: "breakable-square"},
+                                    {type: "breakable-triangle"}],
+                      "elements":[{"col":3,"row":6,"type":"breakable-triangle","rotation":1},
+                                  {"col":6,"row":6,"type":"breakable-triangle","rotation":3},
+                                  {"col":6,"row":3,"type":"breakable-triangle","rotation":0},
+                                  {"col":1,"row":3,"type":"breakable-triangle","rotation":1},
+                                  {"col":0,"row":1,"type":"breakable-triangle","rotation":1},
+                                  {"col":4,"row":1,"type":"breakable-triangle","rotation":0},
+                                  {"col":4,"row":4,"type":"breakable-square"},
+                                  {"col":3,"row":5,"type":"breakable-triangle","rotation":3},
+                                  {"col":3,"row":0,"type":"breakable-triangle","rotation":1},
+                                  {"col":1,"row":0,"type":"breakable-triangle","rotation":1},
+                                  {"col":0,"row":4,"type":"breakable-triangle","rotation":2},
+                                  {"col":0,"row":5,"type":"breakable-triangle","rotation":1},
+                                  {"col":1,"row":6,"type":"breakable-triangle","rotation":3},
+                                  {"col":0,"row":6,"type":"breakable-triangle","rotation":2},
+                                  {"col":5,"row":2,"type":"breakable-triangle","rotation":3},
+                                  {"col":1,"row":1,"type":"breakable-triangle","rotation":1},
+                                  {"col":4,"row":0,"type":"breakable-triangle","rotation":0},
+                                  {"col":5,"row":1,"type":"breakable-triangle","rotation":0},
+                                  {"col":2,"row":2,"type":"breakable-square"},
+                                  {"col":6,"row":2,"type":"breakable-triangle","rotation":3},
+                                  {"col":6,"row":0,"type":"breakable-triangle","rotation":0}]};
+        var solutions = Solver.search( puzzle );
+        buster.assert.equals( solutions.length, 1 );
+    }
+} );
 

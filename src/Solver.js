@@ -110,6 +110,8 @@ var Solver = (function() {
 		return true;
 	    }
 	);
+        
+        var count = 0;
 
         Generator.forEach( gen, function( n ) {
 	    var state = GameState.load( puzzle );
@@ -124,7 +126,11 @@ var Solver = (function() {
 	    if( result.result == "win" ) {
 		solutions.push( state.save() );
 	    }
+
+            ++count;
 	} );
+
+//        console.log( "Solution space (size = " + count + ") searched" );
 
 	return Util.uniqueElements( solutions );
     }
