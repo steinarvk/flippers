@@ -184,7 +184,7 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
         if( f ) {
             f( thing, rect );
         } else {
-            console.log( "invlaid: " + JSON.stringify( thing ) );
+            console.log( "unable to draw: " + JSON.stringify( thing ) );
         }       
     }
 
