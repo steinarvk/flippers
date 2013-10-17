@@ -99,6 +99,17 @@ var Generator = (function() {
             } );
         } ) );
     }
+
+    function forEach( g, f ) {
+        var x = g();
+        while( x !== undefined ) {
+            f( x );
+
+            x = g();
+        }
+
+        return null;
+    }
     
     return {
         filter: genFilter,
@@ -107,6 +118,7 @@ var Generator = (function() {
         fromArray: fromArray,
         toArray: toArray,
         take: genTake,
+        forEach: forEach,
         product: onVarargs( genCartesianProduct ),
         integers: integers
     };

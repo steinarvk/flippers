@@ -87,5 +87,15 @@ buster.testCase( "Generator", {
             buster.assert( c.indexOf( result[i][2] ) != -1 );
         }
         buster.assert.equals( Util.uniqueElements( result ).length, 24 );
+    },
+    "foreach": function() {
+        var x = [1,2,8,3,5];
+        var rv = [];
+
+        Generator.forEach( Generator.fromArray(x), function(z) {
+            rv.push( z );
+        } );
+
+        buster.assert.equals( rv, x );
     }
 } );

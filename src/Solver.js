@@ -54,7 +54,7 @@ var Solver = (function() {
 
     function pieceConfigurations( piece ) {
         function adjoin(m) {
-            return $.extend( {}, piece, m );
+            return Util.merge( piece, m );
         }
         var rv = [];
         if( piece.type == "triangle" || piece.type == "breakable-triangle") {
@@ -84,7 +84,7 @@ var Solver = (function() {
 	for(var i = 0; i < puzzle.size.cols; i++) {
 	    for( var j = 0; j < puzzle.size.rows; j++) {
 		var cell = {col: i, row: j};
-		if( !baseState.elementAt( cell ) ) {
+		if( !baseState.elementAtCell( cell ) ) {
 		    moveCells.push( cell );
 		}
 	    }
@@ -98,7 +98,7 @@ var Solver = (function() {
 	    sets.push( pieceConfigurations( puzzle.inventory[i] ) );
 	}
 
-	var gen = Generator.filter(
+        var gen = Generator.filter(
 	    Generator.product.apply( null, sets ),
 	    function ( moves ) {
 		// Check that all the locations are unique
@@ -110,30 +110,23 @@ var Solver = (function() {
 		return true;
 	    }
 	);
-	
-	while(true) {
-	    var state = JSON.parse( JSON.stringify( puzzle ) );
-	    var n = gen();
 
-	    if( n === undefined ) {
-		break;
-	    }
+        Generator.forEach( gen, function( n ) {
+	    var state = GameState.load( puzzle );
 
 	    for(var i = 0; i < n.length; i += 2) {
 		var cell = n[i];
 		var piece = n[i+1];
-		state.setElement( $.extend( {},
-					    cell,
-					    piece ) );
+		state.setElement( Util.merge( cell, piece ) );
 	    }
 
-	    var result = Solver.solve( state );
+	    var result = Solver.solve( state.save() );
 	    if( result.result == "win" ) {
-		solutions.push( JSON.stringify( state ) );
+		solutions.push( state.save() );
 	    }
-	}
+	} );
 
-	return Util.uniqueElements( solutions ).map( JSON.parse );
+	return Util.uniqueElements( solutions );
     }
 
     return {

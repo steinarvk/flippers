@@ -31,10 +31,21 @@ function uniqueElements( xs ) {
     return rv;
 }
 
+function merge() {
+    var rv = {};
+    for(var i = 0; i < arguments.length; i++) {
+        for(var key in arguments[i]) {
+            rv[ key ] = arguments[i][key];
+        }
+    }
+    return rv;
+}
+
 module.exports = {
     arrayRemoveElement: arrayRemoveElement,
     endsWith: endsWith,
     rectCenter: rectCenter,
     rectRadius: rectRadius,
+    merge: merge,
     uniqueElements: uniqueElements
 }
