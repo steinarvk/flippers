@@ -56,8 +56,6 @@ module.exports = (function() {
     function createState( state ) {
 	var events = null;
 
-        console.log( "foo " + JSON.stringify( state ) );
-
 	function eventAtCell( cell ) {
 	    if( events ) {
 		return events.get( cell.col, cell.row );
