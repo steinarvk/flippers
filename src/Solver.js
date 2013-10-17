@@ -1,5 +1,8 @@
 var GameState = require("./GameState");
 
+var Util = require("./Util");
+var Generator = require("./Generator");
+
 var Solver = (function() {
     function setupContext(state) {
 	return {ticks: 0};
@@ -49,6 +52,24 @@ var Solver = (function() {
 	return reportState( context, game );
     }
 
+    function pieceConfigurations( piece ) {
+        function adjoin(m) {
+            return $.extend( {}, piece, m );
+        }
+        var rv = [];
+        if( piece.type == "triangle" || piece.type == "breakable-triangle") {
+            for(var i = 0; i < 4; i++) {
+                rv.push( adjoin( {rotation: 0} ) );
+            }
+        } else if( piece.type == "flipper" ) {
+            rv.push( adjoin( {ascending: true} ) );
+            rv.push( adjoin( {ascending: false} ) );
+        } else {
+            rv.push( adjoin( {} ) );
+        }
+        return rv;
+    }
+
     function search( puzzle, options ) {
 	// Puzzle has .inventory, and is otherwise a start state.
 	// We can expect that each puzzle expands to ~ 2 x 40^puzzle.inventory.length potential solutions
@@ -78,7 +99,7 @@ var Solver = (function() {
 	}
 
 	var gen = Generator.filter(
-	    Generator.cartesianProduct( sets ),
+	    Generator.product.apply( null, sets ),
 	    function ( moves ) {
 		// Check that all the locations are unique
 		for(var i = 0; i < moves.length; i += 2) {

@@ -18,9 +18,23 @@ function rectRadius( rect ) {
     return Math.min( 0.5 * rect.width, 0.5 * rect.height );
 }
 
+function uniqueElements( xs ) {
+    var rv = [];
+    var m = {};
+    for(var i = 0; i < xs.length; i++) {
+        var x = xs[i];
+        if( !m[x] ) {
+            rv.push( x );
+        }   
+        m[x] = true;
+    }
+    return rv;
+}
+
 module.exports = {
     arrayRemoveElement: arrayRemoveElement,
     endsWith: endsWith,
     rectCenter: rectCenter,
-    rectRadius: rectRadius
+    rectRadius: rectRadius,
+    uniqueElements: uniqueElements
 }
