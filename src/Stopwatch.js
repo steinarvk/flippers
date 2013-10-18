@@ -1,3 +1,5 @@
+"use strict";
+
 var Stopwatch = {create: function() {
     var ms0 = new Date().getTime();
 

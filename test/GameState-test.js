@@ -152,6 +152,5 @@ buster.testCase( "GameState", {
         buster.assert.greater( changed, 0 );
         buster.assert.equals( data_before, JSON.stringify( data ) );
         buster.refute.equals( saved_before, saved_after );
-    },
-
+    }
 } );

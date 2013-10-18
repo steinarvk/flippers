@@ -1,3 +1,5 @@
+"use strict";
+
 var LayoutShare = require("./LayoutShare");
 
 var AABB = {create: function( rect ) {
