@@ -9,7 +9,6 @@ var Regions = require("./Regions");
 var PredefinedLevels = require("./PredefinedLevels");
 var Menu = require("./Menu");
 var Screen = require("./Screen");
-var Stopwatch = require("./Stopwatch");
 var GridMenu = require("./GridMenu");
 var Map2D = require("./Map2D");
 var Icon = require("./Icon");
