@@ -1,19 +1,25 @@
+/*jslint browser: true*/
+/*globals $*/
+
+"use strict";
+
 var AABB = require("./AABB");
 var BoardFitter = require("./BoardFitter");
 
 module.exports = { create: function(canvas, area, boardsize) {
-    var ctx = canvas.getContext( "2d" );
-
-    var cellsize = null;
-    var offset = null;
-
-    var boardShading = null;
+    var ctx = canvas.getContext( "2d" ),
+        cellsize = null,
+        offset = null,
+        boardShading = null;
 
     function drawBoard() {
-	for(var i = 0; i < boardsize.cols; i++) {
-            for(var j = 0; j < boardsize.rows; j++) {
-		var isWhite = (i%2) == (j%2);
-                var shaded = boardShading && boardShading.get(i,j);
+        var i, j,
+            isWhite, shaded;
+
+	for(i = 0; i < boardsize.cols; i++) {
+            for(j = 0; j < boardsize.rows; j++) {
+		isWhite = (i%2) === (j%2);
+                shaded = boardShading && boardShading.get(i,j);
 
 		if( shaded ) {
                     ctx.fillStyle = isWhite ? "#a88" : "#88a";
@@ -29,8 +35,14 @@ module.exports = { create: function(canvas, area, boardsize) {
 	}
     }
     
+    function autofitBoard() {
+        var rv = BoardFitter.create( area, boardsize );
+        cellsize = rv.cellsize();
+        offset = rv.offset();
+    }
+
     function setBoardSize( sz ) {
-	if( sz.cols == boardsize.cols && sz.rows == boardsize.rows ) {
+	if( sz.cols === boardsize.cols && sz.rows === boardsize.rows ) {
 	    return;
 	}
 	boardsize = sz;
@@ -39,12 +51,6 @@ module.exports = { create: function(canvas, area, boardsize) {
 
     function setBoardShading( shading ) {
         boardShading = shading;
-    }
-
-    function autofitBoard() {
-        var rv = BoardFitter.create( area, boardsize );
-        cellsize = rv.cellsize();
-        offset = rv.offset();
     }
 
     autofitBoard();
@@ -59,11 +65,6 @@ module.exports = { create: function(canvas, area, boardsize) {
 		 2 * Math.PI,
 		 false );
 	ctx.fill();
-    }
-
-    function center( cell ) {
-	return {x: (cell.col + 0.5) * cellsize + offset.x,
-		y: (cell.row + 0.5) * cellsize + offset.y};
     }
 
     function cellRect( cell ) {
@@ -83,14 +84,14 @@ module.exports = { create: function(canvas, area, boardsize) {
     }
 
     function colourOf( base, deactivated ) {
-        if( base == "red" ) {
+        if( base === "red" ) {
             if( !deactivated ) {
 	        return "#e32";
             }
             return "#932";
         }
 
-        if( base == "green" ) {
+        if( base === "green" ) {
             if( !deactivated ) {
                 return "#1b1";
             }
@@ -102,12 +103,11 @@ module.exports = { create: function(canvas, area, boardsize) {
 
     function drawFlippingFlipper( thing, degrees, rect ) {
         rect = rect || cellRect( thing );
-	var c = rectCenter( rect );
-	var r = rectRadius( rect );
-
-	var a = 2 * Math.PI * degrees / 360.0;
-	var cosa = Math.cos( a );
-	var sina = Math.sin( a );
+	var c = rectCenter( rect ),
+            r = rectRadius( rect ),
+            a = 2 * Math.PI * degrees / 360.0,
+	    cosa = Math.cos( a ),
+	    sina = Math.sin( a );
 	
 	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 	ctx.beginPath();
@@ -123,8 +123,10 @@ module.exports = { create: function(canvas, area, boardsize) {
     function drawSquare( thing, options, rect ) {
         rect = rect || cellRect( thing );
 
-	var size = 1.0;
-	var sp = 3;
+	var size = 1.0,
+	    c = rectCenter( rect ),
+            i,
+            r;
 
 	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 
@@ -132,20 +134,14 @@ module.exports = { create: function(canvas, area, boardsize) {
 	    size = 1.0 - 0.8 * options.disappear.phase;
 	}
 
-	var c = rectCenter( rect );
 
-	for(var i = 0; i < 5; i++) {
-	    var r = rectRadius( rect ) * size * (0.6 + i * 0.1);
+	for(i = 0; i < 5; i++) {
+	    r = rectRadius( rect ) * size * (0.6 + i * 0.1);
 	    ctx.strokeRect( c.x - r,
 			    c.y - r,
 			    2 * r,
 			    2 * r );
 	}
-    }
-
-    function drawOriginAndExit( origin, exit ) {
-        drawDirectionUpArrow( origin );
-        drawDirectionUpArrow( exit );
     }
 
     function drawDirectionUpArrow( cell ) {
@@ -154,19 +150,21 @@ module.exports = { create: function(canvas, area, boardsize) {
         ctx.strokeStyle = "#5a5";
         ctx.fillStyle = "#0a0";
 
-        var rect = cellRect( cell );
-        var c = rectCenter( rect );
-        var r = rectRadius( rect ) * 0.75;
+        var rect = cellRect( cell ),
+            c = rectCenter( rect ),
+            r = rectRadius( rect ) * 0.75,
+            begun = false,
+            x0,
+            y0,
+            i, a, x, y;
 
         ctx.beginPath();
 
-        var begun = false;
-        var x0, y0;
 
-        for(var i = 0; i < 3; i++) {
-            var a = -Math.PI * 0.5 + i * (2/3 * Math.PI);
-            var x = c.x + r * Math.cos( a );
-            var y = c.y + r * Math.sin( a );
+        for(i = 0; i < 3; i++) {
+            a = -Math.PI * 0.5 + i * (2/3 * Math.PI);
+            x = c.x + r * Math.cos( a );
+            y = c.y + r * Math.sin( a );
 
             if( begun ) {
                 ctx.lineTo( x, y );
@@ -182,25 +180,33 @@ module.exports = { create: function(canvas, area, boardsize) {
 
         ctx.fill();
     }
+
+    function drawOriginAndExit( origin, exit ) {
+        drawDirectionUpArrow( origin );
+        drawDirectionUpArrow( exit );
+    }
     
     function drawTriangle( thing, options, rect  ) {
         rect = rect || cellRect( thing );
 
 	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
-	var sp = 3;
-	var dx = [-1,1,1,-1];
-	var dy = [1,1,-1,-1];
-        var c = rectCenter( rect );
+	var sp = 3,
+	    dx = [-1,1,1,-1],
+	    dy = [1,1,-1,-1],
+            c = rectCenter( rect ),
+            begun = false,
+            i, j,
+            x0, y0,
+            x, y;
 	
-	for(var i = 0; i < 5; i++) {
-	    var begun = false;
-	    var f = ctx.moveTo;
-	    var x0, y0;
+	for(i = 0; i < 5; i++) {
 	    ctx.beginPath();
-	    for(var j = 0; j < 4; j++) {
-		if( j == thing.rotation ) continue;
-		var x = c.x + dx[j] * (rectRadius( rect ) - sp * i);
-		var y = c.y + dy[j] * (rectRadius( rect ) - sp * i);
+	    for(j = 0; j < 4; j++) {
+		if( j === thing.rotation ) {
+                    continue;
+                }
+		x = c.x + dx[j] * (rectRadius( rect ) - sp * i);
+		y = c.y + dy[j] * (rectRadius( rect ) - sp * i);
 		if( begun ) {
 		    ctx.lineTo( x, y );
 		} else {
@@ -219,25 +225,25 @@ module.exports = { create: function(canvas, area, boardsize) {
         rect = rect || cellRect( thing );
 
 	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
-	var sp = 9;
-	var size = 1;
-	var dx = [-1,1,1,-1];
-	var dy = [1,1,-1,-1];
-        var c = rectCenter( rect );
+	var size = 1,
+	    dx = [-1,1,1,-1],
+	    dy = [1,1,-1,-1],
+            c = rectCenter( rect ),
+            begun = false,
+            i, j, x0, y0, x, y;
 
 	if( options && options.disappear && options.disappear.phase ) {
 	    size = 1.0 - 0.8 * options.disappear.phase;
 	}
 	
-	for(var i = 0; i < 2; i++) {
-	    var begun = false;
-	    var f = ctx.moveTo;
-	    var x0, y0;
+	for(i = 0; i < 2; i++) {
 	    ctx.beginPath();
-	    for(var j = 0; j < 4; j++) {
-		if( j == thing.rotation ) continue;
-		var x = c.x + dx[j] * (rectRadius( rect ) * size * (0.75 + 0.25 * i));
-		var y = c.y + dy[j] * (rectRadius( rect ) * size * (0.75 + 0.25 * i));
+	    for(j = 0; j < 4; j++) {
+		if( j === thing.rotation ) {
+                    continue;
+                }
+		x = c.x + dx[j] * (rectRadius( rect ) * size * (0.75 + 0.25 * i));
+		y = c.y + dy[j] * (rectRadius( rect ) * size * (0.75 + 0.25 * i));
 		if( begun ) {
 		    ctx.lineTo( x, y );
 		} else {
@@ -255,7 +261,9 @@ module.exports = { create: function(canvas, area, boardsize) {
     function drawBreakableSquare( thing, options, rect ) {
         rect = rect || cellRect( thing );
 
-	var size = 1.0;
+	var size = 1.0,
+            c = rectCenter( rect ),
+            i, r;
 
 	ctx.strokeStyle = colourOf( thing.colour, thing.deactivated );
 
@@ -263,10 +271,8 @@ module.exports = { create: function(canvas, area, boardsize) {
 	    size = 1.0 - 0.8 * options.disappear.phase;
 	}
 
-        var c = rectCenter( rect );
-
-	for(var i = 0; i < 2; i++) {
-	    var r = rectRadius( rect ) * size * (0.75 + i * 0.25);
+	for(i = 0; i < 2; i++) {
+	    r = rectRadius( rect ) * size * (0.75 + i * 0.25);
 	    ctx.strokeRect( c.x - r,
 			    c.y - r,
 			    2 * r,
@@ -288,26 +294,23 @@ module.exports = { create: function(canvas, area, boardsize) {
 	ctx.fill();
     }
 
-    var drawFunctions = {
-	"flipper": drawFlipper,
-	"square": drawSquare,
-	"breakable-square": drawBreakableSquare,
-	"switch": drawSwitch,
-	"breakable-triangle": drawBreakableTriangle,
-	"triangle": drawTriangle
-    };
+    function drawFunction(name) {
+        return {
+	    "flipper": drawFlipper,
+	    "square": drawSquare,
+	    "breakable-square": drawBreakableSquare,
+	    "switch": drawSwitch,
+	    "breakable-triangle": drawBreakableTriangle,
+	    "triangle": drawTriangle
+        }[name];
+    }
 
     function drawElement( thing ) {
-	drawFunctions[thing.type]( thing );
+	drawFunction(thing.type)( thing );
     }
 
     function drawElementInRect( thing, rect ) {
-        drawFunctions[thing.type]( thing, null, rect );
-    }
-
-    function drawInventoryItemIn( item, options, rect ) {
-        drawColouredRect( rect, options.selected ? "yellow" : "#ddd" );
-        drawElementInRect( item, rect );
+        drawFunction(thing.type)( thing, null, rect );
     }
 
     function cellAtPosition( pos ) {
@@ -315,12 +318,18 @@ module.exports = { create: function(canvas, area, boardsize) {
     }
     
     function linearClipAndScale( t, x0, x1 ) {
-        if( t <= x0 ) return 0.0;
-        if( t >= x1 ) return 1.0;
+        if( t <= x0 ) {
+            return 0.0;
+        }
+        if( t >= x1 ) {
+            return 1.0;
+        }
 	return (t - x0) / (x1 - x0);
     }
 
     function drawFlippingEvent( event, t ) {
+        var a0, d;
+
 	t = linearClipAndScale( t, 0.4, 1.0 );
 	if( t <= 0 ) {
 	    drawFlipper( {col: event.element.col,
@@ -333,16 +342,17 @@ module.exports = { create: function(canvas, area, boardsize) {
 			  row: event.element.row,
 			  ascending: !event.originallyAscending } );
 	} else {
-	    var a0 = event.originallyAscending ? -45 : 45;
-	    var d = event.ccw ? -90 : 90;
+	    a0 = event.originallyAscending ? -45 : 45;
+	    d = event.ccw ? -90 : 90;
+
 	    drawFlippingFlipper( event.element, a0 + t * d );
 	}
 	return true;
     }
 
     function drawDisappearingEvent( event, t ) {
-	var renderer = drawFunctions[ event.element.type ];
-        var end = event.begin + 0.5;
+	var renderer = drawFunction( event.element.type ),
+            end = event.begin + 0.5;
         if( t >= end ) {
             return true;
         }
@@ -352,13 +362,14 @@ module.exports = { create: function(canvas, area, boardsize) {
 	return true;
     }
 
-    var drawEventFunctions = {
-	"disappear": drawDisappearingEvent,
-	"flip": drawFlippingEvent
-    };
+    function drawEventFunction(name) {
+	return {"disappear": drawDisappearingEvent,
+	        "flip": drawFlippingEvent
+               }[name];
+    }
 
     function drawEvent( event, t ) {
-	var f = drawEventFunctions[ event.type ];
+	var f = drawEventFunction( event.type );
 	if( !f ) {
 	    return false;
 	}
@@ -368,9 +379,10 @@ module.exports = { create: function(canvas, area, boardsize) {
     setBoardSize( boardsize );
 
     function drawColouredAABB( bb, colour ) {
-        var col = colour || "#0f0";
+        var col = colour || "#0f0",
+            r = bb.rect();
+
 	ctx.fillStyle = col;
-        var r = bb.rect();
 	ctx.fillRect( r.x,
                       r.y,
                       r.width,
@@ -380,13 +392,17 @@ module.exports = { create: function(canvas, area, boardsize) {
     function drawColouredRect( rect, colour ) {
         var col = colour || "#0f0";
 	ctx.fillStyle = col;
-        var r = rect;
-	ctx.fillRect( r.x,
-                      r.y,
-                      r.width,
-                      r.height );
+	ctx.fillRect( rect.x,
+                      rect.y,
+                      rect.width,
+                      rect.height );
     }
-        
+
+    function drawInventoryItemIn( item, options, rect ) {
+        drawColouredRect( rect, options.selected ? "yellow" : "#ddd" );
+        drawElementInRect( item, rect );
+    }
+
     return {
 	setBoardSize: setBoardSize,
         setBoardShading: setBoardShading,

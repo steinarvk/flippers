@@ -1,3 +1,8 @@
+/*jslint browser: true*/
+/*globals $*/
+
+"use strict";
+
 var Paginated = {create: function( requestUrl, result ) {
     console.log( "create paginated" );
 
@@ -59,7 +64,8 @@ var Paginated = {create: function( requestUrl, result ) {
     return {
         next: nextPage,
         prev: prevPage,
-        rows: getData
+        rows: getData,
+        pages: numberOfPages
     };
 } };
 
@@ -100,9 +106,8 @@ var Backend = {create: function(baseUrl) {
     }
 
     function postPuzzle( puzzleData, next ) {
-        var fullUrl = baseUrl + "puzzles";
-
-        var postData = JSON.stringify( puzzleData );
+        var fullUrl = baseUrl + "puzzles",
+            postData = JSON.stringify( puzzleData );
 
         $.post( fullUrl, postData )
             .done( function( data ) {
