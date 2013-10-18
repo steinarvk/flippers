@@ -1,3 +1,5 @@
+"use strict";
+
 var Generator = (function() {
     function integers(n) {
         n = n || 0;
@@ -17,9 +19,10 @@ var Generator = (function() {
     }
 
     function toArray( g ) {
-        var rv = [];
+        var rv = [],
+            x;
         while( true ) {
-            var x = g();
+            x = g();
             if( x === undefined ) {
                 break;
             }
@@ -29,9 +32,10 @@ var Generator = (function() {
     }
 
     function genTake( n, g ) {
-        var rv = [];
-        for(var i = 0; i < n; i++) {
-            var x = g();
+        var rv = [],
+            x, i;
+        for(i = 0; i < n; i++) {
+            x = g();
             if( x === undefined ) {
                 break;
             }
@@ -62,8 +66,9 @@ var Generator = (function() {
 
     function onVarargs( f ) {
         return function() {
-            var arg = [];
-            for(var i = 0; i < arguments.length; i++) {
+            var arg = [],
+                i;
+            for(i = 0; i < arguments.length; i++) {
                 arg.push( arguments[i] );
             }
             return f( arg );
@@ -72,7 +77,7 @@ var Generator = (function() {
 
     function genConcat( generators ) {
         return function() {
-            var x = undefined;
+            var x;
             while( generators.length ) {
                 x = generators[0]();
                 if( x === undefined ) {
@@ -122,6 +127,6 @@ var Generator = (function() {
         product: onVarargs( genCartesianProduct ),
         integers: integers
     };
-})();
+}());
 
 module.exports = Generator;

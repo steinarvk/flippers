@@ -4,7 +4,7 @@ all: bundle
 
 BUNDLE_NAME=generated/flippers_bundle.js
 ANDROID_TARGET=android/Flippers/assets/
-EXTRA_ASSETS=flippers.html modernizr.custom.29265.js kibo.js jquery-2.0.3.js normalize.css
+EXTRA_ASSETS=flippers.html modernizr.custom.29265.js kibo.js jquery-2.0.3.js normalize.css assets/*.png
 
 JSLINT_OPTIONS=--white --plusplus --unparam --continue
 
