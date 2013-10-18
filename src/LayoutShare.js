@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = (function() {
     function specMin( spec ) {
         if( spec.fixed ) {
@@ -24,34 +26,34 @@ module.exports = (function() {
     }
 
     function allot( available, specs ) {
-        var minimums = specs.map( specMin );
-        var total = minimums.reduce( sum );
-        var excess = available - total;
-        var totalShare = specs.map( specShare ).reduce( sum );
-        var totalNonminimalShare = specs.map( function( spec ) {
-            var proper = available * specShare( spec ) / totalShare;
-            var minimal = specMin(spec);
-            if( minimal >= proper ) {
+        var minimums = specs.map( specMin ),
+            total = minimums.reduce( sum ),
+            excess = available - total,
+            totalShare = specs.map( specShare ).reduce( sum ),
+            totalNonminimalShare = specs.map( function( spec ) {
+                var proper = available * specShare( spec ) / totalShare,
+                    minimal = specMin(spec);
+                if( minimal >= proper ) {
+                    return 0;
+                }
+                return specShare( spec );
+            } ).reduce( sum ),
+            totalMinimalSpace = specs.map( function( spec ) {
+                var proper = available * specShare( spec ) / totalShare,
+                    minimal = specMin(spec);
+                if( minimal >= proper ) {
+                    return minimal;
+                }
                 return 0;
-            }
-            return specShare( spec );
-        } ).reduce( sum );
-        var totalMinimalSpace = specs.map( function( spec ) {
-            var proper = available * specShare( spec ) / totalShare;
-            var minimal = specMin(spec);
-            if( minimal >= proper ) {
-                return minimal;
-            }
-            return 0;
-        } ).reduce( sum );
-        var realExcess = available - totalMinimalSpace;
+            } ).reduce( sum ),
+            realExcess = available - totalMinimalSpace;
 
         if( excess <= 0 ) {
             return minimums;
         }
         return specs.map( function(spec) {
-            var proper = available * specShare( spec ) / totalShare;
-            var minimal = specMin(spec);
+            var proper = available * specShare( spec ) / totalShare,
+                minimal = specMin(spec);
             if( minimal >= proper ) {
                 return minimal;
             }
@@ -62,4 +64,4 @@ module.exports = (function() {
     return {
         allot: allot
     };
-})();
+}());

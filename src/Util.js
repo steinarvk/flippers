@@ -1,3 +1,5 @@
+"use strict";
+
 function arrayRemoveElement( ar, element ) {
     var i = ar.indexOf( element );
     if( i > -1 ) {
@@ -19,10 +21,11 @@ function rectRadius( rect ) {
 }
 
 function uniqueElements( xs ) {
-    var rv = [];
-    var m = {};
-    for(var i = 0; i < xs.length; i++) {
-        var x = xs[i];
+    var rv = [],
+        m = {},
+        i, x;
+    for(i = 0; i < xs.length; i++) {
+        x = xs[i];
         if( !m[x] ) {
             rv.push( x );
         }   
@@ -32,10 +35,13 @@ function uniqueElements( xs ) {
 }
 
 function merge() {
-    var rv = {};
-    for(var i = 0; i < arguments.length; i++) {
-        for(var key in arguments[i]) {
-            rv[ key ] = arguments[i][key];
+    var rv = {},
+        i, key;
+    for(i = 0; i < arguments.length; i++) {
+        for(key in arguments[i]) {
+            if( arguments[i].hasOwnProperty(key) ) {
+                rv[ key ] = arguments[i][key];
+            }
         }
     }
     return rv;
@@ -48,4 +54,4 @@ module.exports = {
     rectRadius: rectRadius,
     merge: merge,
     uniqueElements: uniqueElements
-}
+};

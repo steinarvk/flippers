@@ -1,3 +1,5 @@
+"use strict";
+
 var Random = (function() {
     
     function choice( arr ) {
@@ -6,8 +8,9 @@ var Random = (function() {
     }
     
     function sequence( f, n ) {
-        var rv = "";
-        for(var i = 0; i < n; i++) {
+        var rv = "",
+            i;
+        for(i = 0; i < n; i++) {
             rv += f();
         }
         return rv;
@@ -28,6 +31,6 @@ var Random = (function() {
         digits: generateDigits,
         letters: generateLetters
     };
-} )();
+}());
 
 module.exports = Random;

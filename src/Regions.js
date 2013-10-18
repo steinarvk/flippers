@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = {create: function() {
     // This is one of those vague pieces of code where the point of it
     // is that it COULD be more efficient, even if it currently isn't.

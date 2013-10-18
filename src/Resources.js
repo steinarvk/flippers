@@ -1,20 +1,19 @@
+/*jslint browser: true*/
+
+"use strict";
+
 var Util = require("./Util");
 
 var Resources = {create: function(resources) {
     var obj = {store: {},
                done: 0,
-               remaining: 0};
-
-    var suffixes = {
-        ".png": "image",
-        ".jpg": "image",
-        ".jpeg": "image",
-        ".gif": "image"
-    };
-
-    var functions = {
-        "image": loadImage
-    };
+               remaining: 0},
+        suffixes = {
+            ".png": "image",
+            ".jpg": "image",
+            ".jpeg": "image",
+            ".gif": "image"
+        };
 
     function loadImage( name, url ) {
         var img = new Image();
@@ -27,10 +26,19 @@ var Resources = {create: function(resources) {
         img.src = url;
     }
 
+    function getLoadFunction(name) {
+        return {
+            "image": loadImage
+        }[ name ];
+    }
+
     function identifyResource( s ) {
-        for(var suffix in suffixes) {
-            if( Util.endsWith( s, suffix ) ) {
-                return functions[ suffixes[ suffix ] ];
+        var suffix;
+        for(suffix in suffixes) {
+            if( suffixes.hasOwnProperty( suffix ) ) {
+                if( Util.endsWith( s, suffix ) ) {
+                    return getLoadFunction( suffixes[ suffix ] );
+                }
             }
         }
         return null;
@@ -45,9 +53,14 @@ var Resources = {create: function(resources) {
         }
     }
 
-    for(var key in resources) {
-        requestResource( key, resources[ key ] );
-    }
+    (function() {
+        var key;
+        for(key in resources) {
+            if( resources.hasOwnProperty( key ) ) {
+                requestResource( key, resources[ key ] );
+            }
+        }
+    }());
 
     return obj;
 } };

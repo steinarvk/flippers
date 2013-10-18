@@ -1,16 +1,10 @@
-module.exports = {create: function( target, hook, options ) {
-    var currentId = null;
-    var lastTime = null;
-    var accumulated = 0;
-    var isRunning = false;
+"use strict";
 
-    function onTrigger() {
-        var now = new Date().getTime();
-        if( lastTime ) {
-            addTime( now - lastTime );
-        }
-        lastTime = now;
-    }
+module.exports = {create: function( target, hook, options ) {
+    var currentId = null,
+        lastTime = null,
+        accumulated = 0,
+        isRunning = false;
 
     function addTime( delta ) {
         accumulated += delta;
@@ -19,21 +13,29 @@ module.exports = {create: function( target, hook, options ) {
             accumulated -= target;
         }
     }
-    
-    function start() {
-        stop();
-        if( !options.manual ) {
-            currentId = setInterval( onTrigger, 0.5 * target );
-        }
-        isRunning = true;
-    }
 
+    function onTrigger() {
+        var now = new Date().getTime();
+        if( lastTime ) {
+            addTime( now - lastTime );
+        }
+        lastTime = now;
+    }
+    
     function stop() {
         if( currentId ) {
             clearInterval( currentId );
             currentId = null;
         }
         isRunning = false;
+    }
+
+    function start() {
+        stop();
+        if( !options.manual ) {
+            currentId = setInterval( onTrigger, 0.5 * target );
+        }
+        isRunning = true;
     }
 
     function running() {
@@ -45,5 +47,5 @@ module.exports = {create: function( target, hook, options ) {
         stop: stop,
         running: running,
         addTime: addTime
-    }
+    };
 } };
