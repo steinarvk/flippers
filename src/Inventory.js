@@ -1,6 +1,7 @@
 var AABB = require("./AABB");
 var Regions = require("./Regions");
 var RegionGrid = require("./RegionGrid");
+var Util = require("./Util");
 
 module.exports = {create: function( select, area, size, options ) {
     var grid = RegionGrid.create( area, size, options );
@@ -38,9 +39,9 @@ module.exports = {create: function( select, area, size, options ) {
             ++i;
         }
         var cell = cellNo( i );
-        itemRegions[i] = $.extend( grid.cell( cell ),
-                                   cell,
-                                   {item: item} );
+        itemRegions[i] = Util.mergeInto( grid.cell( cell ),
+                                         cell,
+                                         {item: item} );
         return itemRegions[i];
     }
 
@@ -56,7 +57,7 @@ module.exports = {create: function( select, area, size, options ) {
         onActiveItems( function(itemregion) {
             if( !itemregion.blank ) {
                 gfx.drawInventoryItemIn( itemregion.item,
-                                         {selected: itemregion == selected},
+                                         {selected: itemregion === selected},
                                          itemregion.rect() );
             }
         } );
@@ -96,21 +97,21 @@ module.exports = {create: function( select, area, size, options ) {
     }
 
     function deltaSelected( di ) {
+        var index, n;
+
         if( !itemRegions.length ) {
             setSelected( null );
             return;
         }
 
-        var index;
-
         if( !selected ) {
             index = 0;
         } else {
-            var n = itemRegions.length;
-            var index = (selected.index + di) % n;
+            n = itemRegions.length;
+            index = (selected.index + di) % n;
             index = (index + n) % n;
         }
-        
+
         setSelected( itemRegions[index] );
     }
 
@@ -134,5 +135,5 @@ module.exports = {create: function( select, area, size, options ) {
         setSelected: setSelected,
         nextSelected: nextSelected,
         previousSelected: previousSelected
-    }
+    };
 } };

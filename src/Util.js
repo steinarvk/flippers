@@ -34,17 +34,24 @@ function uniqueElements( xs ) {
     return rv;
 }
 
-function merge() {
-    var rv = {},
+function mergeInto() {
+    var argsArray = [].slice.apply( arguments ),
+        rv = argsArray.shift(),
         i, key;
-    for(i = 0; i < arguments.length; i++) {
-        for(key in arguments[i]) {
-            if( arguments[i].hasOwnProperty(key) ) {
-                rv[ key ] = arguments[i][key];
+    for(i = 0; i < argsArray.length; i++) {
+        for(key in argsArray[i]) {
+            if( argsArray[i].hasOwnProperty(key) ) {
+                rv[ key ] = argsArray[i][key];
             }
         }
     }
     return rv;
+}
+
+function merge() {
+    var argsArray = [].slice.apply( arguments ),
+        arrayPrime = [{}].concat( argsArray );
+    return mergeInto.apply( null, arrayPrime );
 }
 
 module.exports = {
@@ -53,5 +60,6 @@ module.exports = {
     rectCenter: rectCenter,
     rectInnerRadius: rectInnerRadius,
     merge: merge,
+    mergeInto: mergeInto,
     uniqueElements: uniqueElements
 };

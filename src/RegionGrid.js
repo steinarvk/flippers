@@ -5,7 +5,7 @@ var AABB = require("./AABB");
 /*globals $*/
 
 module.exports = {create: function( area, size, options ) {
-    var margins = options.margins || 0,
+    var margins = (options && options.margins) || 0,
         cellsize = Math.min(
             Math.floor( area.width / (2 * size.cols) ) * 2,
             Math.floor( area.height / (2 * size.rows) ) * 2
