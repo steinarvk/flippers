@@ -27,13 +27,23 @@ var Solver = (function() {
     }
 
     function solve( state, options ) {
-	var limit = (options && options.limit) || 1000;
-	var game = null;
+	var limit = (options && options.limit) || 1000,
+            game,
+            key;
+
 	if( state.origin ) {
 	    game = GameState.load( state );
 	} else {
 	    game = GameState.loadOld( state );
 	}
+
+        if( options && options.hooks ) {
+            for(key in options.hooks) {
+                if( options.hooks.hasOwnProperty(key) ) {
+                    game.addHook( key, options.hooks[key] );
+                }
+            }
+        }
 
 	var context = setupContext( game.save() );
 

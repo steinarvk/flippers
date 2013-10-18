@@ -1,4 +1,5 @@
 var Map2D = require("./Map2D");
+var Hooks = require("./Hooks");
 
 module.exports = (function() {
     function defaultOrigin( boardsize ) {
@@ -54,7 +55,8 @@ module.exports = (function() {
     }
 
     function createState( state ) {
-	var events = null;
+	var events = null,
+            hooks = Hooks.create();
 
 	function eventAtCell( cell ) {
 	    if( events ) {
@@ -233,12 +235,18 @@ module.exports = (function() {
 	    var el = elementAt( position.col, position.row );
 
 	    if( !el || el.deactivated ) {
+                if( el ) {
+                    hooks.run( "onRollover", el, velocity );
+                } else {
+                    hooks.run( "onBallMoved", position, velocity );
+                }
 		state.ball = {
 		    position: position,
 		    incomingVelocity: velocity,
 		    outgoingVelocity: velocity
 		};
 	    } else {
+                hooks.run( "onInteraction", el, velocity );
 		state.ball.outgoingVelocity = velocity;
 		collisions[ el.type ]( state.ball, el );
 	    }
@@ -355,7 +363,7 @@ module.exports = (function() {
 		}
 	    }
 	}
-
+        
 	return {
 	    start: start,
 	    stop: stop,
@@ -368,6 +376,7 @@ module.exports = (function() {
 	    removeElementAtCell: removeElementAtCell,
 	    setElement: setElement,
 	    onSquares: onSquares,
+            addHook: hooks.add,
             origin: function() { return state.origin; },
             target: function() { return state.target; },
 	    ball: function(){ return state.ball; },

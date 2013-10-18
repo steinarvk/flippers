@@ -34,6 +34,14 @@ module.exports = (function() {
 	    return submap[js];
 	}
 
+        function adjust( i, j, f ) {
+            set(i, j, f( get( i, j ) ) );
+        }
+
+        function count() {
+            return save().length;
+        }
+
 	function save() {
 	    var rv = [],
                 i, j, is, js;
@@ -55,6 +63,8 @@ module.exports = (function() {
 	    set: set,
 	    remove: remove,
 	    get: get,
+            count: count,
+            adjust: adjust,
 	    save: save
 	};
     }

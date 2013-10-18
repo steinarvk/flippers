@@ -54,12 +54,43 @@ function merge() {
     return mergeInto.apply( null, arrayPrime );
 }
 
+function arrayCounts( arr ) {
+    var rv = {}, k, i;
+    for(i = 0; i < arr.length; i++) {
+        k = arr[i];
+        if( typeof rv[k] === "undefined" ) {
+            rv[k] = 1;
+        } else {
+            rv[k]++;
+        }
+    }
+    return rv;
+}
+
+function getter( k ) {
+    return function( m ) {
+        return m[k];
+    };
+}
+
+function greaterThan( v ) {
+    return function( x ) {
+        return x > v;
+    };
+}
+
+function inc(x) { return x + 1; }
+
 module.exports = {
     arrayRemoveElement: arrayRemoveElement,
+    arrayCounts: arrayCounts,
     endsWith: endsWith,
     rectCenter: rectCenter,
     rectInnerRadius: rectInnerRadius,
+    greaterThan: greaterThan,
+    getter: getter,
     merge: merge,
+    inc: inc,
     mergeInto: mergeInto,
     uniqueElements: uniqueElements
 };
