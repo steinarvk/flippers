@@ -260,7 +260,7 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
 
         var rect = fitter.cellRect( cell );
         var c = Util.rectCenter( rect );
-        var r = Util.rectRadius( rect ) * 0.75;
+        var r = Util.rectInnerRadius( rect ) * 0.75;
 
         ctx.beginPath();
 

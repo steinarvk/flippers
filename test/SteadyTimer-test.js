@@ -26,5 +26,36 @@ buster.testCase( "SteadyTimer", {
         x.addTime( 26 );
 
         buster.assert.equals( counter, 3 );
+    },
+    "simple automatic": function( done ) {
+        var counter = 0;
+        var x = SteadyTimer.create( 13, function() {
+            counter++;
+
+            if( counter >= 10 ) {
+                buster.assert( true );
+                done();
+            }
+        }, {manual: false} );
+        x.start();
+    },
+    "stop automatic": function( done ) {
+        var counter = 0;
+        var x = SteadyTimer.create( 13, function() {
+            counter++;
+
+            if( counter >= 5 ) {
+                buster.assert( false );
+                done();
+            }
+        }, {manual: false} );
+        x.start();
+        setTimeout( function() {
+            x.stop();
+        }, 50 );
+        setTimeout( function() {
+            buster.assert.less( counter, 5 );
+            done();
+        }, 100 );
     }
 } );

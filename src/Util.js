@@ -16,7 +16,7 @@ function rectCenter( rect ) {
             y: rect.y + 0.5 * rect.height};
 }
 
-function rectRadius( rect ) {
+function rectInnerRadius( rect ) {
     return Math.min( 0.5 * rect.width, 0.5 * rect.height );
 }
 
@@ -51,7 +51,7 @@ module.exports = {
     arrayRemoveElement: arrayRemoveElement,
     endsWith: endsWith,
     rectCenter: rectCenter,
-    rectRadius: rectRadius,
+    rectInnerRadius: rectInnerRadius,
     merge: merge,
     uniqueElements: uniqueElements
 };

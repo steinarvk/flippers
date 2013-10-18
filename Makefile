@@ -14,6 +14,10 @@ clean:
 test:
 	buster-test
 
+test-coverage:
+	istanbul cover buster-test
+
+
 lint:
 	jslint $(JSLINT_OPTIONS) src/*.js
 
