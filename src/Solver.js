@@ -1,3 +1,5 @@
+"use strict";
+
 var GameState = require("./GameState");
 
 var Util = require("./Util");
@@ -14,9 +16,9 @@ var Solver = (function() {
 
     function reportState( context, game ) {
 	var result = null;
-	if( game.status() == "gameover:win" ) {
+	if( game.status() === "gameover:win" ) {
 	    result = "win";
-	} else if( game.status() == "gameover:loss" ) {
+	} else if( game.status() === "gameover:loss" ) {
 	    result = "loss";
 	}
 
@@ -67,11 +69,11 @@ var Solver = (function() {
             return Util.merge( piece, m );
         }
         var rv = [];
-        if( piece.type == "triangle" || piece.type == "breakable-triangle") {
+        if( piece.type === "triangle" || piece.type === "breakable-triangle") {
             for(var i = 0; i < 4; i++) {
                 rv.push( adjoin( {rotation: 0} ) );
             }
-        } else if( piece.type == "flipper" ) {
+        } else if( piece.type === "flipper" ) {
             rv.push( adjoin( {ascending: true} ) );
             rv.push( adjoin( {ascending: false} ) );
         } else {
@@ -133,7 +135,7 @@ var Solver = (function() {
 	    }
 
 	    var result = Solver.solve( state.save() );
-	    if( result.result == "win" ) {
+	    if( result.result === "win" ) {
 		solutions.push( state.save() );
 	    }
 

@@ -1,32 +1,26 @@
+"use strict";
+
 var AABB = require("./AABB");
 var Regions = require("./Regions");
 var RegionGrid = require("./RegionGrid");
 var Util = require("./Util");
 
 module.exports = {create: function( select, area, size, options ) {
-    var grid = RegionGrid.create( area, size, options );
-    var itemRegions = [];
-    var pageSize = size.cols * size.rows;
-    var currentPage = 0;
-    var fullRegion = AABB.create( area );
-    var selected = null;
+    var grid = RegionGrid.create( area, size, options ),
+        itemRegions = [],
+        pageSize = size.cols * size.rows,
+        currentPage = 0,
+        fullRegion = AABB.create( area ),
+        selected = null;
 
-    function setSelected( region ) {
-        selected = region;
-        if( region ) {
-            setPage( region.page );
-        }
-        select( selected );
-    }
-
-    function region() {
+    function getFullRegion() {
         return fullRegion;
     }
 
     function cellNo( i ) {
-        var pageNo = Math.floor( i / pageSize );
-        var rowNo = Math.floor( (i - pageNo * pageSize) / size.cols );
-        var colNo = i - pageNo * pageSize - rowNo * size.cols;
+        var pageNo = Math.floor( i / pageSize ),
+            rowNo = Math.floor( (i - pageNo * pageSize) / size.cols ),
+            colNo = i - pageNo * pageSize - rowNo * size.cols;
         return {col: colNo,
                 row: rowNo,
                 page: pageNo,
@@ -34,15 +28,29 @@ module.exports = {create: function( select, area, size, options ) {
     }
     
     function addItem( item ) {
-        var i = 0;
+        var i = 0, cell;
+
         while( itemRegions[i] ) {
             ++i;
         }
-        var cell = cellNo( i );
+
+        cell = cellNo( i );
         itemRegions[i] = Util.mergeInto( grid.cell( cell ),
                                          cell,
                                          {item: item} );
         return itemRegions[i];
+    }
+
+    function onActiveItems( f ) {
+        var i0 = currentPage * pageSize,
+            i, region;
+
+        for(i = 0; i < pageSize; i++) {
+            region = itemRegions[i0 + i];
+            if( region ) {
+                f( region );
+            }
+        }
     }
 
     function pageRegions() {
@@ -63,16 +71,6 @@ module.exports = {create: function( select, area, size, options ) {
         } );
     }
     
-    function onActiveItems( f ) {
-        var i0 = currentPage * pageSize;
-        var i;
-        for(i = 0; i < pageSize; i++) {
-            var region = itemRegions[i0 + i];
-            if( region ) {
-                f( region );
-            }
-        }
-    }
     
     function numberOfPages() {
         return Math.ceil( itemRegions.length / pageSize );
@@ -80,7 +78,7 @@ module.exports = {create: function( select, area, size, options ) {
 
     function setPage( i ) {
         var n = numberOfPages();
-        if( n == 0 ) {
+        if( n === 0 ) {
             i = 0;
         } else {
             i = ((i % n) + n) % n;
@@ -94,6 +92,14 @@ module.exports = {create: function( select, area, size, options ) {
 
     function previousPage() {
         setPage( currentPage - 1 );
+    }
+
+    function setSelected( region ) {
+        selected = region;
+        if( region ) {
+            setPage( region.page );
+        }
+        select( selected );
     }
 
     function deltaSelected( di ) {
@@ -130,10 +136,12 @@ module.exports = {create: function( select, area, size, options ) {
         setPage: setPage,
         nextPage: nextPage,
         previousPage: previousPage,
-        region: region,
+        region: getFullRegion,
         pageRegions: pageRegions,
         setSelected: setSelected,
         nextSelected: nextSelected,
         previousSelected: previousSelected
     };
 } };
+
+

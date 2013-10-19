@@ -1,22 +1,19 @@
+"use strict";
+
+/*globals Kibo*/
+
 var Mouse = require("./Mouse");
 
 var Screen = { create: function( canvas, options ) {
     options = options || {};
 
-    var drawTimerId = null;
-    var fps = options.fps || 30;
-    var frameDelay = 1000.0 / fps;
-    var holdDelay = options.holdDelay || 500;
-
-    var scene = null;
-
-    drawTimerId = setInterval( draw, frameDelay );
-
-    var mouse = Mouse.create( canvas,
-                              {holdDelay: holdDelay},
-                              onMouse );
-
-    var ctx = canvas.getContext("2d");
+    var fps = options.fps || 30,
+        frameDelay = 1000.0 / fps,
+        holdDelay = options.holdDelay || 500,
+        scene = null,
+        drawTimerId = null, 
+        mouse = null,
+        ctx = canvas.getContext("2d");
 
     function draw() {
 	ctx.clearRect( 0, 0, canvas.width, canvas.height );
@@ -76,6 +73,10 @@ var Screen = { create: function( canvas, options ) {
         } );
     }
 
+    drawTimerId = setInterval( draw, frameDelay );
+    mouse = Mouse.create( canvas,
+                          {holdDelay: holdDelay},
+                          onMouse );
     setupUniversalKeys();
 
     return {

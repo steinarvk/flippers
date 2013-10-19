@@ -58,7 +58,7 @@ function arrayCounts( arr ) {
     var rv = {}, k, i;
     for(i = 0; i < arr.length; i++) {
         k = arr[i];
-        if( typeof rv[k] === "undefined" ) {
+        if( rv[k] === "undefined" ) {
             rv[k] = 1;
         } else {
             rv[k]++;

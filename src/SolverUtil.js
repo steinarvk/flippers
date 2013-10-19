@@ -7,14 +7,6 @@ var Util = require("./Util");
 var Map2D = require("./Map2D" );
 
 var SolverUtil = (function() {
-    function analyzePuzzle( puzzle ) {
-        var solutions = Solver.search( puzzle );
-        return solutions.map( function( solution ) {
-            return {solution: solution,
-                    analysis: analyzeSolution( solution )};
-        } );
-    }
-
     function analyzeSolution( solution ) {
         var bounces = 0,
             rollovers = 0,
@@ -48,7 +40,7 @@ var SolverUtil = (function() {
                 // element is before
                 areaCovered.push( [ element.col, element.row ].toString() );
                 flushInteraction();
-                if( element.type == "switch" ) {
+                if( element.type === "switch" ) {
                     ++switches;
                 } else {
                     ++bounces;
@@ -106,10 +98,15 @@ var SolverUtil = (function() {
 
     function main( filenames ) {
         var i, j, t0, t1, dt, filename, solutions, data;
+
+        function onValue( name, value ) {
+            console.log( "  " + name + ": " + value );
+        }
+
         for(i = 0; i < filenames.length; i++) {
             filename = filenames[i];
             console.log( "=== " + filename + "===" );
-            data = JSON.parse( fs.readFileSync( filename, "utf8" ) );
+            data = JSON.parse( fs.readFile( filename, "utf8" ) );
             t0 = new Date().getTime();
             solutions = SolverUtil.analyzePuzzle( data );
             t1 = new Date().getTime();
@@ -119,11 +116,17 @@ var SolverUtil = (function() {
                          + dt + "ms" );
             for(j = 0; j < solutions.length; j++) {
                 console.log( " == Solution " + (j+1) + " ==" );
-                summarizeSolution( solutions[j], function(name, value) {
-                    console.log( "  " + name + ": " + value );
-                } );
+                summarizeSolution( solutions[j], onValue );
             }
         }
+    }
+
+    function analyzePuzzle( puzzle ) {
+        var solutions = Solver.search( puzzle );
+        return solutions.map( function( solution ) {
+            return {solution: solution,
+                    analysis: analyzeSolution( solution )};
+        } );
     }
 
     return {

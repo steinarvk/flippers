@@ -1,17 +1,13 @@
+"use strict";
+
 var AABB = require("./AABB");
+var Util = require("./Util");
 
 var Icon = {create: function(region,pictures,name,handler,options) {
-    var pad = null;
-    var pic = null;
-    var sz = null;
-    var subregion = null;
-
-    function setIconName(newName) {
-        name = newName;
-        pic = null;
-
-        autoload();
-    }
+    var pad = null,
+        pic = null,
+        sz = null,
+        subregion = null;
 
     function autoload() {
         if( pic ) {
@@ -21,15 +17,17 @@ var Icon = {create: function(region,pictures,name,handler,options) {
             return;
         }
 
+        var sc, maxfill;
+
         pic = pictures[name];
         
-        var maxfill = (options && options.maxfill) || 1.0;
+        maxfill = (options && options.maxfill) || 1.0;
 
         console.log( "maxfill for " + name + " is " + maxfill );
 
-        var sc = Math.min( maxfill * region.width / pic.width,
-                           maxfill * region.height / pic.height );
-
+        sc = Math.min( maxfill * region.width / pic.width,
+                       maxfill * region.height / pic.height );
+        
         console.log( " scaling " + sc );
        
         sz = {width: Math.floor( pic.width * sc ),
@@ -41,6 +39,13 @@ var Icon = {create: function(region,pictures,name,handler,options) {
                                   y: region.y + pad.y,
                                   width: sz.width,
                                   height: sz.height} );
+    }
+
+    function setIconName(newName) {
+        name = newName;
+        pic = null;
+
+        autoload();
     }
 
     function draw(ctx) {
@@ -63,7 +68,7 @@ var Icon = {create: function(region,pictures,name,handler,options) {
         return handler;
     }
 
-    return $.extend( {
+    return Util.merge( {
         setIcon: setIconName,
         draw: draw,
         mouseHandler: mouseHandler

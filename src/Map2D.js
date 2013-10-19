@@ -38,10 +38,6 @@ module.exports = (function() {
             set(i, j, f( get( i, j ) ) );
         }
 
-        function count() {
-            return save().length;
-        }
-
 	function save() {
 	    var rv = [],
                 i, j, is, js;
@@ -59,6 +55,10 @@ module.exports = (function() {
 	    return rv;
 	}
 	
+        function count() {
+            return save().length;
+        }
+
 	return {
 	    set: set,
 	    remove: remove,
