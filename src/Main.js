@@ -18,45 +18,6 @@ var Random = require("./Random");
 var Resources = require("./Resources");
 var Globals = require("./Globals");
 
-function elementDeactivatable( element ) {
-    return element.type != "switch";
-}
-
-function cycleElement( cell, element ) {
-    var newElement = null;
-
-    if( element
-        && !element.deactivated
-        && elementDeactivatable( element ) ) {
-        newElement = element;
-        newElement.deactivated = true;
-    } else if( element && element.rotation ) {
-        newElement = element;
-        newElement.rotation -= 1;
-        newElement.deactivated = false;
-    } else if( !element ) {
-        newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: true };
-    } else if( element.type == "flipper" && element.ascending ) {
-        newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: false };
-    } else if( element.type == "flipper" && !element.ascending ) {
-        newElement = {type: "square", col: cell.col, row: cell.row };
-    } else if( element.type == "square" ) {
-        newElement = {type: "breakable-square", col: cell.col, row: cell.row };
-    } else if( element.type == "breakable-square" ) {
-        newElement = {type: "switch", col: cell.col, row: cell.row };
-    } else if( element.type == "switch" ) {
-        newElement = {type: "triangle", col: cell.col, row: cell.row, rotation: 3 };
-    } else if( element.type == "triangle" ) {
-        newElement = {type: "breakable-triangle", col: cell.col, row: cell.row, rotation: 3 };
-    }
-
-    if( newElement ) {
-        return newElement;
-    }
-
-    return {type: "flipper", col: element.col, row: element.row, ascending: false };
-}
-
 function initialize() {
     var canvasWidth = 480;
     var canvasHeight = 800;
