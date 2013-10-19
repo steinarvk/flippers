@@ -6,7 +6,7 @@ BUNDLE_NAME=generated/flippers_bundle.js
 ANDROID_TARGET=android/Flippers/assets/
 EXTRA_ASSETS=flippers.html modernizr.custom.29265.js kibo.js jquery-2.0.3.js normalize.css assets/*.png
 
-JSLINT_OPTIONS=--white --plusplus --unparam --continue
+JSLINT_OPTIONS=--color --white --plusplus --unparam --continue
 
 clean:
 	rm -f $(BUNDLE_NAME)

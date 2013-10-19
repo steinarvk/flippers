@@ -1,11 +1,11 @@
+"use strict";
+
+/*globals Modernizr */
+/*jslint browser: true */
+
 module.exports = { create: function( root, options, handler ) {
-    var context = null;
-
-    var lastPosition = null;
-
-    function handleMove( e ) {
-        lastPosition = extract( e );
-    }
+    var context = null,
+        lastPosition = null;
 
     function getLastPosition() {
         return lastPosition;
@@ -15,20 +15,42 @@ module.exports = { create: function( root, options, handler ) {
 	return new Date().getTime();
     }
 
+    function trigger( type, pos ) {
+	var ctx = context, f;
+
+	context = null;
+	if( !ctx ) {
+	    return;
+	}
+
+	f = ctx.handlers[type];
+        if( !f ) {
+	    console.log( "no handler for: " + type );
+            return;
+	}
+
+	f( { click: ctx.click,
+	     duration: now() - ctx.time,
+	     release: pos } );
+    }
+
     function down(pos) {
-	var rv = handler( pos );
+	var rv = handler( pos ),
+            ctx;
 	if( !rv ) {
 	    return;
 	}
-	var ctx = {
+
+	ctx = {
 	    time: now(), 
 	    click: pos,
 	    handlers: rv
 	};
 	context = ctx;
+
 	if( rv.hold && options.holdDelay ) {
 	    window.setTimeout( function() {
-		if( context != ctx ) {
+		if( context !== ctx ) {
 		    return;
 		}
 		trigger( "hold" );
@@ -38,26 +60,6 @@ module.exports = { create: function( root, options, handler ) {
         if( Modernizr.touch ) {
             lastPosition = pos;
         }
-    }
-
-    function trigger( type, pos ) {
-	var ctx = context;
-	context = null;
-	if( !ctx ) {
-	    return;
-	}
-
-	var f = ctx.handlers[type];
-	if( f ) {
-	} else {
-	    console.log( "no handler for: " + type );
-	}
-
-	var ms = now() - ctx.time;
-	
-	f( { click: ctx.click,
-	     duration: now() - ctx.time,
-	     release: pos } );
     }
 
     function up( pos ) {
@@ -74,12 +76,11 @@ module.exports = { create: function( root, options, handler ) {
 			y: e.touches[0].pageY - root.style.top};
 	    }
             return null;
-	} else {
-	    return {
-		x: e.pageX - root.style.left,
-		y: e.pageY - root.style.top
-	    };
 	}
+	return {
+	    x: e.pageX - root.style.left,
+	    y: e.pageY - root.style.top
+	};
     }
     
     function handleDown( e ) {
@@ -92,6 +93,10 @@ module.exports = { create: function( root, options, handler ) {
 	var pos = extract(e);
 	e.preventDefault();
 	up( pos );
+    }
+
+    function handleMove( e ) {
+        lastPosition = extract( e );
     }
 
     if( Modernizr.touch ) {
