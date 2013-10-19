@@ -293,9 +293,15 @@ module.exports = (function() {
                     state.ball.position.row == state.target.row )
                 {
                     state.status = "gameover:win";
+                    console.log( "running hooks for WIN" );
+                    hooks.run( "win" );
                 } else {
                     state.status = "gameover:loss";
+                    console.log( "running hooks for LOSS" );
+                    hooks.run( "loss" );
                 }
+                    console.log( "running hooks for END" );
+                hooks.run( "end" );
             }
         }
 

@@ -29,7 +29,9 @@ function initialize() {
         play: "./assets/symbols_play.png",
         stop: "./assets/symbols_stop.png",
         check: "./assets/symbols_check.png",
-        clear: "./assets/symbols_clear.png"
+        clear: "./assets/symbols_clear.png",
+        win: "./assets/gfx_solved.png",
+        lose: "./assets/gfx_failed.png"
     };
     (function() {
         var colours = ["black", "red", "blue", "green"];
@@ -475,13 +477,13 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     var myState = null;
 
     if( presetPuzzle ) {
-        myState = GameState.load( presetPuzzle );
+        setState( GameState.load( presetPuzzle ) );
     } else if( preloadedPuzzle ) {
-        myState = GameState.load( preloadedPuzzle );
+        setState( GameState.load( preloadedPuzzle ) );
     } else {
-        myState = GameState.loadOld(
+        setState( GameState.loadOld(
             {"rows":7,"cols":7,"contents":[]}
-        );
+        ) );
     }
 
     var buildMode = !presetPuzzle;
@@ -547,9 +549,35 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
 
     var playstopbutton = null;
 
+    var overlay = null;
+
+    function setOverlay( name ) {
+        if( name ) {
+            overlay = name;
+            
+            console.log( "setting overlay " + name );
+
+            setTimeout( function() {
+                overlay = null;
+            }, 5000 );
+        } else {
+            overlay = null;
+        }
+    }
+
     function setState( newstate ) {
         myState = newstate;
         mySmoothState = null;
+
+        console.log( "adding hooks for overlay" );
+
+        myState.addHook( "win", function() {
+            setOverlay( "win" );
+        } );
+
+        myState.addHook( "loss", function() {
+            setOverlay( "lose" );
+        } );
     }
 
     function startGame() {
@@ -561,6 +589,10 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
         playstopbutton.setIcon( "stop" );
     }
 
+    function running() {
+        return mySmoothState != null;
+    }
+
     function stopGame() {
         if( !running() ) {
             return;
@@ -569,10 +601,6 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
         playstopbutton.setIcon( "play" );
 
         setState( GameState.load( mySavedState ) );
-    }
-
-    function running() {
-        return mySmoothState != null;
     }
 
     function attemptMutation() {
@@ -807,6 +835,8 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     }
 
     function mouseHandler( click ) {
+        setOverlay( null );
+
         var buttonregion = buttonregions.at( click );
         if( buttonregion ) {
             if( buttonregion.mouseHandler ) {
@@ -890,6 +920,12 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
                 gfx.drawColouredAABB( region, region.colour );
             }
         } );
+
+        if( overlay && pics[overlay] ) {
+            ctx.drawImage( pics[overlay],
+                           Math.floor( 0.5 * (screen.area().width - pics[overlay].width) ),
+                           Math.floor( screen.area().height - pics[overlay].height ) );
+        }
     }
 
     var kb = new Kibo();
