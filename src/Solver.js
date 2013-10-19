@@ -31,9 +31,7 @@ var Solver = (function() {
     function solve( state, options ) {
 	var limit = (options && options.limit) || 1000,
             game,
-            key,
-            i,
-            context;
+            key;
 
 	if( state.origin ) {
 	    game = GameState.load( state );
@@ -49,14 +47,14 @@ var Solver = (function() {
             }
         }
 
-	context = setupContext( game.save() );
+	var context = setupContext( game.save() );
 
 	game.start();
 
-	for(i = 0; i < limit; i++) {
+	for(var i = 0; i < limit; i++) {
 	    observeState( context, game );
 
-	    if( game.status() !== "running" ) {
+	    if( game.status() != "running" ) {
 		break;
 	    }
 
@@ -70,9 +68,9 @@ var Solver = (function() {
         function adjoin(m) {
             return Util.merge( piece, m );
         }
-        var rv = [], i;
+        var rv = [];
         if( piece.type === "triangle" || piece.type === "breakable-triangle") {
-            for(i = 0; i < 4; i++) {
+            for(var i = 0; i < 4; i++) {
                 rv.push( adjoin( {rotation: 0} ) );
             }
         } else if( piece.type === "flipper" ) {
@@ -93,33 +91,31 @@ var Solver = (function() {
 	// (However, note that this means we would have to try all possible orders of placing the puzzle pieces.)
 
 	// Naive search
-	var baseState = GameState.load( puzzle ),
-            moveCells = [],
-            sets = [],
-            solutions = [],
-            i, j, cell, gen;
-
-	for(i = 0; i < puzzle.size.cols; i++) {
-	    for(j = 0; j < puzzle.size.rows; j++) {
-		cell = {col: i, row: j};
+	var baseState = GameState.load( puzzle );
+	var moveCells = [];
+	for(var i = 0; i < puzzle.size.cols; i++) {
+	    for( var j = 0; j < puzzle.size.rows; j++) {
+		var cell = {col: i, row: j};
 		if( !baseState.elementAtCell( cell ) ) {
 		    moveCells.push( cell );
 		}
 	    }
 	}
 
-	for(i = 0; i < puzzle.inventory.length; i++) {
+	var sets = [];
+	var solutions = [];
+
+	for(var i = 0; i < puzzle.inventory.length; i++) {
 	    sets.push( moveCells );
 	    sets.push( pieceConfigurations( puzzle.inventory[i] ) );
 	}
 
-        gen = Generator.filter(
+        var gen = Generator.filter(
 	    Generator.product.apply( null, sets ),
 	    function ( moves ) {
 		// Check that all the locations are unique
-                var index;
-		for(index = 0; index < moves.length; index += 2) {
-		    if( moves.indexOf( moves[index] ) < i ) {
+		for(var i = 0; i < moves.length; i += 2) {
+		    if( moves.indexOf( moves[i] ) < i ) {
 			return false;
 		    }
 		}
@@ -127,21 +123,26 @@ var Solver = (function() {
 	    }
 	);
         
-        Generator.forEach( gen, function( n ) {
-	    var state = GameState.load( puzzle ),
-                index, celldata, piecedata, result;
+        var count = 0;
 
-	    for(index = 0; index < n.length; index += 2) {
-		celldata = n[index];
-		piecedata = n[index+1];
-		state.setElement( Util.merge( celldata, piecedata ) );
+        Generator.forEach( gen, function( n ) {
+	    var state = GameState.load( puzzle );
+
+	    for(var i = 0; i < n.length; i += 2) {
+		var cell = n[i];
+		var piece = n[i+1];
+		state.setElement( Util.merge( cell, piece ) );
 	    }
 
-	    result = Solver.solve( state.save() );
+	    var result = Solver.solve( state.save() );
 	    if( result.result === "win" ) {
 		solutions.push( state.save() );
 	    }
+
+            ++count;
 	} );
+
+//        console.log( "Solution space (size = " + count + ") searched" );
 
 	return Util.uniqueElements( solutions );
     }
@@ -150,6 +151,6 @@ var Solver = (function() {
 	solve: solve,
 	search: search
     };
-}());
+})();
 
 module.exports = Solver;
