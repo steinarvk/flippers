@@ -1,5 +1,7 @@
 android/Flippers/assets/
 *~
-#*#
+\#*\#
 .#*
 generated/
+coverage/
+v8.log
