@@ -1,46 +1,47 @@
+"use strict";
+
 var SteadyTimer = require("./SteadyTimer");
 
 module.exports = { wrap: function( gamestate ) {
-    var target = 40;
-    var counter = 0;
-    var timer = SteadyTimer.create( 7.0,
-                                    advance,
-                                    {manual: true} );
+    var target = 40,
+        counter = 0,
+        timer = null,
+        tickCounter = 0,
+        lastCatchup = null;
 
     function phase() {
 	return counter / target;
     }
 
     function interpolatedBallPosition( ball ) {
-	var cx = (ball.position.col + 0.5);
-	var cy = (ball.position.row + 0.5);
+	var cx = (ball.position.col + 0.5),
+            cy = (ball.position.row + 0.5),
+            t, v;
 	if( (counter * 2) < target ) {
-	    var t = (counter / target) * 2;
-	    var v = ball.incomingVelocity;
+	    t = (counter / target) * 2;
+	    v = ball.incomingVelocity;
 	    return {
 		x: cx + 0.5 * v.dx * (t-1),
 		y: cy + 0.5 * v.dy * (t-1)
 	    };
-	} else {
-	    var t = ((counter - target/2) / target) * 2;
-	    var v = ball.outgoingVelocity;
-	    return {
-		x: cx + 0.5 * v.dx * t,
-		y: cy + 0.5 * v.dy * t
-	    };
 	}
+
+	t = ((counter - target/2) / target) * 2;
+	v = ball.outgoingVelocity;
+	return {
+	    x: cx + 0.5 * v.dx * t,
+	    y: cy + 0.5 * v.dy * t
+	};
     }
 
     function render(gfx) {
+        var ball = gamestate.ball(),
+            t = phase();
 	gfx.setBoardSize( gamestate.size() );
 	
 	gfx.drawBackground();
 
         gfx.drawGoals( gamestate.origin(), gamestate.target() );
-
-	var ball = gamestate.ball();
-
-	var t = phase();
 
 	gamestate.onSquares( function(cell, element, event) {
 	    var drewEvent = false;
@@ -59,8 +60,6 @@ module.exports = { wrap: function( gamestate ) {
 	gfx.drawBall( interpolatedBallPosition( ball ) );
     }
 
-    var tickCounter = 0;
-
     function resetTickCounter() {
         tickCounter = 0;
     }
@@ -69,43 +68,8 @@ module.exports = { wrap: function( gamestate ) {
         return tickCounter;
     }
 
-    function advance() {
-        tickCounter += 1;
-	counter += 1;
-	while( counter > target ) {
-	    gamestate.advance()
-	    counter -= target;
-	}
-
-	if( gamestate.status() != "running" ) {
-	    stop();
-	}
-    }
-
-    var lastCatchup = null;
-
-    function catchup() {
-        if( !timer.running() ) {
-            return;
-        }
-        var now = new Date().getTime();
-        if( lastCatchup ) {
-            var delta = now - lastCatchup;
-            timer.addTime( delta );
-        }
-        lastCatchup = now;
-    }
-    
     function running() {
         return timer.running();
-    }
-    
-    function start() {
-	if( running() ) {
-	    return;
-	}
-        
-        timer.start();
     }
     
     function stop() {
@@ -117,6 +81,45 @@ module.exports = { wrap: function( gamestate ) {
 
         timer.stop();
     }
+
+    function advance() {
+        tickCounter += 1;
+	counter += 1;
+	while( counter > target ) {
+	    gamestate.advance();
+	    counter -= target;
+	}
+
+	if( gamestate.status() !== "running" ) {
+	    stop();
+	}
+    }
+
+    function catchup() {
+        if( !timer.running() ) {
+            return;
+        }
+        var now = new Date().getTime(),
+            delta;
+
+        if( lastCatchup ) {
+            delta = now - lastCatchup;
+            timer.addTime( delta );
+        }
+        lastCatchup = now;
+    }
+    
+    function start() {
+	if( running() ) {
+	    return;
+	}
+        
+        timer.start();
+    }
+    
+    timer = SteadyTimer.create( 7.0,
+                                advance,
+                                {manual: true} );
 
     return {
 	start: start,
