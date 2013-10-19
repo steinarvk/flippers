@@ -1,10 +1,17 @@
-var Label = {create: function( canvas, area, text, options ) {
-    var ctx = canvas.getContext("2d");
+"use strict";
 
-    var fontHeight = Math.floor( area.height * 0.9 );
-    var client = null;
-    var fontStyle = null;
-    var fontSize = null;
+var Label = {create: function( canvas, area, text, options ) {
+    var ctx = canvas.getContext("2d"),
+        client = null,
+        fontStyle = null,
+        fontSize = null;
+
+    function setSize( sz ) {
+        console.log(" set size " + sz );
+
+        fontSize = sz;
+        fontStyle = sz.toString() + "px sans-serif";
+    }
 
     function autoscale() {
         if( fontStyle && client ) {
@@ -16,7 +23,10 @@ var Label = {create: function( canvas, area, text, options ) {
                    width: Math.floor( area.width * 0.9 ),
                    height: Math.floor( area.height * 0.9 ) };
 
-        var maxSize = (options && options.maxSize) || 2000;
+        var maxSize = (options && options.maxSize) || 2000,
+            high = maxSize,
+            low = 1,
+            mid, i;
 
         ctx.fillStyle = "black";
         ctx.textAlign = "center";
@@ -28,19 +38,16 @@ var Label = {create: function( canvas, area, text, options ) {
             if( sz > client.height ) {
                 return false;
             }
-            ctx.font = fontStyle = "" + sz + "px sans-serif";
+            ctx.font = fontStyle = sz.toString() + "px sans-serif";
             var metrics = ctx.measureText( text );
             return (metrics.width < client.width);
         }
 
-        var high = maxSize;
-        var low = 1;
-
         if( !check( low ) ) {
             setSize( low );
         } else {
-            for(var i = 0; i < 10; i++) {
-                var mid = Math.floor( (high + low) * 0.5 );
+            for(i = 0; i < 10; i++) {
+                mid = Math.floor( (high + low) * 0.5 );
 
                 if( check( mid ) ) {
                     low = mid;
@@ -50,13 +57,6 @@ var Label = {create: function( canvas, area, text, options ) {
             }
             setSize( mid );
         }
-    }
-
-    function setSize( sz ) {
-        console.log(" set size " + sz );
-
-        fontSize = sz;
-        fontStyle = "" + sz + "px sans-serif";
     }
 
     function getSize() {

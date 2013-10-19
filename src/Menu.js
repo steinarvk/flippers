@@ -1,13 +1,14 @@
+"use strict";
+
 var Regions = require("./Regions");
 var AABB = require("./AABB");
 var Label = require("./Label");
+var Util = require("./Util");
 
 var Menu = {create: function(canvas, area, items, mouse, options) {
-    var ctx = canvas.getContext("2d");
-    var regions = Regions.create();
-    var fontStyle = null;
-    var fontWidth = null;
-    var labels = [];
+    var ctx = canvas.getContext("2d"),
+        regions = Regions.create(),
+        labels = [];
 
     function regionIsActive( region ) {
         if( !mouse ) {
@@ -24,35 +25,27 @@ var Menu = {create: function(canvas, area, items, mouse, options) {
     }
 
     (function() {
-        var widthSlack = 0.9;
-        var heightSlack = 0.9;
-        var maxWidth = Math.floor( area.width * 0.9 );
-        var height = Math.min( 150, Math.floor( area.height * 0.9 / items.length ) );
+        var widthSlack = 0.9,
+            heightSlack = 0.9,
+            maxWidth = Math.floor( area.width * 0.9 ),
+            height = Math.min( 150, Math.floor( area.height * 0.9 / items.length ) ),
+            padding = 0.1,
+            pad = Math.max( maxWidth * padding * 0.5, height * padding * 0.5 ),
+            y = Math.floor( area.height * (1.0 - heightSlack) * 0.5 ),
+            x = Math.floor( area.width * (1.0 - widthSlack) * 0.5 ),
+            region, sz, i;
 
-        var padding = 0.1;
-
-        var pad = Math.max( maxWidth * padding * 0.5, height * padding * 0.5 );
-
-        var fontHeight = Math.floor( Math.max( 10, (height - 2 * pad) * 0.9 ) );
-
-        fontWidth = Math.floor( maxWidth * 0.9 );
-
-        fontStyle = "bold " + fontHeight + "px sans-serif";
-
-        var y = Math.floor( area.height * (1.0 - heightSlack) * 0.5 );
-        var x = Math.floor( area.width * (1.0 - widthSlack) * 0.5 );
-
-        for(var i = 0; i < items.length; i++) {
-            var region = AABB.create( {x: area.x + x + pad,
+        for(i = 0; i < items.length; i++) {
+            region = AABB.create( {x: area.x + x + pad,
                                        y: area.y + y + pad,
                                        width: maxWidth - 2 * pad,
                                        height: height - 2 * pad} );
             labels.push( Label.create( canvas, region, items[i].text ) );
             y += height;
-            regions.add( $.extend( region, {item: items[i]} ) );
+            regions.add( Util.mergeInto( region, {item: items[i]} ) );
         }
 
-        var sz = Math.min.apply( null, labels.map( function(x){
+        sz = Math.min.apply( null, labels.map( function(x){
             return x.getSize();
         } ) );
         
@@ -61,7 +54,7 @@ var Menu = {create: function(canvas, area, items, mouse, options) {
         labels.forEach( function(label) {
             label.setSize( sz );
         } );
-    })();
+    }());
 
     function draw() {
         regions.onRegions( function(region) {
