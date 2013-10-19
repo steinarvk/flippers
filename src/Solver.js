@@ -7,36 +7,36 @@ var Generator = require("./Generator");
 
 var Solver = (function() {
     function setupContext(state) {
-	return {ticks: 0};
+        return {ticks: 0};
     }
     
     function observeState( context, game ) {
-	context.ticks++;
+        context.ticks++;
     }
 
     function reportState( context, game ) {
-	var result = null;
-	if( game.status() === "gameover:win" ) {
-	    result = "win";
-	} else if( game.status() === "gameover:loss" ) {
-	    result = "loss";
-	}
+        var result = null;
+        if( game.status() === "gameover:win" ) {
+            result = "win";
+        } else if( game.status() === "gameover:loss" ) {
+            result = "loss";
+        }
 
-	return {ticks: context.ticks,
-		result: result,
-		position: game.ball().position,
-		velocity: game.ball().outgoingVelocity};
+        return {ticks: context.ticks,
+                result: result,
+                position: game.ball().position,
+                velocity: game.ball().outgoingVelocity};
     }
 
     function solve( state, options ) {
-	var limit = (options && options.limit) || 1000,
+        var limit = (options && options.limit) || 1000,
             game, key, i, context;
 
-	if( state.origin ) {
-	    game = GameState.load( state );
-	} else {
-	    game = GameState.loadOld( state );
-	}
+        if( state.origin ) {
+            game = GameState.load( state );
+        } else {
+            game = GameState.loadOld( state );
+        }
 
         if( options && options.hooks ) {
             for(key in options.hooks) {
@@ -46,21 +46,21 @@ var Solver = (function() {
             }
         }
 
-	context = setupContext( game.save() );
+        context = setupContext( game.save() );
 
-	game.start();
+        game.start();
 
-	for(i = 0; i < limit; i++) {
-	    observeState( context, game );
+        for(i = 0; i < limit; i++) {
+            observeState( context, game );
 
-	    if( game.status() !== "running" ) {
-		break;
-	    }
+            if( game.status() !== "running" ) {
+                break;
+            }
 
-	    game.advance();
-	}
+            game.advance();
+        }
 
-	return reportState( context, game );
+        return reportState( context, game );
     }
 
     function pieceConfigurations( piece ) {
@@ -83,72 +83,71 @@ var Solver = (function() {
     }
 
     function search( puzzle, options ) {
-	// Puzzle has .inventory, and is otherwise a start state.
-	// We can expect that each puzzle expands to ~ 2 x 40^puzzle.inventory.length potential solutions
-	// This means we're capable of naive exhaustive search for up to around 3 puzzle pieces, meaning most puzzles.
-	// We can also cut down the search space by adjoining a piece at a time and always placing it
-	// in the path of the ball.
-	// (However, note that this means we would have to try all possible orders of placing the puzzle pieces.)
+        // Puzzle has .inventory, and is otherwise a start state.
+        // We can expect that each puzzle expands to ~ 2 x 40^puzzle.inventory.length potential solutions
+        // This means we're capable of naive exhaustive search for up to around 3 puzzle pieces, meaning most puzzles.
+        // We can also cut down the search space by adjoining a piece at a time and always placing it
+        // in the path of the ball.
+        // (However, note that this means we would have to try all possible orders of placing the puzzle pieces.)
 
-	// Naive search
-	var baseState = GameState.load( puzzle ),
+        // Naive search
+        var baseState = GameState.load( puzzle ),
             sets = [],
             solutions = [],
             moveCells = [],
             i, j, cell, gen;
 
-	for(i = 0; i < puzzle.size.cols; i++) {
-	    for(j = 0; j < puzzle.size.rows; j++) {
-		cell = {col: i, row: j};
-		if( !baseState.elementAtCell( cell ) ) {
-		    moveCells.push( cell );
-		}
-	    }
-	}
+        for(i = 0; i < puzzle.size.cols; i++) {
+            for(j = 0; j < puzzle.size.rows; j++) {
+                cell = {col: i, row: j};
+                if( !baseState.elementAtCell( cell ) ) {
+                    moveCells.push( cell );
+                }
+            }
+        }
 
-	for(i = 0; i < puzzle.inventory.length; i++) {
-	    sets.push( moveCells );
-	    sets.push( pieceConfigurations( puzzle.inventory[i] ) );
-	}
+        for(i = 0; i < puzzle.inventory.length; i++) {
+            sets.push( moveCells );
+            sets.push( pieceConfigurations( puzzle.inventory[i] ) );
+        }
 
         gen = Generator.filter(
-	    Generator.product.apply( null, sets ),
-	    function ( moves ) {
-		// Check that all the locations are unique
+            Generator.product.apply( null, sets ),
+            function ( moves ) {
+                // Check that all the locations are unique
                 var index;
-		for(index = 0; index < moves.length; index += 2) {
-		    if( moves.indexOf( moves[index] ) < index) {
-			return false;
-		    }
-		}
-		return true;
-	    }
-	);
+                for(index = 0; index < moves.length; index += 2) {
+                    if( moves.indexOf( moves[index] ) < index) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        );
         
         Generator.forEach( gen, function( n ) {
-	    var state = GameState.load( puzzle ),
+            var state = GameState.load( puzzle ),
                 index, celldata, piecedata, result;
 
-	    for(index = 0; index < n.length; index += 2) {
-		celldata = n[index];
-		piecedata = n[index+1];
-		state.setElement( Util.merge( celldata, piecedata ) );
-	    }
+            for(index = 0; index < n.length; index += 2) {
+                celldata = n[index];
+                piecedata = n[index+1];
+                state.setElement( Util.merge( celldata, piecedata ) );
+            }
 
-	    result = Solver.solve( state.save() );
-	    if( result.result === "win" ) {
-		solutions.push( state.save() );
-	    }
-	} );
+            result = Solver.solve( state.save() );
+            if( result.result === "win" ) {
+                solutions.push( state.save() );
+            }
+        } );
 
-//        console.log( "Solution space (size = " + count + ") searched" );
+        return Util.uniqueElements( solutions );
 
-	return Util.uniqueElements( solutions );
     }
 
     return {
-	solve: solve,
-	search: search
+        solve: solve,
+        search: search
     };
 }());
 

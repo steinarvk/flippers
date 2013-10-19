@@ -8,31 +8,31 @@ module.exports = {create: function() {
     var regions = [];
 
     function addRegion( region ) {
-	regions.push( region );
+        regions.push( region );
     }
 
     function getRegionsAt( pos ) {
-	return regions.filter( function( region ) {
-	    return region.contains( pos );
-	} );
+        return regions.filter( function( region ) {
+            return region.contains( pos );
+        } );
     }
 
     function getRegionAt( pos ) {
-	var rv = getRegionsAt( pos );
-	if( rv ) {
-	    return rv[0];
-	}
+        var rv = getRegionsAt( pos );
+        if( rv ) {
+            return rv[0];
+        }
         return null;
     }
 
     function onEachRegion( f ) {
-	regions.forEach( f );
+        regions.forEach( f );
     }
 
     return {
-	add: addRegion,
-	at: getRegionAt,
-	onRegions: onEachRegion,
-	allAt: getRegionsAt
+        add: addRegion,
+        at: getRegionAt,
+        onRegions: onEachRegion,
+        allAt: getRegionsAt
     };
 } };

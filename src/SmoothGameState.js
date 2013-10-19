@@ -10,54 +10,54 @@ module.exports = { wrap: function( gamestate ) {
         lastCatchup = null;
 
     function phase() {
-	return counter / target;
+        return counter / target;
     }
 
     function interpolatedBallPosition( ball ) {
-	var cx = (ball.position.col + 0.5),
+        var cx = (ball.position.col + 0.5),
             cy = (ball.position.row + 0.5),
             t, v;
-	if( (counter * 2) < target ) {
-	    t = (counter / target) * 2;
-	    v = ball.incomingVelocity;
-	    return {
-		x: cx + 0.5 * v.dx * (t-1),
-		y: cy + 0.5 * v.dy * (t-1)
-	    };
-	}
+        if( (counter * 2) < target ) {
+            t = (counter / target) * 2;
+            v = ball.incomingVelocity;
+            return {
+                x: cx + 0.5 * v.dx * (t-1),
+                y: cy + 0.5 * v.dy * (t-1)
+            };
+        }
 
-	t = ((counter - target/2) / target) * 2;
-	v = ball.outgoingVelocity;
-	return {
-	    x: cx + 0.5 * v.dx * t,
-	    y: cy + 0.5 * v.dy * t
-	};
+        t = ((counter - target/2) / target) * 2;
+        v = ball.outgoingVelocity;
+        return {
+            x: cx + 0.5 * v.dx * t,
+            y: cy + 0.5 * v.dy * t
+        };
     }
 
     function render(gfx) {
         var ball = gamestate.ball(),
             t = phase();
-	gfx.setBoardSize( gamestate.size() );
-	
-	gfx.drawBackground();
+        gfx.setBoardSize( gamestate.size() );
+        
+        gfx.drawBackground();
 
         gfx.drawGoals( gamestate.origin(), gamestate.target() );
 
-	gamestate.onSquares( function(cell, element, event) {
-	    var drewEvent = false;
-	    if( event && gfx.drawEvent ) {
-		drewEvent = gfx.drawEvent( event, t );
-	    }
-	    if( !drewEvent && element ) {
-		gfx.drawElement( element, t );
-	    }
-	} );
+        gamestate.onSquares( function(cell, element, event) {
+            var drewEvent = false;
+            if( event && gfx.drawEvent ) {
+                drewEvent = gfx.drawEvent( event, t );
+            }
+            if( !drewEvent && element ) {
+                gfx.drawElement( element, t );
+            }
+        } );
 
-	if( !ball ) {
-	    return;
-	}
+        if( !ball ) {
+            return;
+        }
 
-	gfx.drawBall( interpolatedBallPosition( ball ) );
+        gfx.drawBall( interpolatedBallPosition( ball ) );
     }
 
     function resetTickCounter() {
@@ -73,9 +73,9 @@ module.exports = { wrap: function( gamestate ) {
     }
     
     function stop() {
-	if( !running() ) {
-	    return;
-	}
+        if( !running() ) {
+            return;
+        }
 
         lastCatchup = null;
 
@@ -84,15 +84,15 @@ module.exports = { wrap: function( gamestate ) {
 
     function advance() {
         tickCounter += 1;
-	counter += 1;
-	while( counter > target ) {
-	    gamestate.advance();
-	    counter -= target;
-	}
+        counter += 1;
+        while( counter > target ) {
+            gamestate.advance();
+            counter -= target;
+        }
 
-	if( gamestate.status() !== "running" ) {
-	    stop();
-	}
+        if( gamestate.status() !== "running" ) {
+            stop();
+        }
     }
 
     function catchup() {
@@ -110,9 +110,9 @@ module.exports = { wrap: function( gamestate ) {
     }
     
     function start() {
-	if( running() ) {
-	    return;
-	}
+        if( running() ) {
+            return;
+        }
         
         timer.start();
     }
@@ -122,10 +122,10 @@ module.exports = { wrap: function( gamestate ) {
                                 {manual: true} );
 
     return {
-	start: start,
-	stop: stop,
-	running: running,
-	render: render,
+        start: start,
+        stop: stop,
+        running: running,
+        render: render,
         tickCounter: getTickCounter,
         resetTickCounter: resetTickCounter,
         catchup: catchup

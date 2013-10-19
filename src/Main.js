@@ -26,32 +26,32 @@ function cycleElement( cell, element ) {
     var newElement = null;
 
     if( element
-	&& !element.deactivated
-	&& elementDeactivatable( element ) ) {
-	newElement = element;
-	newElement.deactivated = true;
+        && !element.deactivated
+        && elementDeactivatable( element ) ) {
+        newElement = element;
+        newElement.deactivated = true;
     } else if( element && element.rotation ) {
-	newElement = element;
-	newElement.rotation -= 1;
-	newElement.deactivated = false;
+        newElement = element;
+        newElement.rotation -= 1;
+        newElement.deactivated = false;
     } else if( !element ) {
-	newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: true };
+        newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: true };
     } else if( element.type == "flipper" && element.ascending ) {
-	newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: false };
+        newElement = {type: "flipper", col: cell.col, row: cell.row, ascending: false };
     } else if( element.type == "flipper" && !element.ascending ) {
-	newElement = {type: "square", col: cell.col, row: cell.row };
+        newElement = {type: "square", col: cell.col, row: cell.row };
     } else if( element.type == "square" ) {
-	newElement = {type: "breakable-square", col: cell.col, row: cell.row };
+        newElement = {type: "breakable-square", col: cell.col, row: cell.row };
     } else if( element.type == "breakable-square" ) {
-	newElement = {type: "switch", col: cell.col, row: cell.row };
+        newElement = {type: "switch", col: cell.col, row: cell.row };
     } else if( element.type == "switch" ) {
-	newElement = {type: "triangle", col: cell.col, row: cell.row, rotation: 3 };
+        newElement = {type: "triangle", col: cell.col, row: cell.row, rotation: 3 };
     } else if( element.type == "triangle" ) {
-	newElement = {type: "breakable-triangle", col: cell.col, row: cell.row, rotation: 3 };
+        newElement = {type: "breakable-triangle", col: cell.col, row: cell.row, rotation: 3 };
     }
 
     if( newElement ) {
-	return newElement;
+        return newElement;
     }
 
     return {type: "flipper", col: element.col, row: element.row, ascending: false };
@@ -108,27 +108,27 @@ function initialize() {
 
     var dropdown = $( "<select/>", {id: "predefinedLevelSelector"} );
     for(var name in PredefinedLevels) {
-	$( "<option/>", {value: name,
-			 text: name} ).appendTo( dropdown );
+        $( "<option/>", {value: name,
+                         text: name} ).appendTo( dropdown );
     }
 
     $("#flippersGame")
-	.append( $(document.createElement("br")) )
-	.append( $(document.createElement("button"))
-		 .attr( "id", "startstopbutton" )
-		 .html( "Start" ) )
-	.append( $(document.createElement("textarea"))
-		 .attr( "id", "leveldata" ) )
-	.append( $(document.createElement("button"))
-		 .attr( "id", "savebutton" )
-		 .html( "Save" ) )
-	.append( $(document.createElement("button"))
-		 .attr( "id", "loadbutton" )
-		 .html( "Load" ) )
-	.append( dropdown )
-	.append( $("<button/>")
+        .append( $(document.createElement("br")) )
+        .append( $(document.createElement("button"))
+                 .attr( "id", "startstopbutton" )
+                 .html( "Start" ) )
+        .append( $(document.createElement("textarea"))
+                 .attr( "id", "leveldata" ) )
+        .append( $(document.createElement("button"))
+                 .attr( "id", "savebutton" )
+                 .html( "Save" ) )
+        .append( $(document.createElement("button"))
+                 .attr( "id", "loadbutton" )
+                 .html( "Load" ) )
+        .append( dropdown )
+        .append( $("<button/>")
                  .attr( "id", "loadpredefinedbutton" )
-		 .html( "Load predefined" ) );
+                 .html( "Load predefined" ) );
 
     var screen = Screen.create( canvas );
 
@@ -371,9 +371,9 @@ function makePuzzleSaver( screen, puzzle ) {
     var gamegraphics = ImageGraphics.create( screen.canvas(),
                                              Globals.resources.store,
                                              sections[0],
-					     {cols: 9,
-					      rows: 9}
-					   );
+                                             {cols: 9,
+                                              rows: 9}
+                                           );
 
     var state = GameState.load( puzzle );
     
@@ -519,7 +519,7 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
         myState = GameState.load( preloadedPuzzle );
     } else {
         myState = GameState.loadOld(
-	    {"rows":7,"cols":7,"contents":[]}
+            {"rows":7,"cols":7,"contents":[]}
         );
     }
 
@@ -528,13 +528,13 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
 
     var gamegraphics = ImageGraphics.create( canvas,
                                              Globals.resources.store,
-					     {x: 0,
-					      y: 0,
-					      width: 480,
-					      height: 480},
-					     {cols: 9,
-					      rows: 9}
-					   );
+                                             {x: 0,
+                                              y: 0,
+                                              width: 480,
+                                              height: 480},
+                                             {cols: 9,
+                                              rows: 9}
+                                           );
     if( !buildMode ) {
         presetGame = GameState.load( presetPuzzle );
         var shade = Map2D.create();
@@ -551,29 +551,29 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
 
     $("#startstopbutton").click( toggleGame );
     $("#savebutton").click( function() {
-	$("#leveldata").val( saveLevel() );
+        $("#leveldata").val( saveLevel() );
     } );
     $("#loadbutton").click( function() {
         if( !buildMode ) {
             return;
         }
-	var data = $("#leveldata").val();
-	console.log( "loading " + data );
-	loadLevel( data );
+        var data = $("#leveldata").val();
+        console.log( "loading " + data );
+        loadLevel( data );
     } );
     $("#loadpredefinedbutton").click( function() {
         if( !buildMode ) {
             return;
         }
 
-	var key = $("#predefinedLevelSelector").val();
-	var level = PredefinedLevels[ key ];
-	if( !level ) {
-	    console.log( "No such level!" );
-	    return;
-	}
+        var key = $("#predefinedLevelSelector").val();
+        var level = PredefinedLevels[ key ];
+        if( !level ) {
+            console.log( "No such level!" );
+            return;
+        }
         if( level.origin ) {
-	    setState( GameState.load( level ) );
+            setState( GameState.load( level ) );
         } else {
             setState( GameState.loadOld( level ) );
         }
@@ -587,15 +587,15 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     var playstopbutton = null;
 
     function setState( newstate ) {
-	myState = newstate;
-	mySmoothState = null;
+        myState = newstate;
+        mySmoothState = null;
     }
 
     function startGame() {
-       	mySavedState = myState.save();
-	myState.start();
-	mySmoothState = SmoothGameState.wrap( myState );
-	mySmoothState.start();
+        mySavedState = myState.save();
+        myState.start();
+        mySmoothState = SmoothGameState.wrap( myState );
+        mySmoothState.start();
 
         playstopbutton.setIcon( "stop" );
     }
@@ -607,11 +607,11 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
 
         playstopbutton.setIcon( "play" );
 
-	setState( GameState.load( mySavedState ) );
+        setState( GameState.load( mySavedState ) );
     }
 
     function running() {
-	return mySmoothState != null;
+        return mySmoothState != null;
     }
 
     function attemptMutation() {
@@ -621,11 +621,11 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     }
 
     function toggleGame() {
-	if( running() ) {
-	    stopGame();
-	} else {
-	    startGame();
-	}
+        if( running() ) {
+            stopGame();
+        } else {
+            startGame();
+        }
     }
 
     function clearGame() {
@@ -657,11 +657,11 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     }
 
     function saveLevel() {
-	return JSON.stringify( myState.save() );
+        return JSON.stringify( myState.save() );
     }
 
     function loadLevel( data ) {
-	setState( GameState.load( JSON.parse( data ) ) );
+        setState( GameState.load( JSON.parse( data ) ) );
     }
 
     console.log( "Game beginning!");
@@ -871,13 +871,13 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
             return null;
         }
         
-	var cell = gamegraphics.cellAtPosition( click );
-	if( !cell ) {
-	    return null;
-	}
+        var cell = gamegraphics.cellAtPosition( click );
+        if( !cell ) {
+            return null;
+        }
         
-	return {
-	    hold: function( m ) {
+        return {
+            hold: function( m ) {
                 attemptMutation();
 
                 if( cellIsFixed( cell ) ) {
@@ -890,9 +890,9 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
 
                 revInvMap.remove( cell.col, cell.row );
                 
-		myState.removeElementAtCell( cell );
-	    },
-	    tap: function( m ) {
+                myState.removeElementAtCell( cell );
+            },
+            tap: function( m ) {
                 attemptMutation();
 
                 if( cellIsFixed( cell ) ) {
@@ -909,16 +909,16 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
                     }
                     myState.setElement( $.extend( {}, cell, currentBrush.item ) );
                 }
-	    }
-	};
+            }
+        };
     }
 
     function render( gfx ) {
-	if( mySmoothState ) {
-	    mySmoothState.render( gfx );
-	} else {
-	    myState.render( gfx );
-	}
+        if( mySmoothState ) {
+            mySmoothState.render( gfx );
+        } else {
+            myState.render( gfx );
+        }
 
         inventory.render( gfx );
 
@@ -948,7 +948,7 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
             if( mySmoothState ) {
                 mySmoothState.catchup();
             }
-	    render( gamegraphics );
+            render( gamegraphics );
         },
         mouseHandler: mouseHandler,
         back: function() { screen.setScene( makeRoot(screen) ); }

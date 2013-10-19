@@ -17,6 +17,8 @@ test:
 test-coverage:
 	istanbul cover buster-test
 
+tabcheck:
+	for i in src/*.js; do echo $$i `xxd $$i | sed -r "s/^[0-9a-f]+://" | grep -E "( 09|09 )" | wc -l` ; done | grep -v " 0$$"
 
 lint:
 	jslint $(JSLINT_OPTIONS) src/*.js

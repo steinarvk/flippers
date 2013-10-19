@@ -111,7 +111,7 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
     function linearClipAndScale( t, x0, x1 ) {
         if( t <= x0 ) return 0.0;
         if( t >= x1 ) return 1.0;
-	return (t - x0) / (x1 - x0);
+        return (t - x0) / (x1 - x0);
     }
 
     function scaleRect( rect, x ) {
@@ -145,8 +145,8 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
                                 ascending: !event.originallyAscending},
                                rect );
         } else {
-	    var a0 = event.originallyAscending ? 0 : 90;
-	    var d = event.ccw ? -90 : 90;
+            var a0 = event.originallyAscending ? 0 : 90;
+            var d = event.ccw ? -90 : 90;
             
             console.log( "d raw " + (a0 + t * d) );
 
@@ -193,7 +193,7 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
 
         // Draw indication using options.selected
         if( options.selected ) {
-	    ctx.fillStyle = "rgba(255,255,0,0.5)";
+            ctx.fillStyle = "rgba(255,255,0,0.5)";
 
             ctx.fillRect( rect.x,
                           rect.y,
@@ -204,9 +204,9 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
 
     function drawColouredRect( rect, colour ) {
         var col = colour || "#0f0";
-	ctx.fillStyle = col;
+        ctx.fillStyle = col;
         var r = rect;
-	ctx.fillRect( r.x,
+        ctx.fillRect( r.x,
                       r.y,
                       r.width,
                       r.height );
@@ -217,15 +217,15 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
         var offset = fitter.offset();
         var cellsize = fitter.cellsize();
 
-	ctx.fillStyle = "#000";
-	ctx.beginPath();
-	ctx.arc( offset.x + pos.x * cellsize,
-		 offset.y + pos.y * cellsize,
-		 cellsize * 0.1,
-		 0,
-		 2 * Math.PI,
-		 false );
-	ctx.fill();
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.arc( offset.x + pos.x * cellsize,
+                 offset.y + pos.y * cellsize,
+                 cellsize * 0.1,
+                 0,
+                 2 * Math.PI,
+                 false );
+        ctx.fill();
     }
 
     function drawBoard() {
@@ -233,23 +233,23 @@ var ImageGraphics = { create: function(canvas, images, area, boardsize) {
         var offset = fitter.offset();
         var cellsize = fitter.cellsize();
 
-	for(var i = 0; i < boardsize.cols; i++) {
+        for(var i = 0; i < boardsize.cols; i++) {
             for(var j = 0; j < boardsize.rows; j++) {
-		var isWhite = (i%2) == (j%2);
+                var isWhite = (i%2) == (j%2);
                 var shaded = shading && shading.get(i,j);
 
-		if( shaded ) {
+                if( shaded ) {
                     ctx.fillStyle = isWhite ? "#a88" : "#88a";
                 } else {
                     ctx.fillStyle = isWhite ? "#caa" : "#aac";
                 }
 
-		ctx.fillRect( offset.x + i * cellsize,
-			      offset.y + j * cellsize,
-			      cellsize,
-			      cellsize );
+                ctx.fillRect( offset.x + i * cellsize,
+                              offset.y + j * cellsize,
+                              cellsize,
+                              cellsize );
             }
-	}
+        }
     }
 
     function drawDirectionUpArrow( cell ) {

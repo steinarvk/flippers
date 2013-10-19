@@ -3,42 +3,42 @@ var Hooks = require("./Hooks");
 
 module.exports = (function() {
     function defaultOrigin( boardsize ) {
-	return  {col: Math.floor( boardsize.cols / 2 ),
-		 row: boardsize.rows};
+        return  {col: Math.floor( boardsize.cols / 2 ),
+                 row: boardsize.rows};
     }
     
     function defaultInitialVelocity( origin ) {
-	return {dx: 0, dy: -1};
+        return {dx: 0, dy: -1};
     }
 
     function defaultTarget( boardsize ) {
-	return  {col: Math.floor( boardsize.cols / 2 ),
-		 row: -1};
+        return  {col: Math.floor( boardsize.cols / 2 ),
+                 row: -1};
     }
 
     function createBlankState( boardsize ) {
-	return createState(
-	    {
-		size: boardsize,
-		origin: defaultOrigin(boardsize),
-		initialVelocity: defaultInitialVelocity( defaultOrigin(boardsize) ),
-		target: defaultTarget(boardsize),
-		elements: []
-	    }
-	);
+        return createState(
+            {
+                size: boardsize,
+                origin: defaultOrigin(boardsize),
+                initialVelocity: defaultInitialVelocity( defaultOrigin(boardsize) ),
+                target: defaultTarget(boardsize),
+                elements: []
+            }
+        );
     }
     
     function convertOldState( data ) {
-	var sz = {cols: data.cols, rows: data.rows};
-	return createState(
-	    {
-		size: sz,
-		origin: defaultOrigin(sz),
-		initialVelocity: defaultInitialVelocity( defaultOrigin(sz) ),
-		target: defaultTarget(sz),
-		elements: data.contents
-	    }
-	);
+        var sz = {cols: data.cols, rows: data.rows};
+        return createState(
+            {
+                size: sz,
+                origin: defaultOrigin(sz),
+                initialVelocity: defaultInitialVelocity( defaultOrigin(sz) ),
+                target: defaultTarget(sz),
+                elements: data.contents
+            }
+        );
     };
 
     function decorateStateWithDefaults( state ) {
@@ -55,78 +55,78 @@ module.exports = (function() {
     }
 
     function createState( state ) {
-	var events = null,
+        var events = null,
             hooks = Hooks.create();
 
-	function eventAtCell( cell ) {
-	    if( events ) {
-		return events.get( cell.col, cell.row );
-	    }
-	    return null;
-	}
-	
-	function clearEvents() {
-	    events = Map2D.create();
-	}
+        function eventAtCell( cell ) {
+            if( events ) {
+                return events.get( cell.col, cell.row );
+            }
+            return null;
+        }
+        
+        function clearEvents() {
+            events = Map2D.create();
+        }
 
-	function setEvent( col, row, data ) {
-	    if( !events ) {
-		clearEvents();
-	    }
-	    events.set( col, row, data );
-	}
-	
-	function elementAt( col, row ) {
-	    for(var i = 0; i < state.elements.length; i++) {
-		var flipper = state.elements[i];
-		if( flipper.col == col && flipper.row == row ) {  
-		    return flipper;
-		}
-	    }
-	    return null;
-	}
-	
-	function start() {
-	    state.ball = {
-		position: state.origin,
-		incomingVelocity: state.initialVelocity,
-		outgoingVelocity: state.initialVelocity
-	    };
-	    state.status = "running";
-	}
+        function setEvent( col, row, data ) {
+            if( !events ) {
+                clearEvents();
+            }
+            events.set( col, row, data );
+        }
+        
+        function elementAt( col, row ) {
+            for(var i = 0; i < state.elements.length; i++) {
+                var flipper = state.elements[i];
+                if( flipper.col == col && flipper.row == row ) {  
+                    return flipper;
+                }
+            }
+            return null;
+        }
+        
+        function start() {
+            state.ball = {
+                position: state.origin,
+                incomingVelocity: state.initialVelocity,
+                outgoingVelocity: state.initialVelocity
+            };
+            state.status = "running";
+        }
 
-	function stop() {
-	    state.ball = null;
-	    state.status = "stop";
-	}
+        function stop() {
+            state.ball = null;
+            state.status = "stop";
+        }
 
-	function status() {
-	    return state.status || "stopped";
-	}
-	
-	function orthogonalBounce( direction ) {
-	    return { dx: - direction.dx,
-		     dy: - direction.dy };
-	}
+        function status() {
+            return state.status || "stopped";
+        }
+        
+        function orthogonalBounce( direction ) {
+            return { dx: - direction.dx,
+                     dy: - direction.dy };
+        }
 
-	function diagonalBounce( direction, ascending ) {
-	    var m = ascending ? -1 : 1;
-	    return { dx: m * direction.dy,
-		     dy: m * direction.dx };
-	}
+        function diagonalBounce( direction, ascending ) {
+            var m = ascending ? -1 : 1;
+            return { dx: m * direction.dy,
+                     dy: m * direction.dx };
+        }
 
-	function squareCollision( ball, square ) {
-	    if( square.type == "breakable-square" ) {
-		setEvent( square.col,
-			  square.row,
-			  {type: "disappear",
+        function squareCollision( ball, square ) {
+            if( square.type == "breakable-square" ) {
+                setEvent( square.col,
+                          square.row,
+                          {type: "disappear",
                            begin: 0.0,
-			   element: square} );
-		removeElementAtCell( square );
-	    }
-	    ballEnters( ball.position,
-			orthogonalBounce( ball.outgoingVelocity ) );
-	}
+                           element: square} );
+                removeElementAtCell( square );
+            }
+            ballEnters( ball.position,
+                        orthogonalBounce( ball.outgoingVelocity ) );
+        }
 
         function triangleCollision( ball, triangle ) {
             var v = ball.outgoingVelocity;
@@ -139,12 +139,12 @@ module.exports = (function() {
             // 32 
             // 01
             if( triangle.type == "breakable-triangle" ) {
-		setEvent( triangle.col,
-			  triangle.row,
-			  {type: "disappear",
+                setEvent( triangle.col,
+                          triangle.row,
+                          {type: "disappear",
                            begin: angled ? 0.5 : 0.0,
-			   element: triangle} );
-		removeElementAtCell( triangle );                
+                           element: triangle} );
+                removeElementAtCell( triangle );                
             }
             if( !angled ) {
                 ballEnters( ball.position,
@@ -159,32 +159,32 @@ module.exports = (function() {
             }
         }
 
-	function flipperCollision( ball, flipper ) {
-	    var v = ball.incomingVelocity = ball.outgoingVelocity;
+        function flipperCollision( ball, flipper ) {
+            var v = ball.incomingVelocity = ball.outgoingVelocity;
 
             var vertical = v.dy != 0;
 
-	    ball.outgoingVelocity = diagonalBounce( v, flipper.ascending );
-	    ball.position = {col: flipper.col,
-			     row: flipper.row};
-	    
-	    setEvent( flipper.col,
-		      flipper.row,
-		      {type: "flip",
-		       element: flipper,
+            ball.outgoingVelocity = diagonalBounce( v, flipper.ascending );
+            ball.position = {col: flipper.col,
+                             row: flipper.row};
+            
+            setEvent( flipper.col,
+                      flipper.row,
+                      {type: "flip",
+                       element: flipper,
                        ccw: vertical == flipper.ascending,
-		       originallyAscending: flipper.ascending} );
+                       originallyAscending: flipper.ascending} );
 
-	    flipper.ascending = !flipper.ascending;
-	}
+            flipper.ascending = !flipper.ascending;
+        }
 
         function switchCollision( ball, element ) {
             var v = ball.outgoingVelocity;
 
-	    if( !element.pressed ) {
-		element.pressed = true;
-		triggerSwitch( element );
-	    }
+            if( !element.pressed ) {
+                element.pressed = true;
+                triggerSwitch( element );
+            }
 
             state.ball = ball = {
                 position: {col: element.col,
@@ -194,8 +194,8 @@ module.exports = (function() {
             };
         }
 
-	function triggerSwitch( element ) {
-	    onEachElement( function(switched) {
+        function triggerSwitch( element ) {
+            onEachElement( function(switched) {
                 if( switched.type != "switch"
                     && switched.colour == element.colour ) {
                     switched.deactivated = !switched.deactivated;
@@ -205,132 +205,132 @@ module.exports = (function() {
                                newActive: !switched.deactivated} );
                 }
             } );
-	}
+        }
 
-	function leaveSwitch( element ) {
-	    element.pressed = false;
-	}
+        function leaveSwitch( element ) {
+            element.pressed = false;
+        }
 
-	var collisions = {
-	    "flipper": flipperCollision,
-	    "square": squareCollision,
-	    "breakable-square": squareCollision,
-	    "triangle": triangleCollision,
-	    "breakable-triangle": triangleCollision,
+        var collisions = {
+            "flipper": flipperCollision,
+            "square": squareCollision,
+            "breakable-square": squareCollision,
+            "triangle": triangleCollision,
+            "breakable-triangle": triangleCollision,
             "switch": switchCollision
-	};
+        };
 
-	var onBallLeaves = {
-	    "switch": leaveSwitch
-	};
-	
-	function checkCell( pos ) {
-	    return (pos.col >= 0
-		    && pos.row >= 0
-		    && pos.col < state.size.cols
-		    && pos.row < state.size.rows);
-	}
+        var onBallLeaves = {
+            "switch": leaveSwitch
+        };
+        
+        function checkCell( pos ) {
+            return (pos.col >= 0
+                    && pos.row >= 0
+                    && pos.col < state.size.cols
+                    && pos.row < state.size.rows);
+        }
 
-	function ballEnters( position, velocity ) {
-	    var el = elementAt( position.col, position.row );
+        function ballEnters( position, velocity ) {
+            var el = elementAt( position.col, position.row );
 
-	    if( !el || el.deactivated ) {
+            if( !el || el.deactivated ) {
                 if( el ) {
                     hooks.run( "onRollover", el, velocity );
                 } else {
                     hooks.run( "onBallMoved", position, velocity );
                 }
-		state.ball = {
-		    position: position,
-		    incomingVelocity: velocity,
-		    outgoingVelocity: velocity
-		};
-	    } else {
+                state.ball = {
+                    position: position,
+                    incomingVelocity: velocity,
+                    outgoingVelocity: velocity
+                };
+            } else {
                 hooks.run( "onInteraction", el, velocity );
-		state.ball.outgoingVelocity = velocity;
-		collisions[ el.type ]( state.ball, el );
-	    }
-	}
+                state.ball.outgoingVelocity = velocity;
+                collisions[ el.type ]( state.ball, el );
+            }
+        }
 
-	function ballLeaves( position ) {
-	    var el = elementAt( position.col, position.row );
+        function ballLeaves( position ) {
+            var el = elementAt( position.col, position.row );
 
-	    if( !el || el.deactivated ) {
-		return;
-	    }
+            if( !el || el.deactivated ) {
+                return;
+            }
 
-	    var f = onBallLeaves[ el.type ];
-	    if( f ) {
-		f( el );
-	    }
-	}
+            var f = onBallLeaves[ el.type ];
+            if( f ) {
+                f( el );
+            }
+        }
 
-	function advance() {
-	    if( state.status != "running" ) {
-		return;
-	    }
+        function advance() {
+            if( state.status != "running" ) {
+                return;
+            }
 
-	    clearEvents();
+            clearEvents();
 
-	    var v = state.ball.outgoingVelocity;
+            var v = state.ball.outgoingVelocity;
 
-	    var originalPosition = JSON.stringify( state.ball.position );
+            var originalPosition = JSON.stringify( state.ball.position );
 
-	    ballEnters( {col: state.ball.position.col + v.dx,
-			 row: state.ball.position.row + v.dy },
-			state.ball.outgoingVelocity );
+            ballEnters( {col: state.ball.position.col + v.dx,
+                         row: state.ball.position.row + v.dy },
+                        state.ball.outgoingVelocity );
 
-	    var positionChanged = JSON.stringify( state.ball.position ) != originalPosition;
-	    if( positionChanged ) {
-		originalPosition = JSON.parse( originalPosition );
-		ballLeaves( originalPosition );
-	    }
+            var positionChanged = JSON.stringify( state.ball.position ) != originalPosition;
+            if( positionChanged ) {
+                originalPosition = JSON.parse( originalPosition );
+                ballLeaves( originalPosition );
+            }
 
 
-	    if( !checkCell( state.ball.position ) ) {
-		if( state.ball.position.col == state.target.col
-		    &&
-		    state.ball.position.row == state.target.row )
-		{
-		    state.status = "gameover:win";
-		} else {
-		    state.status = "gameover:loss";
-		}
-	    }
-	}
+            if( !checkCell( state.ball.position ) ) {
+                if( state.ball.position.col == state.target.col
+                    &&
+                    state.ball.position.row == state.target.row )
+                {
+                    state.status = "gameover:win";
+                } else {
+                    state.status = "gameover:loss";
+                }
+            }
+        }
 
-	function save() {
-	    return JSON.parse( JSON.stringify( state ) );
-	}
+        function save() {
+            return JSON.parse( JSON.stringify( state ) );
+        }
 
-	function onEachElement( f ) {
-	    for(var key in state.elements) {
-		f( state.elements[key] );
-	    }
-	}
+        function onEachElement( f ) {
+            for(var key in state.elements) {
+                f( state.elements[key] );
+            }
+        }
 
-	function render( gfx ) {
-	    // Direct render function -- note that this object operates
-	    // discretely. For better visuals we can use a layer above
-	    // to show smooth animation.
+        function render( gfx ) {
+            // Direct render function -- note that this object operates
+            // discretely. For better visuals we can use a layer above
+            // to show smooth animation.
 
-	    gfx.setBoardSize( state.size );
+            gfx.setBoardSize( state.size );
 
-	    gfx.drawBackground();
+            gfx.drawBackground();
 
-	    onEachElement( gfx.drawElement );
+            onEachElement( gfx.drawElement );
 
             gfx.drawGoals( state.origin, state.target );
 
-	    if( state.ball ) {
-		gfx.drawBall( {x: (0.5 + state.ball.position.col),
-			       y: (0.5 + state.ball.position.row) } );
-	    }
-	}
+            if( state.ball ) {
+                gfx.drawBall( {x: (0.5 + state.ball.position.col),
+                               y: (0.5 + state.ball.position.row) } );
+            }
+        }
 
-	function elementAtCell( cell ) {
-	    return elementAt( cell.col, cell.row );
-	}
+        function elementAtCell( cell ) {
+            return elementAt( cell.col, cell.row );
+        }
 
         function arrayRemoveElement( arr, el ) {
             var index = arr.indexOf( el );
@@ -339,49 +339,49 @@ module.exports = (function() {
             }
         }
 
-	function removeElementAtCell( cell ) {
-	    var el = elementAtCell( cell );
-	    if( el ) {
-		arrayRemoveElement( state.elements, el );
-	    }
-	}
+        function removeElementAtCell( cell ) {
+            var el = elementAtCell( cell );
+            if( el ) {
+                arrayRemoveElement( state.elements, el );
+            }
+        }
 
-	function setElement( element ) {
-	    removeElementAtCell( element ); // Note duck-typing
-	    state.elements.push( element );
-	}
+        function setElement( element ) {
+            removeElementAtCell( element ); // Note duck-typing
+            state.elements.push( element );
+        }
 
-	function onSquares( f ) {
-	    for( var i = 0; i < state.size.cols; i++) {
-		for(var j = 0; j < state.size.rows; j++) {
-		    var cell = {col: i, row: j};
-		    var element = elementAtCell( cell );
-		    var event = eventAtCell( cell );
-		    if( element || event ) {
-			f( cell, element, event );
-		    }
-		}
-	    }
-	}
+        function onSquares( f ) {
+            for( var i = 0; i < state.size.cols; i++) {
+                for(var j = 0; j < state.size.rows; j++) {
+                    var cell = {col: i, row: j};
+                    var element = elementAtCell( cell );
+                    var event = eventAtCell( cell );
+                    if( element || event ) {
+                        f( cell, element, event );
+                    }
+                }
+            }
+        }
         
-	return {
-	    start: start,
-	    stop: stop,
-	    advance: advance,
-	    status: status,
-	    save: save,
-	    render: render,
-	    elementAtCell: elementAtCell,
-	    eventAtCell: eventAtCell,
-	    removeElementAtCell: removeElementAtCell,
-	    setElement: setElement,
-	    onSquares: onSquares,
+        return {
+            start: start,
+            stop: stop,
+            advance: advance,
+            status: status,
+            save: save,
+            render: render,
+            elementAtCell: elementAtCell,
+            eventAtCell: eventAtCell,
+            removeElementAtCell: removeElementAtCell,
+            setElement: setElement,
+            onSquares: onSquares,
             addHook: hooks.add,
             origin: function() { return state.origin; },
             target: function() { return state.target; },
-	    ball: function(){ return state.ball; },
-	    size: function(){ return state.size; }
-	};	
+            ball: function(){ return state.ball; },
+            size: function(){ return state.size; }
+        };      
     }
 
     function loadState( state ) {
@@ -397,8 +397,8 @@ module.exports = (function() {
     }
 
     return {
-	create: createBlankState,
-	load: loadState,
-	loadOld: loadOldState
+        create: createBlankState,
+        load: loadState,
+        loadOld: loadOldState
     };
 })();
