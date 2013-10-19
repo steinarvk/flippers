@@ -12,6 +12,16 @@ buster.testCase( "Random", {
             buster.refute.equals( xs.indexOf(x), -1 );
         }
     },
+    "choices": function() {
+        var xs = ["foo", "bar", "baaz"], i, x;
+        for(i = 0; i < 100; i++) {
+            x = Random.choices( [xs,xs,xs] );
+            buster.assert.equals( x.length, 3 );
+            buster.refute.equals( xs.indexOf(x[0]), -1 );
+            buster.refute.equals( xs.indexOf(x[1]), -1 );
+            buster.refute.equals( xs.indexOf(x[2]), -1 );
+        }
+    },
     "digits": function() {
         var i, d, xs = [];
         for(i = 0; i < 100; i++) {

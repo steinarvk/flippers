@@ -5,6 +5,14 @@ var Random = (function() {
         var index = Math.floor( Math.random() * arr.length );
         return arr[index];
     }
+
+    function choices( arrs ) {
+        var rv = [], i;
+        for(i = 0; i < arrs.length; i++) {
+            rv.push( choice( arrs[i] ) );
+        }
+        return rv;
+    }
     
     function sequence( f, n ) {
         var rv = "",
@@ -27,6 +35,7 @@ var Random = (function() {
     
     return {
         choice: choice,
+        choices: choices,
         digits: generateDigits,
         letters: generateLetters
     };

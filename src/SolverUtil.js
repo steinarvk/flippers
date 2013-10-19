@@ -106,7 +106,7 @@ var SolverUtil = (function() {
         for(i = 0; i < filenames.length; i++) {
             filename = filenames[i];
             console.log( "=== " + filename + "===" );
-            data = JSON.parse( fs.readFile( filename, "utf8" ) );
+            data = JSON.parse( fs.readFileSync( filename, "utf8" ) );
             t0 = new Date().getTime();
             solutions = SolverUtil.analyzePuzzle( data );
             t1 = new Date().getTime();

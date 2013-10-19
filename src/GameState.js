@@ -3,8 +3,8 @@ var Hooks = require("./Hooks");
 
 module.exports = (function() {
     function defaultOrigin( boardsize ) {
-        return  {col: Math.floor( boardsize.cols / 2 ),
-                 row: boardsize.rows};
+        return {col: Math.floor( boardsize.cols / 2 ),
+                row: boardsize.rows};
     }
     
     function defaultInitialVelocity( origin ) {
@@ -293,14 +293,11 @@ module.exports = (function() {
                     state.ball.position.row == state.target.row )
                 {
                     state.status = "gameover:win";
-                    console.log( "running hooks for WIN" );
                     hooks.run( "win" );
                 } else {
                     state.status = "gameover:loss";
-                    console.log( "running hooks for LOSS" );
                     hooks.run( "loss" );
                 }
-                    console.log( "running hooks for END" );
                 hooks.run( "end" );
             }
         }
@@ -369,6 +366,19 @@ module.exports = (function() {
                 }
             }
         }
+
+        function onAllCells(f) {
+            var cell = {col: 0, row: 0};
+            for(cell.col = 0; cell.col < state.size.cols; cell.col++) {
+                for(cell.row = 0; cell.row < state.size.rows; cell.row++) {
+                    f( cell );
+                }
+            }            
+        }
+
+        function numberOfElements() {
+            return state.elements.length;
+        }
         
         return {
             start: start,
@@ -381,7 +391,9 @@ module.exports = (function() {
             eventAtCell: eventAtCell,
             removeElementAtCell: removeElementAtCell,
             setElement: setElement,
+            numberOfElements: numberOfElements,
             onSquares: onSquares,
+            onAllCells: onAllCells,
             addHook: hooks.add,
             origin: function() { return state.origin; },
             target: function() { return state.target; },

@@ -90,6 +90,46 @@ var Generator = (function() {
         };
     }
 
+    function genCartesianProductSafe( seqs ) {
+        var indices = [],
+            done = false;
+
+        (function() {
+            var i;
+            for(i = 0; i < seqs.length; i++) {
+                indices.push( 0 );
+            }
+        }());
+
+        return function() {
+            if( done ) {
+                return undefined;
+            }
+            var value = [],
+                i;
+
+            for(i = 0; i < seqs.length; i++) {
+                value.push( seqs[i][ indices[i] ] );
+            }
+
+            i = 0;
+
+            indices[i]++;
+
+            while( i < seqs.length && indices[i] >= seqs[i].length ) {
+                indices[i] = 0;
+                i++;
+                indices[i]++;
+            }
+
+            if( i >= seqs.length ) {
+                done = true;
+            }
+            
+            return value;
+        };
+    }
+
     function genCartesianProduct( seqs ) {
         if( !seqs.length ) {
             return fromArray( [[]] );
@@ -105,6 +145,15 @@ var Generator = (function() {
         } ) );
     }
 
+    function genCartesianPower( seq, n ) {
+        var seqs = [], i;
+        for(i = 0; i < n; i++) {
+            seqs.push( seq );
+        }
+        console.log( "generating product of seq len " + seqs.length );
+        return Generator.product.apply( null, seqs );
+    }
+
     function forEach( g, f ) {
         var x = g();
         while( x !== undefined ) {
@@ -115,16 +164,24 @@ var Generator = (function() {
 
         return null;
     }
+
+    function filters( gen, fs ) {
+        return genFilter( gen, function(x) {
+            return fs.every( function(f) { return f(x); } );
+        } );
+    }
     
     return {
         filter: genFilter,
+        filters: filters,
         concat: onVarargs( genConcat ),
         map: genMap,
         fromArray: fromArray,
         toArray: toArray,
         take: genTake,
         forEach: forEach,
-        product: onVarargs( genCartesianProduct ),
+        product: onVarargs( genCartesianProductSafe ),
+        cartesianPower: genCartesianPower,
         integers: integers
     };
 }());
