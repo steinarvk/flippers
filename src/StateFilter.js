@@ -25,10 +25,26 @@ var StateFilter = (function() {
             return bounced;
         };
     }
+
+    function uniqueSolution() {
+        return function(puzzle) {
+            var solutions = Solver.search( puzzle ),
+                rv = false;
+            if( solutions.length === 1 ) {
+//                console.log( "solution elements len " +  solutions[0].elements.length );
+//                console.log( "inv len " +  puzzle.inventory.length );
+//                console.log( "puzzle el len " +  puzzle.elements.length );
+                rv = (solutions[0].elements.length
+                      === (puzzle.elements.length + puzzle.inventory.length));
+            }
+            return rv;
+        };
+    }
     
     return {
         nontrivial: nontrivial,
-        successful: successful
+        successful: successful,
+        uniqueSolution: uniqueSolution
     };
 }());
 

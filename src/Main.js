@@ -18,6 +18,7 @@ var Random = require("./Random");
 var Resources = require("./Resources");
 var Globals = require("./Globals");
 var BrowserUtil = require("./BrowserUtil");
+var PieceUtil = require("./PieceUtil");
 
 function initialize() {
     var canvasWidth = 480;
@@ -371,27 +372,13 @@ function makePuzzleSaver( screen, puzzle ) {
         screen.setScene( makeGame( screen, null, state.save() ) );
     }
 
-    function normalizePiece( piece ) {
-        piece = JSON.parse( JSON.stringify( piece ) );
-
-        delete piece.col;
-        delete piece.row;
-        if( piece.ascending ) {
-            piece.ascending = false;
-        }
-        if( piece.rotation ) {
-            piece.rotation = 0;
-        }
-        return piece;
-    }
-
     function onAccept() {
         var st = GameState.load( state.save() );
         var inv = [];
         for(var i = 0; i < inventoryCells.length; i++) {
             var element = st.elementAtCell( inventoryCells[i] );
 
-            inv.push( normalizePiece( element ) );
+            inv.push( PieceUtil.normalizePiece( element ) );
 
             st.removeElementAtCell( inventoryCells[i] );
         }

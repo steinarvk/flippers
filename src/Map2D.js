@@ -59,12 +59,19 @@ module.exports = (function() {
             return save().length;
         }
 
+        function forEach( f ) {
+            save().forEach( function(el) {
+                f( el[0], el[1], el[2] );
+            } );
+        }
+
         return {
             set: set,
             remove: remove,
             get: get,
             count: count,
             adjust: adjust,
+            forEach: forEach,
             save: save
         };
     }

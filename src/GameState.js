@@ -300,6 +300,8 @@ module.exports = (function() {
                 }
                 hooks.run( "end" );
             }
+
+            hooks.run( "onTick" );
         }
 
         function canonicalizedElements() {
@@ -371,6 +373,14 @@ module.exports = (function() {
             state.elements.push( element );
         }
 
+        function onEmptyCells( f ) {
+            onSquares( function(cell, element) {
+                if( element ) {
+                    f( cell );
+                }
+            } );
+        }
+
         function onSquares( f ) {
             for( var i = 0; i < state.size.cols; i++) {
                 for(var j = 0; j < state.size.rows; j++) {
@@ -411,6 +421,7 @@ module.exports = (function() {
             numberOfElements: numberOfElements,
             onSquares: onSquares,
             onAllCells: onAllCells,
+            onEmptyCells: onEmptyCells,
             addHook: hooks.add,
             origin: function() { return state.origin; },
             target: function() { return state.target; },
