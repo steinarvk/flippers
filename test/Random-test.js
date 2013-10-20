@@ -31,7 +31,7 @@ buster.testCase( "Random", {
             buster.refute.equals( parseInt( d, 10 ), 0 );
             xs.push( d );
         }
-        buster.assert.equals( Util.uniqueElements( xs ).length, xs.length );
+        buster.assert.greater( Util.uniqueElements( xs ).length, 0.95 * xs.length  );
     },
     "letters": function() {
         var i, d, xs = [];
