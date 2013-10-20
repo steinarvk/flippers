@@ -71,7 +71,7 @@ var Solver = (function() {
             i;
         if( piece.type === "triangle" || piece.type === "breakable-triangle") {
             for(i = 0; i < 4; i++) {
-                rv.push( adjoin( {rotation: 0} ) );
+                rv.push( adjoin( {rotation: i} ) );
             }
         } else if( piece.type === "flipper" ) {
             rv.push( adjoin( {ascending: true} ) );

@@ -3,10 +3,11 @@ var buster = require("buster");
 var Solver = require("../src/Solver");
 var SolverUtil = require("../src/SolverUtil");
 
+var Util = require("../src/Util");
 var GameState = require("../src/GameState");
 
 var TestPuzzles = {
-    one:
+    ambiguous:
     {"size": {"cols":7,"rows":7},
      "origin":{"col":3,"row":7},
      "initialVelocity":{"dx":0,"dy":-1},
@@ -117,11 +118,18 @@ buster.testCase( "Solver search", {
         buster.assert.equals( placed.ascending, false );
     },
     "realistic uniqueness": function() {
-        var solutions = Solver.search( TestPuzzles.one );
-        solutions.forEach(function(solution) {
-            console.log( "Solution in " + Solver.solve( solution ).ticks + " ticks " + JSON.stringify( solution ) );
-        } );
-        buster.assert.equals( solutions.length, 1 );
+        var solutions = Solver.search( TestPuzzles.ambiguous ),
+            goldSolution = GameState.load( TestPuzzles.ambiguous ),
+            goldSolutionResult;
+        goldSolution.setElement( {col: 1, row: 5, type: "breakable-square"} );
+        goldSolution.setElement( {col: 3, row: 4, type: "breakable-triangle", rotation: 3} );
+        goldSolutionResult = Solver.solve( goldSolution.save() );
+        buster.assert.equals( goldSolutionResult.result, "win" );
+        buster.assert.equals( goldSolutionResult.ticks, 74 );
+        buster.assert.equals( Util.countIf( solutions, function(solution) {
+            return Solver.solve( solution ).ticks >= 74;
+        } ), 1 );
+        buster.assert.equals( solutions.length, 20 );
     },
     "extra inventory": function() {
         var solutions = Solver.search( TestPuzzles.excess );
@@ -134,9 +142,9 @@ buster.testCase( "Solver search", {
 
 buster.testCase( "SolverUtil", {
     "analysis": function() {
-        var reports = SolverUtil.analyzePuzzle( TestPuzzles.one ),
+        var reports = SolverUtil.analyzePuzzle( TestPuzzles.ambiguous ),
             analysis = reports[0].analysis;
-        buster.assert.equals( reports.length, 1 );
+        buster.assert.equals( reports.length, 20 );
         buster.assert.isNumber( analysis.ticks );
         buster.assert.isNumber( analysis.switches );
         buster.assert.isNumber( analysis.rollovers );
