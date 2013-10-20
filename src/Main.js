@@ -221,13 +221,17 @@ function makePregameMenu( screen, n ) {
                      }
                  ) );
              } },
-            {text: "Freeform",
+            {text: "Editor",
              activate: function() {
                  screen.setScene( makeGame( screen, null ) );
              }},
-            {text: "Online",
+            {text: "Custom",
              activate: function() {
                  screen.setScene( makeOnlinePuzzlesMenu( screen ) );
+             }},
+            {text: "Online",
+             activate: function() {
+                 window.location = "http://irrasjonal.net/misc/flippers/flippers.html";
              }}
         ],
         screen.mouse(),
