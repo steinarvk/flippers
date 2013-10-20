@@ -1,5 +1,7 @@
 "use strict";
 
+var Util = require("../src/Util");
+
 var Generator = (function() {
     function integers(n) {
         n = n || 0;
@@ -161,7 +163,6 @@ var Generator = (function() {
         for(i = 0; i < n; i++) {
             seqs.push( seq );
         }
-        console.log( "generating product of seq len " + seqs.length );
         return Generator.product.apply( null, seqs );
     }
 
@@ -182,6 +183,42 @@ var Generator = (function() {
         } );
     }
     
+    function orderedSubseqsOfLength( seq, i ) {
+        var gen = Generator.cartesianPower( [false,true], seq.length );
+
+        gen = Generator.filter(
+            gen,
+            function(bools) {
+                return Util.countIf( bools, Util.identity ) == i;
+            } );
+
+        gen = Generator.map(
+            gen,
+            function(bools) {
+                var rv = [], i;
+                for(i = 0; i < seq.length; i++) {
+                    if( bools[i] ) {
+                        rv.push( seq[i] );
+                    }
+                }
+                return rv;
+            }
+        );
+        
+        return gen;
+    }
+
+    function orderedSubseqs( seq ) {
+        // Subseqs, ordered from smallest sets to largest.
+        var rv = [], i;
+        for(i = 0; i <= seq.length; i++) {
+            rv.push( function(i) {
+                return orderedSubseqsOfLength( seq, i );
+            }(i) );
+        }
+        return Generator.concat.apply( null, rv );
+    }
+    
     return {
         filter: genFilter,
         filters: filters,
@@ -194,7 +231,8 @@ var Generator = (function() {
         forEach: forEach,
         product: onVarargs( genCartesianProductSafe ),
         cartesianPower: genCartesianPower,
-        integers: integers
+        integers: integers,
+        orderedSubseqs: orderedSubseqs
     };
 }());
 

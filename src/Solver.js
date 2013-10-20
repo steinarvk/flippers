@@ -81,7 +81,7 @@ var Solver = (function() {
         }
         return rv;
     }
-
+    
     function search( puzzle, options ) {
         // Puzzle has .inventory, and is otherwise a start state.
         // We can expect that each puzzle expands to ~ 2 x 40^puzzle.inventory.length potential solutions
@@ -89,8 +89,55 @@ var Solver = (function() {
         // We can also cut down the search space by adjoining a piece at a time and always placing it
         // in the path of the ball.
         // (However, note that this means we would have to try all possible orders of placing the puzzle pieces.)
+        var solutions = [],
+            inventorygen = Generator.orderedSubseqs( puzzle.inventory ),
+            nextInventory,
+            leastInventorySize,
+            solutionsHere,
+            triedInventories = [],
+            inventoryAlreadyTried;
 
+        function inventoryEquivalentTo(x) {
+            return function(y) {
+                return Util.multisetsEqual( x, y, Util.jsonEqual );
+            };
+        }
+
+        nextInventory = inventorygen();
+
+        do {
+            inventoryAlreadyTried = triedInventories
+                .map( inventoryEquivalentTo )
+                .some( Util.appliedOn( [nextInventory] ) );
+            if( inventoryAlreadyTried ) {
+                nextInventory = inventorygen();
+                continue;
+            }
+
+
+            triedInventories.push( nextInventory );
+
+            solutionsHere = searchInventory( puzzle,
+                                             options,
+                                             nextInventory );
+            if( solutionsHere.length ) {
+                leastInventorySize = nextInventory.length;
+
+                solutions = solutions.concat( solutionsHere );
+            }
+
+            nextInventory = inventorygen();
+        } while( nextInventory
+                 && (leastInventorySize === undefined
+                     ||
+                     nextInventory.length === leastInventorySize) );
+
+        return solutions;
+    }
+
+    function searchInventory( puzzle, options, inventory ) {
         // Naive search
+
         var baseState = GameState.load( puzzle ),
             sets = [],
             solutions = [],
@@ -106,9 +153,9 @@ var Solver = (function() {
             }
         }
 
-        for(i = 0; i < puzzle.inventory.length; i++) {
+        for(i = 0; i < inventory.length; i++) {
             sets.push( moveCells );
-            sets.push( pieceConfigurations( puzzle.inventory[i] ) );
+            sets.push( pieceConfigurations( inventory[i] ) );
         }
 
         gen = Generator.filter(

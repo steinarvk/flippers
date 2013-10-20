@@ -97,5 +97,19 @@ buster.testCase( "Generator", {
         } );
 
         buster.assert.equals( rv, x );
+    },
+    "ordered subseqs": function() {
+        var x = [1,2,3],
+            rv = Generator.toArray( Generator.orderedSubseqs( x ) );
+
+        buster.assert.equals( rv,
+                              [[],
+                               [1],
+                               [2],
+                               [3],
+                               [1,2],
+                               [1,3],
+                               [2,3],
+                               [1,2,3]] );
     }
 } );

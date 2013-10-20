@@ -60,5 +60,22 @@ buster.testCase( "Util", {
         var adder3 = Util.compose( Util.inc, Util.inc, Util.inc );
         buster.assert.equals( adder3(0), 3 );
         buster.assert.equals( adder3(9), 12 );
+    },
+    "multiset equality": function() {
+        buster.assert( Util.multisetsEqual(
+            [1,2,3],
+            [3,2,1],
+            Util.jsonEqual
+        ) );
+        buster.refute( Util.multisetsEqual(
+            [],
+            [1],
+            Util.jsonEqual
+        ) );
+        buster.refute( Util.multisetsEqual(
+            [1],
+            [],
+            Util.jsonEqual
+        ) );
     }
 } );

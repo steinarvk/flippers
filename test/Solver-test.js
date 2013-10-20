@@ -50,8 +50,24 @@ var TestPuzzles = {
                   "type":"flipper",
                   "ascending":false,"colour":"red"}],
      "inventory": [{type: "flipper"}]
+    },
+    excess:
+    {"size":{"cols":3,"rows":3},
+     "origin":{"col":1,"row":3},
+     "initialVelocity":{"dx":0,"dy":-1},
+     "target":{"col":1,"row":-1},
+     "elements":[{"col":1,"row":1,
+                  "type":"flipper",
+                  "ascending":true,"colour":"red"},
+                 {"col":2,"row":1,
+                  "type":"flipper",
+                  "ascending":true,"colour":"red"},
+                 {"col":2,"row":0,
+                  "type":"flipper",
+                  "ascending":false,"colour":"red"}],
+     "inventory": [{type: "flipper"},
+                   {type: "flipper"}]
     }
-
 };
   
 buster.testCase( "Solver scenarios", {
@@ -102,6 +118,13 @@ buster.testCase( "Solver search", {
     },
     "realistic uniqueness": function() {
         var solutions = Solver.search( TestPuzzles.one );
+        buster.assert.equals( solutions.length, 1 );
+    },
+    "extra inventory": function() {
+        var solutions = Solver.search( TestPuzzles.excess );
+        // The solver should use the least amount of pieces possible.
+        // E.g. if it's possible to solve the puzzle with 1 piece, don't bother
+        // doing a search on how to do it with 2.
         buster.assert.equals( solutions.length, 1 );
     }
 } );
