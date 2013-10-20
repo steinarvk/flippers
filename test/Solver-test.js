@@ -118,6 +118,9 @@ buster.testCase( "Solver search", {
     },
     "realistic uniqueness": function() {
         var solutions = Solver.search( TestPuzzles.one );
+        solutions.forEach(function(solution) {
+            console.log( "Solution in " + Solver.solve( solution ).ticks + " ticks " + JSON.stringify( solution ) );
+        } );
         buster.assert.equals( solutions.length, 1 );
     },
     "extra inventory": function() {
