@@ -14,7 +14,9 @@ DesignDoc.views.puzzlesByName = {
     map: function(doc) {
         if( doc.type == "puzzle" ) {
             emit( doc.name,
-                  {author: doc.author} );
+                  {author: doc.author,
+		   size: doc.puzzle.size,
+		   inventory: doc.puzzle.inventory.length} );
         }
     }
 };
