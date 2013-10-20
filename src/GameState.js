@@ -302,8 +302,25 @@ module.exports = (function() {
             }
         }
 
+        function canonicalizedElements() {
+            var rv = [];
+
+            onAllCells(function(cell) {
+                var element = elementAtCell( cell );
+                if( element ) {
+                    rv.push( JSON.parse( JSON.stringify( element ) ) );
+                }
+            } );
+            
+            return rv;
+        }
+
         function save() {
-            return JSON.parse( JSON.stringify( state ) );
+            var rv = JSON.parse( JSON.stringify( state ) );
+
+            rv.elements = canonicalizedElements();
+
+            return rv;
         }
 
         function onEachElement( f ) {

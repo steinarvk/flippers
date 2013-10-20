@@ -55,5 +55,10 @@ buster.testCase( "Util", {
         buster.assert.equals( Util.rectCenter( rect1 ).y, 90 );
         buster.assert.equals( Util.rectCenter( rect2 ).x, 85 );
         buster.assert.equals( Util.rectCenter( rect2 ).y, 55 );
+    },
+    "function composition": function() {
+        var adder3 = Util.compose( Util.inc, Util.inc, Util.inc );
+        buster.assert.equals( adder3(0), 3 );
+        buster.assert.equals( adder3(9), 12 );
     }
 } );

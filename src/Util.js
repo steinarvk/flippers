@@ -88,6 +88,36 @@ function greaterThan( v ) {
 
 function inc(x) { return x + 1; }
 
+function collector(target) {
+    return function(x) {
+        target.push( x );
+    };
+}
+
+function normalizeArguments(x) {
+    return [].slice.apply( x );
+}
+
+function jsonCopy(x) {
+    return JSON.parse( JSON.stringify( x ) );
+}
+
+function compose() {
+    var fs = normalizeArguments( arguments ),
+        f = fs.shift(),
+        nf = null;
+
+    if( !fs.length ) {
+        return f;
+    }
+
+    nf = compose.apply( null, fs );
+
+    return function() {
+        return nf( f.apply( null, arguments ) );
+    };
+}
+
 module.exports = {
     arrayRemoveElement: arrayRemoveElement,
     arrayCounts: arrayCounts,
@@ -100,5 +130,9 @@ module.exports = {
     inc: inc,
     quantile: quantile,
     mergeInto: mergeInto,
-    uniqueElements: uniqueElements
+    uniqueElements: uniqueElements,
+    collector: collector,
+    compose: compose,
+    normalizeArguments: normalizeArguments,
+    jsonCopy: jsonCopy
 };

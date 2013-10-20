@@ -140,8 +140,15 @@ var Solver = (function() {
                 solutions.push( state.save() );
             }
         } );
+        
+        solutions = solutions.map( JSON.stringify );
+        solutions = Util.uniqueElements( solutions );
+        solutions.forEach(function(x) {
+            console.log( "solution: " + x );
+        } );
+        solutions = solutions.map( JSON.parse );
 
-        return Util.uniqueElements( solutions );
+        return solutions;
 
     }
 

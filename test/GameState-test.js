@@ -1,6 +1,7 @@
 var buster = require("buster");
 
 var GameState = require("../src/GameState");
+var Util = require("../src/Util");
 
 var PredefinedLevels = require("../src/PredefinedLevels" );
 
@@ -152,5 +153,31 @@ buster.testCase( "GameState", {
         buster.assert.greater( changed, 0 );
         buster.assert.equals( data_before, JSON.stringify( data ) );
         buster.refute.equals( saved_before, saved_after );
+    },
+    "save canonicalization": function() {
+        var sz = {cols: 3, rows: 3},
+            st1 = GameState.create( sz ),
+            st2 = GameState.create( sz ),
+            cells = [],
+            mkEl = function(cell) {
+                return Util.merge( cell,
+                                   {type: "flipper",
+                                    ascending: cell.col === cell.row} );
+            };
+        st1.onAllCells( Util.compose( Util.jsonCopy,
+                                      Util.collector(cells) ) );
+
+        cells.forEach( function(cell) {
+            st1.setElement( mkEl( cell ) );
+        } );
+
+        cells.reverse();
+
+        cells.forEach( function(cell) {
+            st2.setElement( mkEl( cell ) );
+        } );
+
+        buster.assert.equals( JSON.stringify( st1.save() ),
+                              JSON.stringify( st2.save() ) );
     }
 } );
