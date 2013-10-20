@@ -300,6 +300,8 @@ module.exports = (function() {
                 }
                 hooks.run( "end" );
             }
+
+            hooks.run( "onTick" );
         }
 
         function canonicalizedElements() {

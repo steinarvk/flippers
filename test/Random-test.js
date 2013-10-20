@@ -42,5 +42,11 @@ buster.testCase( "Random", {
             xs.push( d );
         }
         buster.assert.equals( Util.uniqueElements( xs ).length, xs.length );
+    },
+    "removing draw": function() {
+        var arr = [1,2,3,4,5,6,7,8,9],
+            sel = Random.removingDraw( arr, 3 );
+        buster.assert.equals( arr.length, 6 );
+        buster.assert.equals( sel.length, 3 );
     }
 } );
