@@ -186,6 +186,25 @@ var Util = (function() {
         return true;
     }
 
+    function bestBy( arr, f ) {
+        var i, rv = null;
+        if( arr.length > 0 ) {
+            rv = arr[0];
+            for(i = 1; i < arr.length; i++) {
+                if( f( arr[i], rv ) ) {
+                    rv = arr[i];
+                }
+            }
+        }
+        return rv;
+    }
+
+    function negate(f) {
+        return function(x) {
+            return f(x);
+        };
+    }
+
     return {
         arrayRemoveElement: arrayRemoveElement,
         arrayCounts: arrayCounts,
@@ -205,8 +224,10 @@ var Util = (function() {
         jsonCopy: jsonCopy,
         jsonEqual: jsonEqual,
         identity: identity,
+        negate: negate,
         countIf: countIf,
         appliedOn: appliedOn,
+        bestBy: bestBy,
         multisetsEqual: multisetsEqual
     };
 }());
