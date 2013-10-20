@@ -1,5 +1,12 @@
 "use strict";
 
+
+function quantile( arr, pct ) {
+    arr = JSON.parse( JSON.stringify( arr ) );
+    arr.sort( function(a,b) { return a-b; } );
+    return arr[ Math.floor( pct * arr.length ) ];
+}
+
 function arrayRemoveElement( ar, element ) {
     var i = ar.indexOf( element );
     if( i > -1 ) {
@@ -91,6 +98,7 @@ module.exports = {
     getter: getter,
     merge: merge,
     inc: inc,
+    quantile: quantile,
     mergeInto: mergeInto,
     uniqueElements: uniqueElements
 };

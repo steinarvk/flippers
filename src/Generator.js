@@ -44,6 +44,17 @@ var Generator = (function() {
         return rv;
     }
 
+    function genTakeGen( n, g ) {
+        var count = 0;
+        return function() {
+            if( count >= n ) {
+                return undefined;
+            }
+            ++count;
+            return g();
+        };
+    }
+
     function genMap( g, f ) {
         return function() {
             var x = g();
@@ -179,6 +190,7 @@ var Generator = (function() {
         fromArray: fromArray,
         toArray: toArray,
         take: genTake,
+        takeGen: genTakeGen,
         forEach: forEach,
         product: onVarargs( genCartesianProductSafe ),
         cartesianPower: genCartesianPower,

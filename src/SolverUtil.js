@@ -76,6 +76,7 @@ var SolverUtil = (function() {
     }
 
     function summarizeSolution( report, output ) {
+        console.log( "Solution: " + JSON.stringify( report.solution ) );
         output( "Total elements",
                 report.solution.elements.length );
         output( "Ticks taken",
