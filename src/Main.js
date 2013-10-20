@@ -17,6 +17,7 @@ var Label = require("./Label");
 var Random = require("./Random");
 var Resources = require("./Resources");
 var Globals = require("./Globals");
+var BrowserUtil = require("./BrowserUtil");
 
 function initialize() {
     var canvasWidth = 480;
@@ -207,33 +208,38 @@ function makeRoot( screen ) {
 }
 
 function makePregameMenu( screen, n ) {
-    return Menu.create(
-        screen.canvas(),
-        {x: 0, y: 0, width: 480, height: 800},
-        [
-            {text: "Puzzle",
-             activate: function() {
-                 screen.setScene( makeLevelSelectMenu(
-                     screen,
-                     PredefinedLevels,
-                     function(level) {
-                         screen.setScene( makeGame( screen, level ) );
-                     }
-                 ) );
-             } },
-            {text: "Editor",
-             activate: function() {
-                 screen.setScene( makeGame( screen, null ) );
-             }},
-            {text: "Custom",
-             activate: function() {
-                 screen.setScene( makeOnlinePuzzlesMenu( screen ) );
-             }},
+    var menuOptions = [
+        {text: "Puzzle",
+         activate: function() {
+             screen.setScene( makeLevelSelectMenu(
+                 screen,
+                 PredefinedLevels,
+                 function(level) {
+                     screen.setScene( makeGame( screen, level ) );
+                 }
+             ) );
+         } },
+        {text: "Editor",
+         activate: function() {
+             screen.setScene( makeGame( screen, null ) );
+         }},
+        {text: "Custom",
+         activate: function() {
+             screen.setScene( makeOnlinePuzzlesMenu( screen ) );
+         }}
+    ];
+    if( BrowserUtil.isLocal() ) {
+        menuOptions.push(
             {text: "Online",
              activate: function() {
                  window.location = "http://irrasjonal.net/misc/flippers/flippers.html";
              }}
-        ],
+        );
+    }
+    return Menu.create(
+        screen.canvas(),
+        {x: 0, y: 0, width: 480, height: 800},
+        menuOptions,
         screen.mouse(),
         {back: function() { screen.setScene( makeRoot(screen) ); }}
     );
