@@ -7,6 +7,25 @@ var Util = require("../src/Util");
 var GameState = require("../src/GameState");
 
 var TestPuzzles = {
+    requiresDeactivated:
+    {
+	"size": {"cols": 1, "rows": 3},
+	"origin": {"col": 0, "row": 3},
+	"initialVelocity": {"dx": 0, "dy": -1},
+	"target": {"col": -1, "row": 0},
+	"elements": [{"col":0, "row": 2, "type": "switch"}],
+	"inventory": [{"type": "flipper", "deactivated": true}]
+    },
+    requiresSwitch:
+    {
+	"size": {"cols": 1, "rows": 3},
+	"origin": {"col": 0, "row": 3},
+	"initialVelocity": {"dx": 0, "dy": -1},
+	"target": {"col": -1, "row": 0},
+	"elements": [{"col": 0, "row": 0, "type": "flipper", "deactivated": true, 
+		      "ascending": false}],
+	"inventory": [{"type": "switch"}]
+    },
     ambiguous:
     {"size": {"cols":7,"rows":7},
      "origin":{"col":3,"row":7},
@@ -130,6 +149,14 @@ buster.testCase( "Solver search", {
             return Solver.solve( solution ).ticks >= 74;
         } ), 1 );
         buster.assert.equals( solutions.length, 20 );
+    },
+    "solve with deactivated": function() {
+	var solutions = Solver.search( TestPuzzles.requiresDeactivated );
+	buster.assert.equals( solutions.length, 1 );
+    },
+    "solve with switch": function() {
+	var solutions = Solver.search( TestPuzzles.requiresSwitch );
+	buster.assert.equals( solutions.length, 2 );
     },
     "extra inventory": function() {
         var solutions = Solver.search( TestPuzzles.excess );
