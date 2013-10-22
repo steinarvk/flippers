@@ -40,7 +40,7 @@ var Util = (function() {
 
     function nameArray( names, arr ) {
 	var rv = [];
-	zip( function( name, el ) {
+	zip_( function( name, el ) {
 	    rv[ name ] = el;
 	}, names, arr );
 	return rv;
@@ -270,7 +270,8 @@ var Util = (function() {
         multisetsEqual: multisetsEqual,
 	zip: zip,
 	zip_: zip_,
-	arrayMin: arrayMin
+	arrayMin: arrayMin,
+        nameArray: nameArray
     };
 }());
 

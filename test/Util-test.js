@@ -108,5 +108,12 @@ buster.testCase( "Util", {
         buster.assert.equals( f(3,5), 10 );
         buster.assert.equals( f(1,3), 6 );
         buster.assert.equals( f(9,9), 20 );
+    },
+    "name array test": function() {
+        var rv = Util.nameArray( ["x", "y", "z"],
+                                 [42, 43, 44] );
+        buster.assert.equals( rv.x, 42 );
+        buster.assert.equals( rv.y, 43 );
+        buster.assert.equals( rv.z, 44 );
     }
 } );
