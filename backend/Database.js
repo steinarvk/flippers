@@ -15,6 +15,8 @@ DesignDoc.views.puzzlesByName = {
         if( doc.type == "puzzle" ) {
             emit( doc.name,
                   {author: doc.author,
+                   name: doc.name,
+                   puzzle: doc.puzzle,
 		   size: doc.puzzle.size,
 		   inventory: doc.puzzle.inventory.length} );
         }

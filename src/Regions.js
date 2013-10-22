@@ -29,10 +29,16 @@ module.exports = {create: function() {
         regions.forEach( f );
     }
 
+    function getCount() {
+        return regions.length;
+    }
+
     return {
         add: addRegion,
         at: getRegionAt,
         onRegions: onEachRegion,
+        forEach: onEachRegion,
+        count: getCount,
         allAt: getRegionsAt
     };
 } };

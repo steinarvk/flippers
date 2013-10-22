@@ -35,7 +35,7 @@ var Label = {create: function( canvas, area, text, options ) {
         ctx.textAlign = "left";
         
         function check( sz ) {
-            if( sz > client.height ) {
+            if( (sz * 1.5) > client.height ) {
                 return false;
             }
             ctx.font = fontStyle = sz.toString() + "px sans-serif";

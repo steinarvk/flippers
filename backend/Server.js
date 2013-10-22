@@ -114,7 +114,9 @@ function finishPaginatedList( finish, pageSize, error, data, reverse, skip ) {
         var rows = data.rows.map( function( entry ) {
             return {id: entry.id,
                     name: entry.key,
-                    author: entry.value.author};
+                    author: entry.value.author,
+                    size: entry.value.size,
+                    puzzle: entry.value.puzzle};
         } );
         var rv = {
             total_rows: total_rows,
@@ -165,7 +167,7 @@ function handleListPuzzles( finish, pageSize ) {
 }
 
 function handleGetPuzzles( finish, args ) {
-    var pageSize = 5;
+    var pageSize = 4;
 
     if( args.query.id ) {
         handleGetPuzzleById( finish, args.query.id );

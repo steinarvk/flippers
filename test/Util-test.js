@@ -14,6 +14,12 @@ buster.testCase( "Util", {
         buster.assert.equals( Util.uniqueElements( [5,1,2,3,4,7,2,3,4,5,6] ),
                               [5,1,2,3,4,7,6] );
     },
+    "basic quantile": function() {
+        var data = [ 5, 0, 3, 2, 9, 8, 6, 1, 7, 4 ];
+        buster.assert.equals( Util.quantile( data, 0 ), 0 );
+        buster.assert.equals( Util.quantile( data, 0.9999 ), 9 );
+        buster.assert.equals( Util.quantile( data, 0.5 ), 5 );
+    },
     "merge": function() {
         var x = {"foo": 42, "bar": "baz"};
         var y = {"foo": 90, "baa": "baa"};

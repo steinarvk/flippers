@@ -19,6 +19,7 @@ var Resources = require("./Resources");
 var Globals = require("./Globals");
 var BrowserUtil = require("./BrowserUtil");
 var PieceUtil = require("./PieceUtil");
+var PuzzleSelectionMenu = require("./PuzzleSelectionMenu");
 
 function initialize() {
     var canvasWidth = 480;
@@ -152,20 +153,10 @@ function makeOnlinePuzzleLoader( screen, id ) {
 
 function makeOnlinePuzzlesMenu( screen ) {
     var backend = Backend.create();
-    var pics = Globals.resources.store;
-
-    function makeEntry( entry ) {
-        return {
-            text: entry.name + " (" + entry.author + ")",
-            activate: function() {
-                screen.setScene( makeOnlinePuzzleLoader( screen,
-                                                         entry.id ) );
-            }
-        };
-    }
 
     function displayResult( error, puzzlespage ) {
         function onPaged() {
+            console.log( "okay display new ");
             displayResult( null, puzzlespage );
         }
 
@@ -175,27 +166,27 @@ function makeOnlinePuzzlesMenu( screen ) {
             return;
         }
 
-        var prevEntry = {text: "Previous",
-                         activate: function() {
-                             puzzlespage.prev( onPaged );
-                         }};
-        var nextEntry = {text: "Next",
-                         activate: function() {
-                             puzzlespage.next( onPaged );
-                         }};
-
-        var entries = puzzlespage.rows().map( makeEntry );
-
-        var menuEntries = [];
-        
-        menuEntries = menuEntries.concat( [prevEntry], entries, [nextEntry] );
-
-        screen.setScene( Menu.create(
+        screen.setScene( PuzzleSelectionMenu.create(
             screen.canvas(),
             screen.area(),
-            menuEntries,
+            puzzlespage.rows(),
             screen.mouse(),
-            {back: function() { screen.setScene( makeRoot(screen) ); }}
+            {},
+            {
+                next: function() {
+                    puzzlespage.next( onPaged );
+                },
+                prev: function() {
+                    puzzlespage.prev( onPaged );
+                },
+                puzzle: function(doc) {
+                    screen.setScene( makeGame( screen,
+                                               doc.puzzle ) );
+                },
+                back: function() {
+                    screen.setScene( makeRoot(screen) );
+                }
+            }
         ) );
     }
 
