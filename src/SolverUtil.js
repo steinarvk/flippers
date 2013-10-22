@@ -7,7 +7,7 @@ var Util = require("./Util");
 var Map2D = require("./Map2D" );
 
 var SolverUtil = (function() {
-    function analyzeSolution( solution ) {
+    function analyzeSolution( solution, referenceSolution ) {
         var bounces = 0,
             rollovers = 0,
             switches = 0,
@@ -18,7 +18,25 @@ var SolverUtil = (function() {
             untouchedPieces = Map2D.create(),
             touchedPieces = Map2D.create(),
             i,
-            result;
+            result,
+            uniqueAreaCovered,
+            referenceAreaCovered = Map2D.create();
+
+        if( referenceSolution ) {
+            Solver.solve( referenceSolution, { hooks: {
+                onBallMoved: function( newCell, velocity ) {
+                    referenceAreaCovered.set( newCell.col,
+                                              newCell.row,
+                                              true );
+                },
+                onInteraction: function( newCell ) {
+                    referenceAreaCovered.set( newCell.col,
+                                              newCell.row,
+                                              true );
+                }
+            } } );
+            console.log( "refsol " + referenceAreaCovered.count() );
+        }
 
         for( i = 0; i < solution.elements.length; i++ ) {
             untouchedPieces.set( solution.elements[i].col,
@@ -33,12 +51,14 @@ var SolverUtil = (function() {
         
         result = Solver.solve( solution, { hooks: {
             onBallMoved: function( newCell, velocity ) {
-                areaCovered.push( [ newCell.col, newCell.row ].toString() );
+                areaCovered.push( JSON.stringify( [ newCell.col,
+                                                    newCell.row ] ) );
                 ++movedSinceInteraction;
             },
             onInteraction: function( element, ballVel ) {
                 // element is before
-                areaCovered.push( [ element.col, element.row ].toString() );
+                areaCovered.push( JSON.stringify( [ element.col,
+                                                    element.row ] ) );
                 flushInteraction();
                 if( element.type === "switch" ) {
                     ++switches;
@@ -59,8 +79,12 @@ var SolverUtil = (function() {
             }
         } } );
         
-        areaCovered = Util.uniqueElements( areaCovered ).length;
-        
+        areaCovered = Util.uniqueElements( areaCovered );
+        uniqueAreaCovered = areaCovered.map( JSON.parse )
+            .filter( function( arr ) {
+                return !referenceAreaCovered.get( arr[0], arr[1] );
+            } );
+
         stretchCounts = Util.arrayCounts( stretches );
 
         return {
@@ -69,7 +93,8 @@ var SolverUtil = (function() {
             ticks: result.ticks,
             switches: switches,
             rollovers: rollovers,
-            squaresVisited: areaCovered,
+            uniqueSquaresVisited: JSON.stringify( uniqueAreaCovered ),
+            squaresVisited: areaCovered.length,
             untouchedPieces: untouchedPieces.count(),
             multitouchedPieces: touchedPieces.save().map( Util.getter(2) ).filter( Util.greaterThan( 1 ) ).length
         };
@@ -95,6 +120,8 @@ var SolverUtil = (function() {
                 report.analysis.untouchedPieces );
         output( "Multi-hit pieces",
                 report.analysis.multitouchedPieces );
+        output( "Unique area",
+                report.analysis.uniqueSquaresVisited );
     }
 
     function main( filenames ) {
@@ -123,10 +150,15 @@ var SolverUtil = (function() {
     }
 
     function analyzePuzzle( puzzle ) {
-        var solutions = Solver.search( puzzle );
+        var solutions = Solver.search( puzzle ),
+            bestSolution = Util.bestBy(
+                solutions,
+                function( a, b ) {
+                    return Solver.solve( a ).ticks > Solver.solve( b ).ticks;
+                } );
         return solutions.map( function( solution ) {
             return {solution: solution,
-                    analysis: analyzeSolution( solution )};
+                    analysis: analyzeSolution( solution, bestSolution )};
         } );
     }
 

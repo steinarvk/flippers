@@ -7,6 +7,201 @@ var Util = require("../src/Util");
 var GameState = require("../src/GameState");
 
 var TestPuzzles = {
+    lesson: {
+        "size": {
+            "cols": 7,
+            "rows": 7
+        },
+        "origin": {
+            "col": 3,
+            "row": 7
+        },
+        "initialVelocity": {
+            "dx": 0,
+            "dy": -1
+        },
+        "target": {
+            "col": 3,
+            "row": -1
+        },
+        "elements": [
+            {
+                "col": 3,
+                "row": 0,
+                "type": "square",
+                "colour": "red"
+            },
+            {
+                "col": 3,
+                "row": 4,
+                "type": "switch",
+                "colour": "red"
+            },
+            {
+                "col": 3,
+                "row": 6,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 3,
+                "row": 2,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 1,
+                "row": 4,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 5,
+                "row": 6,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red"
+            },
+            {
+                "col": 5,
+                "row": 4,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red"
+            },
+            {
+                "col": 1,
+                "row": 6,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red"
+            },
+            {
+                "col": 1,
+                "row": 1,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red"
+            },
+            {
+                "col": 0,
+                "row": 6,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 0,
+                "row": 5,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 6,
+                "row": 5,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 6,
+                "row": 4,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 0,
+                "row": 4,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red"
+            },
+            {
+                "col": 0,
+                "row": 3,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red"
+            },
+            {
+                "col": 6,
+                "row": 6,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 0,
+                "row": 0,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 1,
+                "row": 0,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "col": 6,
+                "row": 3,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red"
+            },
+            {
+                "col": 6,
+                "row": 0,
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red"
+            },
+            {
+                "col": 5,
+                "row": 0,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red"
+            },
+            {
+                "col": 5,
+                "row": 1,
+                "type": "flipper",
+                "ascending": true,
+                "colour": "red"
+            }
+        ],
+        "inventory": [
+            {
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red",
+                "deactivated": true
+            },
+            {
+                "type": "flipper",
+                "ascending": false,
+                "colour": "red"
+            }
+        ]
+    },
     ambiguous:
     {"size": {"cols":7,"rows":7},
      "origin":{"col":3,"row":7},
@@ -137,6 +332,10 @@ buster.testCase( "Solver search", {
         // E.g. if it's possible to solve the puzzle with 1 piece, don't bother
         // doing a search on how to do it with 2.
         buster.assert.equals( solutions.length, 1 );
+    },
+    "solve lesson": function() {
+        var solutions = Solver.search( TestPuzzles.lesson );
+        buster.assert.greater( solutions.length, 0 );
     }
 } );
 
