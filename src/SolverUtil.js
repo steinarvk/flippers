@@ -35,7 +35,6 @@ var SolverUtil = (function() {
                                               true );
                 }
             } } );
-            console.log( "refsol " + referenceAreaCovered.count() );
         }
 
         for( i = 0; i < solution.elements.length; i++ ) {

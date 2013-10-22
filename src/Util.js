@@ -6,6 +6,45 @@ var Util = (function() {
         arr.sort( function(a,b) { return a-b; } );
         return arr[ Math.floor( pct * arr.length ) ];
     }
+
+    function arrayMin( arr ) {
+	return Math.min.apply( null, arr );
+    }
+
+    function zip( f ) {
+	var rv = [],
+            args = normalizeArguments( arguments );
+	args.splice( 0, 1 );
+	
+	zip_.apply( null, 
+		    [ compose( collector(rv),
+			       f ) ].concat( args ) );
+
+
+	return rv;
+    }
+
+    function zip_( f ) {
+	var args = normalizeArguments( arguments ),
+            minLength, i, subargs = [];
+	args.splice( 0, 1 );
+
+	minLength = arrayMin( args.map( getter("length") ) );
+
+	for(i = 0; i < minLength; i++) {
+	    f.apply( null, args.map( getter(i) ) );
+	}
+
+	return null;
+    }
+
+    function nameArray( names, arr ) {
+	var rv = [];
+	zip( function( name, el ) {
+	    rv[ name ] = el;
+	}, names, arr );
+	return rv;
+    }
     
     function arrayRemoveElement( ar, element ) {
         var i = ar.indexOf( element );
@@ -228,7 +267,10 @@ var Util = (function() {
         countIf: countIf,
         appliedOn: appliedOn,
         bestBy: bestBy,
-        multisetsEqual: multisetsEqual
+        multisetsEqual: multisetsEqual,
+	zip: zip,
+	zip_: zip_,
+	arrayMin: arrayMin
     };
 }());
 

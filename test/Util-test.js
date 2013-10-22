@@ -77,5 +77,28 @@ buster.testCase( "Util", {
             [],
             Util.jsonEqual
         ) );
+    },
+    "basic zip": function() {
+	var alpha = [ "hello", "world" ],
+            beta = [ "mjau", "mjau" ],
+            gamma = [ "1", "2", "3" ],
+            rv = Util.zip( function( a, b, c ) {
+	       return a + b + c;
+            }, alpha, beta, gamma );
+
+	buster.assert.equals( rv, ["hellomjau1",
+				   "worldmjau2"] );
+    },
+    "basic zip_": function() {
+	var alpha = [ "hello", "world" ],
+            beta = [ "mjau", "mjau" ],
+            gamma = [ "1", "2", "3" ],
+            coll = [],
+            rv = Util.zip_( function( a, b, c ) {
+		coll.push( a + b + c );
+            }, alpha, beta, gamma );
+
+	buster.assert.equals( rv, null );
+	buster.assert.equals( coll, ["hellomjau1", "worldmjau2"] );
     }
 } );
