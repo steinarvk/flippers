@@ -100,5 +100,13 @@ buster.testCase( "Util", {
 
 	buster.assert.equals( rv, null );
 	buster.assert.equals( coll, ["hellomjau1", "worldmjau2"] );
+    },
+    "high-arity function composition": function() {
+        var f = Util.compose( function(a,b) { return a + b; },
+                              Util.inc,
+                              Util.inc );
+        buster.assert.equals( f(3,5), 10 );
+        buster.assert.equals( f(1,3), 6 );
+        buster.assert.equals( f(9,9), 20 );
     }
 } );

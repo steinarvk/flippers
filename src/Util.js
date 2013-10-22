@@ -17,8 +17,8 @@ var Util = (function() {
 	args.splice( 0, 1 );
 	
 	zip_.apply( null, 
-		    [ compose( collector(rv),
-			       f ) ].concat( args ) );
+		    [ compose( f,
+                               collector(rv) ) ].concat( args ) );
 
 
 	return rv;
