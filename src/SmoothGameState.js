@@ -2,23 +2,83 @@
 
 var SteadyTimer = require("./SteadyTimer");
 
-module.exports = { wrap: function( gamestate ) {
-    var target = 40,
-        counter = 0,
-        timer = null,
-        tickCounter = 0,
-        lastCatchup = null;
+var Stopwatch = {create: function() {
+    var t = 0,
+        isRunning = false,
+        t0 = null;
 
-    function phase() {
-        return counter / target;
+    function start() {
+        t0 = new Date().getTime();
+        isRunning = true;
     }
 
-    function interpolatedBallPosition( ball ) {
+    function flush() {
+        var t1 = new Date().getTime();
+        if( isRunning ) {
+            t += (t1 - t0) / 1000.0;
+            t0 = t1;
+        }
+    }
+
+    function running() {
+        return isRunning;
+    }
+
+    function stop() {
+        flush();
+        isRunning = false;
+        t0 = null;
+    }
+
+    function reset() {
+        stop();
+        t = 0;
+    }
+
+    function get() {
+        flush();
+        return t;
+    }
+
+    function decrease(dt) {
+        t -= dt;
+    }
+
+    return {
+        start: start,
+        stop: stop,
+        reset: reset,
+        get: get,
+        decrease: decrease,
+        running: running
+    };
+} };
+
+module.exports = { wrap: function( gamestate ) {
+    var timer = Stopwatch.create(),
+        lastCatchup = null,
+        speed = 4;
+
+    function phase() {
+        var t = timer.get();
+        while( (t*5) > 1.0 ) {
+            gamestate.advance();
+            if( gamestate.status() !== "running" ) {
+                stop();
+            }
+
+            timer.decrease( 1/speed );
+            t = timer.get();
+        }
+        return t * speed;
+    }
+
+    function interpolatedBallPosition( ball, t ) {
         var cx = (ball.position.col + 0.5),
             cy = (ball.position.row + 0.5),
-            t, v;
-        if( (counter * 2) < target ) {
-            t = (counter / target) * 2;
+            v;
+        if( t < 0.5 ) {
+            t = t * 2;
             v = ball.incomingVelocity;
             return {
                 x: cx + 0.5 * v.dx * (t-1),
@@ -26,7 +86,7 @@ module.exports = { wrap: function( gamestate ) {
             };
         }
 
-        t = ((counter - target/2) / target) * 2;
+        t = (t - 0.5) * 2;
         v = ball.outgoingVelocity;
         return {
             x: cx + 0.5 * v.dx * t,
@@ -35,8 +95,9 @@ module.exports = { wrap: function( gamestate ) {
     }
 
     function render(gfx) {
-        var ball = gamestate.ball(),
-            t = phase();
+        var t = phase(),
+            ball = gamestate.ball();
+
         gfx.setBoardSize( gamestate.size() );
         
         gfx.drawBackground();
@@ -57,15 +118,8 @@ module.exports = { wrap: function( gamestate ) {
             return;
         }
 
-        gfx.drawBall( interpolatedBallPosition( ball ) );
-    }
-
-    function resetTickCounter() {
-        tickCounter = 0;
-    }
-
-    function getTickCounter() {
-        return tickCounter;
+        console.log( JSON.stringify( interpolatedBallPosition( ball, t ) ) );
+        gfx.drawBall( interpolatedBallPosition( ball, t ) );
     }
 
     function running() {
@@ -77,57 +131,25 @@ module.exports = { wrap: function( gamestate ) {
             return;
         }
 
-        lastCatchup = null;
-
         timer.stop();
     }
 
-    function advance() {
-        tickCounter += 1;
-        counter += 1;
-        while( counter > target ) {
-            gamestate.advance();
-            counter -= target;
-        }
-
-        if( gamestate.status() !== "running" ) {
-            stop();
-        }
-    }
-
-    function catchup() {
-        if( !timer.running() ) {
-            return;
-        }
-        var now = new Date().getTime(),
-            delta;
-
-        if( lastCatchup ) {
-            delta = now - lastCatchup;
-            timer.addTime( delta );
-        }
-        lastCatchup = now;
-    }
-    
     function start() {
         if( running() ) {
             return;
         }
-        
+
         timer.start();
     }
-    
-    timer = SteadyTimer.create( 7.0,
-                                advance,
-                                {manual: true} );
 
+    function catchup() {
+    }
+    
     return {
         start: start,
         stop: stop,
         running: running,
         render: render,
-        tickCounter: getTickCounter,
-        resetTickCounter: resetTickCounter,
         catchup: catchup
     };
 } };
