@@ -57,7 +57,7 @@ var Stopwatch = {create: function() {
 module.exports = { wrap: function( gamestate ) {
     var timer = Stopwatch.create(),
         lastCatchup = null,
-        speed = 4;
+        speed = 3;
 
     function phase() {
         var t = timer.get();
