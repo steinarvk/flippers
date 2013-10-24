@@ -61,8 +61,9 @@ module.exports = { wrap: function( gamestate ) {
 
     function phase() {
         var t = timer.get();
-        while( (t*5) > 1.0 ) {
+        while( (t*speed) > 1.0 ) {
             gamestate.advance();
+            console.log( "advance!" );
             if( gamestate.status() !== "running" ) {
                 stop();
             }
@@ -118,7 +119,6 @@ module.exports = { wrap: function( gamestate ) {
             return;
         }
 
-        console.log( JSON.stringify( interpolatedBallPosition( ball, t ) ) );
         gfx.drawBall( interpolatedBallPosition( ball, t ) );
     }
 
