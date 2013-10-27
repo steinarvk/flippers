@@ -24,6 +24,7 @@ public class MainActivity extends Activity {
     WebChromeClient chromeClient;
     WebView webview;
     FrameLayout webviewPlaceholder;
+    JsInterface jsInterface;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,10 +75,16 @@ public class MainActivity extends Activity {
             webview.setHorizontalScrollBarEnabled(false);
             webview.setVerticalScrollBarEnabled( false );
             
+            jsInterface = new JsInterface( this );
+            
+            webview.addJavascriptInterface( jsInterface, "AndroidJava" );
+            
             webview.loadUrl( "file:///android_asset/flippers.html" );
         } else {
             Log.d( "Flippers", "previous webview exists, no need to create a new one" );
         }
+        
+        webview.requestFocus( View.FOCUS_DOWN );
         
         webviewPlaceholder.addView( webview );
     }

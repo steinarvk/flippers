@@ -20,6 +20,7 @@ var Globals = require("./Globals");
 var BrowserUtil = require("./BrowserUtil");
 var PieceUtil = require("./PieceUtil");
 var PuzzleSelectionMenu = require("./PuzzleSelectionMenu");
+var TextInput = require("./TextInput" );
 
 function initialize() {
     var canvasWidth = 480;
@@ -199,7 +200,7 @@ function makeRoot( screen ) {
     return makePregameMenu( screen, 1 );
 }
 
-function makePregameMenu( screen, n ) {
+function makePregameMenu( screen, n, testText ) {
     var menuOptions = [
         {text: "Puzzle",
          activate: function() {
@@ -220,6 +221,26 @@ function makePregameMenu( screen, n ) {
              screen.setScene( makeOnlinePuzzlesMenu( screen ) );
          }}
     ];
+
+    var testEntry =
+            {text: (testText ? ("Foo" + testText) : "Input test"),
+             activate: function() {
+                 var input = TextInput.create( {
+                     onchange: function(text) {
+                         console.log( "changed: " + text );
+                     },
+                     onenter: function(text) {
+                         screen.setScene( makePregameMenu( screen, n, text ) );
+                     }
+                 } );
+             } };
+
+    menuOptions.push( testEntry );
+
+    if( AndroidJava ) {
+        AndroidJava.showKeyboard();
+    }
+
     if( BrowserUtil.isLocal() ) {
         menuOptions.push(
             {text: "Online",
