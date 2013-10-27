@@ -21,6 +21,7 @@ var BrowserUtil = require("./BrowserUtil");
 var PieceUtil = require("./PieceUtil");
 var PuzzleSelectionMenu = require("./PuzzleSelectionMenu");
 var TextInput = require("./TextInput" );
+var Solver = require("./Solver");
 
 function initialize() {
     var canvasWidth = 480;
@@ -237,7 +238,7 @@ function makePregameMenu( screen, n, testText ) {
 
     menuOptions.push( testEntry );
 
-    if( AndroidJava ) {
+    if( typeof AndroidJava !== "undefined" ) {
         AndroidJava.showKeyboard();
     }
 
@@ -385,6 +386,14 @@ function makePuzzleSaver( screen, puzzle ) {
     }
 
     function onAccept() {
+        function prepareMetadata( puzzle, solution ) {
+            var report = Solver.solve( solution );
+            return {
+                ticks: report.ticks,
+                valid: report.result === "win"
+            };
+        }
+        
         var st = GameState.load( state.save() );
         var inv = [];
         for(var i = 0; i < inventoryCells.length; i++) {
@@ -402,21 +411,26 @@ function makePuzzleSaver( screen, puzzle ) {
         var rv = {type: "puzzle",
                   name: puzzleName,
                   author: puzzleAuthor,
-                  puzzle: puz};
+                  puzzle: puz,
+                  metadata: prepareMetadata( puz, state.save() ) };
 
-        var backend = Backend.create();
+        if( !rv.metadata.valid ) {
+            console.log( "puzzle is not valid" );
+        } else {
+            var backend = Backend.create();
 
-        backend.postPuzzle( rv,
-                            function( error, id ) {
-                                if( id ) {
-                                    screen.setScene( makeOnlinePuzzleLoader(
-                                        screen,
-                                        id
-                                    ) );
-                                } else {
-                                    console.log( "Error posting puzzle" );
-                                }
-                            } );
+            backend.postPuzzle( rv,
+                                function( error, id ) {
+                                    if( id ) {
+                                        screen.setScene( makeOnlinePuzzleLoader(
+                                            screen,
+                                            id
+                                        ) );
+                                    } else {
+                                        console.log( "Error posting puzzle" );
+                                    }
+                                } );
+        }
     }
 
     function toggleInventoryCell( cell ) {
@@ -758,7 +772,10 @@ function makeGame( screen, presetPuzzle, preloadedPuzzle ) {
     }
 
     function showSavePuzzleDialog() {
-        screen.setScene( makePuzzleSaver( screen, myState.save() ) );
+        var success = Solver.solve( myState.save() ).result === "win";
+        if( success ) {
+            screen.setScene( makePuzzleSaver( screen, myState.save() ) );
+        }
     }
 
     function configureElement( element ) {
